@@ -2,16 +2,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Layouts
-import AdminLayout from './layouts/AdminLayout.jsx';
-import TecnicoLayout from './layouts/TecnicoLayout.jsx';
-import DistribuidorLayout from './layouts/DistribuidorLayout.jsx';
-import ClienteLayout from './layouts/ClienteLayout.jsx';
+import AdminLayout from './layouts/adminlayout.jsx';
+import TecnicoLayout from './layouts/tecnicolayout.jsx';
+import DistribuidorLayout from './layouts/distribuidorlayout.jsx';
+import ClienteLayout from './layouts/clientelayout.jsx';
 import CotizacionForm from './components/forms/CotizacionForm.jsx';
 import CotizacionesTable from './components/ui/CotizacionesTable.jsx';
 
 // Páginas
-import Login from './pages/auth/Login.jsx';
-import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import Login from './pages/auth/login.jsx';
+import AdminDashboard from './pages/admin/admindashboard.jsx';
 import Servicios from './pages/admin/Servicios.jsx';
 import Cotizaciones from './pages/admin/Cotizaciones.jsx';
 import Usuarios from './pages/admin/Usuarios.jsx';
