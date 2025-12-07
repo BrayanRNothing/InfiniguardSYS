@@ -2,23 +2,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Layouts
-import AdminLayout from './layouts/adminlayout.jsx';
-import TecnicoLayout from './layouts/tecnicolayout.jsx';
-import DistribuidorLayout from './layouts/distribuidorlayout.jsx';
-import ClienteLayout from './layouts/clientelayout.jsx';
+import AdminLayout from './layouts/AdminLayout.jsx';
+import TecnicoLayout from './layouts/TecnicoLayout.jsx';
+import DistribuidorLayout from './layouts/DistribuidorLayout.jsx';
+import ClienteLayout from './layouts/ClienteLayout.jsx';
 import CotizacionForm from './components/forms/CotizacionForm.jsx';
 import CotizacionesTable from './components/ui/CotizacionesTable.jsx';
 
 // Páginas
-import Login from './pages/auth/login.jsx';
-import AdminDashboard from './pages/admin/admindashboard.jsx';
+import Login from './pages/auth/Login.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import Servicios from './pages/admin/Servicios.jsx';
 import Cotizaciones from './pages/admin/Cotizaciones.jsx';
 import Usuarios from './pages/admin/Usuarios.jsx';
-import TecnicoHome from './pages/tecnico/tecnicohome.jsx';
+import TecnicoHome from './pages/tecnico/TecnicoHome.jsx';
 import NuevaSolicitud from './pages/tecnico/NuevaSolicitud.jsx';
-import DistribuidorHome from './pages/distribuidor/distribuidorhome.jsx';
-import ClienteHome from './pages/cliente/clientehome.jsx';
+import DistribuidorHome from './pages/distribuidor/DistribuidorHome.jsx';
+import ClienteHome from './pages/cliente/ClienteHome.jsx';
 
 function App() {
   return (
