@@ -116,8 +116,10 @@ const ClienteHome = () => {
   // Filtrar solicitudes
   const pendientes = misSolicitudes.filter(s => s.estado === 'pendiente');
   const cotizadas = misSolicitudes.filter(s => s.estado === 'cotizado');
+  const enProceso = misSolicitudes.filter(s => s.estado === 'en-proceso');
   const aprobadas = misSolicitudes.filter(s => s.estadoCliente === 'aprobado' || s.estado === 'aprobado-cliente');
   const rechazadas = misSolicitudes.filter(s => s.estadoCliente === 'rechazado' || s.estado === 'rechazado-cliente');
+  const finalizadas = misSolicitudes.filter(s => s.estado === 'finalizado');
 
   // Vista HOME
   const renderHome = () => (
@@ -348,6 +350,92 @@ const ClienteHome = () => {
     </div>
   );
 
+  const renderEnProceso = () => (
+    <div>
+      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <span className="text-2xl">🔧</span> Servicios en Proceso
+      </h3>
+      {enProceso.length === 0 ? (
+        <div className="text-center text-gray-500 py-8">No hay servicios en proceso</div>
+      ) : (
+        <div className="space-y-4">
+          {enProceso.map(sol => (
+            <div key={sol.id} className="bg-purple-50 border-2 border-purple-300 rounded-lg p-5 shadow-md">
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="font-bold text-lg text-purple-900">{sol.titulo}</h3>
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-200 text-purple-800 animate-pulse">
+                  EN PROCESO
+                </span>
+              </div>
+              
+              {/* Información del técnico asignado */}
+              {sol.tecnico && (
+                <div className="bg-white rounded-lg p-4 mb-3 border border-purple-200">
+                  <p className="text-sm font-bold text-purple-800 mb-2">👨‍🔧 Técnico Asignado:</p>
+                  <p className="text-base font-semibold text-gray-800">{sol.tecnico}</p>
+                </div>
+              )}
+              
+              {/* Fecha y hora programada */}
+              {(sol.fechaServicio || sol.horaServicio) && (
+                <div className="bg-blue-50 rounded-lg p-4 mb-3 border border-blue-200">
+                  <p className="text-sm font-bold text-blue-800 mb-2">📅 Servicio Programado:</p>
+                  {sol.fechaServicio && <p className="text-base text-gray-800"><strong>Fecha:</strong> {sol.fechaServicio}</p>}
+                  {sol.horaServicio && <p className="text-base text-gray-800"><strong>Hora:</strong> {sol.horaServicio}</p>}
+                </div>
+              )}
+              
+              {/* Detalles del servicio */}
+              <div className="text-sm text-gray-700 space-y-1 mt-3">
+                <p><strong>Tipo:</strong> {sol.tipo}</p>
+                {sol.precio && <p><strong>Precio:</strong> ${sol.precio}</p>}
+                <p><strong>Dirección:</strong> {sol.direccion}</p>
+                <p><strong>Teléfono:</strong> {sol.telefono}</p>
+                {sol.notas && <p><strong>Notas:</strong> {sol.notas}</p>}
+              </div>
+              
+              <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
+                <p className="text-xs text-green-700 text-center">
+                  ℹ️ El técnico llegará en la fecha y hora indicada
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderFinalizadas = () => (
+    <div>
+      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <span className="text-2xl">✅</span> Servicios Finalizados
+      </h3>
+      {finalizadas.length === 0 ? (
+        <div className="text-center text-gray-500 py-8">No hay servicios finalizados</div>
+      ) : (
+        <div className="space-y-4">
+          {finalizadas.map(sol => (
+            <div key={sol.id} className="bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-bold text-lg text-gray-900">{sol.titulo}</h3>
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-300 text-gray-800">
+                  FINALIZADO
+                </span>
+              </div>
+              <div className="text-sm text-gray-700 space-y-1">
+                <p><strong>Tipo:</strong> {sol.tipo}</p>
+                {sol.tecnico && <p><strong>Técnico:</strong> {sol.tecnico}</p>}
+                {sol.precio && <p><strong>Precio:</strong> ${sol.precio}</p>}
+                <p><strong>Fecha:</strong> {sol.fecha}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       
@@ -357,28 +445,40 @@ const ClienteHome = () => {
       </div>
 
       {/* --- MENU DE PESTAÑAS (TABS) --- */}
-      <div className="flex p-1 bg-gray-200 rounded-xl mb-6">
+      <div className="grid grid-cols-3 gap-1 p-1 bg-gray-200 rounded-xl mb-6">
         <button 
           onClick={() => setActiveTab('pendientes')}
-          className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${activeTab === 'pendientes' ? 'bg-white text-orange-600 shadow' : 'text-gray-500'}`}
+          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'pendientes' ? 'bg-white text-orange-600 shadow' : 'text-gray-500'}`}
         >
           Pendientes
         </button>
         <button 
           onClick={() => setActiveTab('cotizadas')}
-          className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${activeTab === 'cotizadas' ? 'bg-white text-blue-600 shadow' : 'text-gray-500'}`}
+          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'cotizadas' ? 'bg-white text-blue-600 shadow' : 'text-gray-500'}`}
         >
           Cotizadas
         </button>
         <button 
+          onClick={() => setActiveTab('en-proceso')}
+          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'en-proceso' ? 'bg-white text-purple-600 shadow' : 'text-gray-500'}`}
+        >
+          En Proceso
+        </button>
+        <button 
           onClick={() => setActiveTab('aprobadas')}
-          className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${activeTab === 'aprobadas' ? 'bg-white text-green-600 shadow' : 'text-gray-500'}`}
+          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'aprobadas' ? 'bg-white text-green-600 shadow' : 'text-gray-500'}`}
         >
           Aprobadas
         </button>
         <button 
+          onClick={() => setActiveTab('finalizadas')}
+          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'finalizadas' ? 'bg-white text-gray-600 shadow' : 'text-gray-500'}`}
+        >
+          Finalizadas
+        </button>
+        <button 
           onClick={() => setActiveTab('rechazadas')}
-          className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${activeTab === 'rechazadas' ? 'bg-white text-red-600 shadow' : 'text-gray-500'}`}
+          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'rechazadas' ? 'bg-white text-red-600 shadow' : 'text-gray-500'}`}
         >
           Rechazadas
         </button>
@@ -390,7 +490,9 @@ const ClienteHome = () => {
         {activeTab === 'solicitar' && renderSolicitar()}
         {activeTab === 'pendientes' && renderPendientes()}
         {activeTab === 'cotizadas' && renderCotizadas()}
+        {activeTab === 'en-proceso' && renderEnProceso()}
         {activeTab === 'aprobadas' && renderAprobadas()}
+        {activeTab === 'finalizadas' && renderFinalizadas()}
         {activeTab === 'rechazadas' && renderRechazadas()}
       </div>
     </div>

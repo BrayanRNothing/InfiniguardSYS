@@ -8,6 +8,8 @@ function Servicios() {
   const [formAsignar, setFormAsignar] = useState({
     cotizacionId: '',
     tecnicoId: '',
+    fechaServicio: '',
+    horaServicio: '',
     notas: ''
   });
   const [formCrear, setFormCrear] = useState({
@@ -61,13 +63,15 @@ function Servicios() {
         body: JSON.stringify({
           tecnico: tecnicoSeleccionado.nombre,
           estado: 'en-proceso',
+          fechaServicio: formAsignar.fechaServicio,
+          horaServicio: formAsignar.horaServicio,
           notas: formAsignar.notas
         })
       });
 
       if (res.ok) {
         alert('✅ Servicio asignado al técnico');
-        setFormAsignar({ cotizacionId: '', tecnicoId: '', notas: '' });
+        setFormAsignar({ cotizacionId: '', tecnicoId: '', fechaServicio: '', horaServicio: '', notas: '' });
         cargarDatos();
       }
     } catch (error) {
@@ -221,6 +225,29 @@ function Servicios() {
                   <option key={tec.id} value={tec.id}>{tec.nombre}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">📅 Fecha del Servicio *</label>
+                <input 
+                  type="date" 
+                  value={formAsignar.fechaServicio} 
+                  onChange={(e) => setFormAsignar({...formAsignar, fechaServicio: e.target.value})} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">🕐 Hora del Servicio *</label>
+                <input 
+                  type="time" 
+                  value={formAsignar.horaServicio} 
+                  onChange={(e) => setFormAsignar({...formAsignar, horaServicio: e.target.value})} 
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  required 
+                />
+              </div>
             </div>
 
             <div>
