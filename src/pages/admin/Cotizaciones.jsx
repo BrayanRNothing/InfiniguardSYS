@@ -93,26 +93,17 @@ function Cotizaciones() {
 
   // Identificar origen de la cotización
   const esCliente = (cot) => {
-    // Si el tipo es de técnico (equipo, herramienta, etc.), es solicitud de técnico
+    // Si tiene campo 'cliente' definido (no null), viene de un cliente
+    // Si tiene campo 'usuario' definido (no null), viene de técnico/distribuidor
+    if (cot.cliente && !cot.usuario) {
+      return true; // Es de cliente
+    }
+    if (cot.usuario && !cot.cliente) {
+      return false; // Es de técnico/distribuidor
+    }
+    // Fallback: si tiene ambos o ninguno, verificar por tipo de servicio
     const tiposDeTecnico = ['equipo-tecnico', 'herramienta', 'material', 'repuesto', 'garantia'];
-    if (tiposDeTecnico.includes(cot.tipo)) {
-      return false; // Es de técnico
-    }
-    
-    // Si tiene campo 'usuario' (lo creó alguien que inició sesión como técnico)
-    // y NO tiene campo 'cliente' o el cliente es igual al usuario, verificar si es técnico
-    if (cot.usuario && (!cot.cliente || cot.cliente === cot.usuario)) {
-      // Lista de nombres de técnicos conocidos
-      const tecnicosConocidos = ['Ing. Brayan', 'tecnico', 'Técnico'];
-      const nombreUsuario = cot.usuario.toLowerCase();
-      
-      // Si el nombre contiene palabras como 'ing', 'tecnico', etc.
-      if (tecnicosConocidos.some(t => nombreUsuario.includes(t.toLowerCase()))) {
-        return false; // Es de técnico
-      }
-    }
-    
-    return true; // Es de cliente
+    return !tiposDeTecnico.includes(cot.tipo);
   };
 
   const pendientes = cotizaciones.filter(c => c.estado === 'pendiente');

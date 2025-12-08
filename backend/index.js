@@ -78,7 +78,8 @@ app.post('/api/servicios', (req, res) => {
   const nuevoServicio = {
     id: Date.now(), // Generamos ID aleatorio basado en la hora
     titulo: nuevosDatos.titulo,
-    cliente: nuevosDatos.cliente || nuevosDatos.usuario || 'Anónimo',
+    cliente: nuevosDatos.cliente || null, // SOLO si viene del cliente
+    usuario: nuevosDatos.usuario || null, // SOLO si viene del técnico/distribuidor
     tecnico: nuevosDatos.tecnico || null,
     tipo: nuevosDatos.tipo,
     modelo: nuevosDatos.modelo || '',
