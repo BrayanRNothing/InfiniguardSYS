@@ -87,54 +87,44 @@ const AdminDashboard = () => {
       </div>
 
       {/* 2. Grid de Estadísticas (KPIs) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <Link to="/admin/cotizaciones" className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm font-medium">Cotizaciones Pendientes</p>
-              <p className="text-4xl font-bold mt-2">{stats.cotizacionesPendientes}</p>
-            </div>
-            <div className="text-5xl opacity-80">📄</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <Link to="/admin/cotizaciones" className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
+          <div className="flex flex-col items-center text-center">
+            <div className="text-4xl mb-3">📄</div>
+            <p className="text-orange-100 text-xs font-medium mb-2">Cotizaciones Pendientes</p>
+            <p className="text-3xl font-bold">{stats.cotizacionesPendientes}</p>
           </div>
         </Link>
 
-        <Link to="/admin/servicios" className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-yellow-100 text-sm font-medium">Servicios Pendientes</p>
-              <p className="text-4xl font-bold mt-2">{stats.serviciosPendientes}</p>
-            </div>
-            <div className="text-5xl opacity-80">⏳</div>
+        <Link to="/admin/servicios" className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
+          <div className="flex flex-col items-center text-center">
+            <div className="text-4xl mb-3">⏳</div>
+            <p className="text-yellow-100 text-xs font-medium mb-2">Servicios Pendientes</p>
+            <p className="text-3xl font-bold">{stats.serviciosPendientes}</p>
           </div>
         </Link>
 
-        <Link to="/admin/servicios" className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm font-medium">Servicios Activos</p>
-              <p className="text-4xl font-bold mt-2">{stats.serviciosActivos}</p>
-            </div>
-            <div className="text-5xl opacity-80">⚙️</div>
+        <Link to="/admin/servicios" className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
+          <div className="flex flex-col items-center text-center">
+            <div className="text-4xl mb-3">⚙️</div>
+            <p className="text-purple-100 text-xs font-medium mb-2">Servicios Activos</p>
+            <p className="text-3xl font-bold">{stats.serviciosActivos}</p>
           </div>
         </Link>
 
-        <Link to="/admin/servicios" className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium">Servicios Finalizados</p>
-              <p className="text-4xl font-bold mt-2">{stats.serviciosFinalizados}</p>
-            </div>
-            <div className="text-5xl opacity-80">✅</div>
+        <Link to="/admin/servicios" className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
+          <div className="flex flex-col items-center text-center">
+            <div className="text-4xl mb-3">✅</div>
+            <p className="text-green-100 text-xs font-medium mb-2">Servicios Finalizados</p>
+            <p className="text-3xl font-bold">{stats.serviciosFinalizados}</p>
           </div>
         </Link>
 
-        <Link to="/admin/usuarios" className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium">Total Usuarios</p>
-              <p className="text-4xl font-bold mt-2">{stats.totalUsuarios}</p>
-            </div>
-            <div className="text-5xl opacity-80">👥</div>
+        <Link to="/admin/usuarios" className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition transform hover:scale-105">
+          <div className="flex flex-col items-center text-center">
+            <div className="text-4xl mb-3">👥</div>
+            <p className="text-blue-100 text-xs font-medium mb-2">Total Usuarios</p>
+            <p className="text-3xl font-bold">{stats.totalUsuarios}</p>
           </div>
         </Link>
       </div>

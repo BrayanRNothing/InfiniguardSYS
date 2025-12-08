@@ -105,7 +105,7 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-lg text-white text-sm sm:text-base placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-              placeholder="user@protex.com"
+              placeholder="user@infiniguard.com"
               required
             />
           </div>

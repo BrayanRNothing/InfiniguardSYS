@@ -19,6 +19,7 @@ import TecnicoHome from './pages/tecnico/TecnicoHome.jsx';
 import NuevaSolicitud from './pages/tecnico/NuevaSolicitud.jsx';
 import DistribuidorHome from './pages/distribuidor/DistribuidorHome.jsx';
 import ClienteHome from './pages/cliente/ClienteHome.jsx';
+import NotFound from './pages/NotFound.jsx';
 
 function App() {
   return (
@@ -59,7 +60,7 @@ function App() {
         </Route>
 
         {/* Si escriben una ruta que no existe, los mandamos al Login */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
