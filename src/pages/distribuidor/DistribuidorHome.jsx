@@ -29,8 +29,14 @@ const DistribuidorHome = () => {
     };
     window.addEventListener('changeDistribuidorTab', handleTabChange);
 
+    // Auto-refresh cada 10 segundos
+    const interval = setInterval(() => {
+      cargarCotizaciones(userGuardado);
+    }, 10000);
+
     return () => {
       window.removeEventListener('changeDistribuidorTab', handleTabChange);
+      clearInterval(interval);
     };
   }, []);
 

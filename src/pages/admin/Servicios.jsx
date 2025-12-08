@@ -22,6 +22,13 @@ function Servicios() {
 
   useEffect(() => {
     cargarDatos();
+    
+    // Auto-refresh cada 10 segundos
+    const interval = setInterval(() => {
+      cargarDatos();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const cargarDatos = async () => {

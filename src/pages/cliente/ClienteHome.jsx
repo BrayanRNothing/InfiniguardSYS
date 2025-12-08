@@ -26,8 +26,14 @@ const ClienteHome = () => {
     };
     window.addEventListener('changeClienteTab', handleTabChange);
 
+    // Auto-refresh cada 10 segundos
+    const interval = setInterval(() => {
+      cargarSolicitudes(userGuardado);
+    }, 10000);
+
     return () => {
       window.removeEventListener('changeClienteTab', handleTabChange);
+      clearInterval(interval);
     };
   }, []);
 

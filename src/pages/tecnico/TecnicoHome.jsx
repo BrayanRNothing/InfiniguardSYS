@@ -44,6 +44,13 @@ const TecnicoHome = () => {
 
   useEffect(() => {
     cargarDatos();
+    
+    // Auto-refresh cada 10 segundos
+    const interval = setInterval(() => {
+      cargarDatos();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // 2. Función para marcar como FINALIZADO

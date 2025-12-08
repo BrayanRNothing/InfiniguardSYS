@@ -8,6 +8,13 @@ function Cotizaciones() {
 
   useEffect(() => {
     cargarCotizaciones();
+    
+    // Auto-refresh cada 10 segundos
+    const interval = setInterval(() => {
+      cargarCotizaciones();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const cargarCotizaciones = async () => {
