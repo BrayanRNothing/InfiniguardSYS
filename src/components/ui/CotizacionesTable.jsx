@@ -8,7 +8,7 @@ const CotizacionesTable = () => {
   useEffect(() => {
     const fetchServicios = async () => {
       try {
-        const response = await fetch('http://localhost:4000/api/servicios');
+        const response = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios');
         if (response.ok) {
           const data = await response.json();
           setSolicitudes(data);

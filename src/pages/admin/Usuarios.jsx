@@ -10,7 +10,7 @@ function Usuarios() {
 
   const cargarUsuarios = async () => {
     try {
-      const res = await fetch('http://localhost:4000/api/usuarios');
+      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/usuarios');
       const data = await res.json();
       setUsuarios(data);
     } catch (error) {

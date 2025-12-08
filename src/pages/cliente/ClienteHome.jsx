@@ -33,7 +33,7 @@ const ClienteHome = () => {
 
   const cargarSolicitudes = async (user) => {
     try {
-      const res = await fetch('http://localhost:4000/api/servicios');
+      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios');
       const data = await res.json();
       const misData = data.filter(s => s.cliente === user?.nombre || s.usuario === user?.nombre);
       setMisSolicitudes(misData);
@@ -62,7 +62,7 @@ const ClienteHome = () => {
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:4000/api/servicios', {
+      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -89,7 +89,7 @@ const ClienteHome = () => {
 
   const handleRespuestaCliente = async (id, respuesta) => {
     try {
-      const res = await fetch(`http://localhost:4000/api/servicios/${id}`, {
+      const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

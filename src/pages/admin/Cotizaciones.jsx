@@ -12,7 +12,7 @@ function Cotizaciones() {
 
   const cargarCotizaciones = async () => {
     try {
-      const res = await fetch('http://localhost:4000/api/servicios');
+      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios');
       const data = await res.json();
       setCotizaciones(data);
     } catch (error) {
@@ -27,7 +27,7 @@ function Cotizaciones() {
     }
 
     try {
-      const res = await fetch(`http://localhost:4000/api/servicios/${id}`, {
+      const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -50,7 +50,7 @@ function Cotizaciones() {
 
   const handleAprobarCotizacionTecnico = async (id) => {
     try {
-      const res = await fetch(`http://localhost:4000/api/servicios/${id}`, {
+      const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado: 'aprobado' })
@@ -69,7 +69,7 @@ function Cotizaciones() {
     if (!confirm('¿Rechazar esta cotización?')) return;
     
     try {
-      const res = await fetch(`http://localhost:4000/api/servicios/${id}`, {
+      const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado: 'rechazado' })

@@ -36,7 +36,7 @@ const DistribuidorHome = () => {
 
   const cargarCotizaciones = async (user) => {
     try {
-      const res = await fetch('http://localhost:4000/api/servicios');
+      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios');
       const data = await res.json();
       // Filtrar solo las cotizaciones creadas por este distribuidor
       const misCotizaciones = data.filter(s => s.usuario === user?.nombre);
@@ -55,7 +55,7 @@ const DistribuidorHome = () => {
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:4000/api/servicios', {
+      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

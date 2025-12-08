@@ -21,11 +21,11 @@ const AdminDashboard = () => {
   const cargarDatos = async () => {
     try {
       // Cargar servicios
-      const resServicios = await fetch('http://localhost:4000/api/servicios');
+      const resServicios = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios');
       const servicios = await resServicios.json();
 
       // Cargar usuarios
-      const resUsuarios = await fetch('http://localhost:4000/api/usuarios');
+      const resUsuarios = await fetch('https://infiniguardsys-production.up.railway.app/api/usuarios');
       const usuarios = await resUsuarios.json();
 
       // Calcular estadísticas

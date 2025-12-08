@@ -15,7 +15,7 @@ const TecnicoHome = () => {
     setUsuario(userGuardado);
 
     try {
-      const res = await fetch('http://localhost:4000/api/servicios');
+      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios');
       const data = await res.json();
 
       // FILTRO A: TRABAJO (Lo que el admin me asignó)
@@ -57,7 +57,7 @@ const TecnicoHome = () => {
     if(!window.confirm("¿Confirmas que terminaste este servicio?")) return;
 
     try {
-      const res = await fetch(`http://localhost:4000/api/servicios/${id}`, {
+      const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado: 'finalizado' })

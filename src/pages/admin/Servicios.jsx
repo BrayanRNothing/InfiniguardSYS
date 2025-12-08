@@ -26,11 +26,11 @@ function Servicios() {
 
   const cargarDatos = async () => {
     try {
-      const resTec = await fetch('http://localhost:4000/api/tecnicos');
+      const resTec = await fetch('https://infiniguardsys-production.up.railway.app/api/tecnicos');
       const dataTec = await resTec.json();
       setTecnicos(dataTec);
 
-      const resServ = await fetch('http://localhost:4000/api/servicios');
+      const resServ = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios');
       const dataServ = await resServ.json();
       setServicios(dataServ);
     } catch (error) {
@@ -48,7 +48,7 @@ function Servicios() {
     setLoading(true);
     try {
       const tecnicoSeleccionado = tecnicos.find(t => t.id == formAsignar.tecnicoId);
-      const res = await fetch(`http://localhost:4000/api/servicios/${formAsignar.cotizacionId}`, {
+      const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${formAsignar.cotizacionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -81,7 +81,7 @@ function Servicios() {
     setLoading(true);
     try {
       const tecnicoSeleccionado = tecnicos.find(t => t.id == formCrear.tecnicoId);
-      const res = await fetch('http://localhost:4000/api/servicios', {
+      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
