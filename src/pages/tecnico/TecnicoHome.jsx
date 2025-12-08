@@ -166,9 +166,57 @@ const TecnicoHome = () => {
                   <p className="text-xs font-bold text-blue-800 mb-1">💬 Respuesta del Admin:</p>
                   <p className="text-sm text-gray-700">{sol.respuestaAdmin}</p>
                   {sol.precio && <p className="text-sm font-bold text-blue-900 mt-1">💰 Precio: ${sol.precio}</p>}
+                  
+                  {/* BOTONES PARA APROBAR/RECHAZAR */}
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={async () => {
+                        if (!confirm('¿Aprobar esta cotización?')) return;
+                        try {
+                          const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${sol.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ estado: 'aprobado' })
+                          });
+                          if (res.ok) {
+                            alert('✅ Cotización aprobada');
+                            cargarDatos();
+                          }
+                        } catch (error) {
+                          console.error(error);
+                          alert('Error al aprobar');
+                        }
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded transition"
+                    >
+                      ✅ Aprobar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('¿Rechazar esta cotización?')) return;
+                        try {
+                          const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${sol.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ estado: 'rechazado' })
+                          });
+                          if (res.ok) {
+                            alert('❌ Cotización rechazada');
+                            cargarDatos();
+                          }
+                        } catch (error) {
+                          console.error(error);
+                          alert('Error al rechazar');
+                        }
+                      }}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition"
+                    >
+                      ❌ Rechazar
+                    </button>
+                  </div>
                 </div>
               )}
-              {sol.estado === 'aprobado' && <p className="text-xs text-green-600 font-bold mt-2">✅ Autorizado por Admin</p>}
+              {sol.estado === 'aprobado' && <p className="text-xs text-green-600 font-bold mt-2">✅ Autorizado - En espera de procesamiento</p>}
               {sol.estado === 'rechazado' && <p className="text-xs text-red-600 font-bold mt-2">❌ Rechazada</p>}
             </div>
           ))}
