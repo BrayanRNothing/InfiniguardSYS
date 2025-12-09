@@ -41,8 +41,8 @@ function CotizacionForm({ titulo, tipoServicio }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Obtener el usuario actual del localStorage
-    const userStorage = localStorage.getItem('user');
+    // Obtener el usuario actual del sessionStorage
+    const userStorage = sessionStorage.getItem('user');
     const usuario = userStorage ? JSON.parse(userStorage) : null;
     
     // Preparamos el objeto para enviar al Backend

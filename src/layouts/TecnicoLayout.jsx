@@ -12,7 +12,7 @@ const TecnicoLayout = () => {
 
   useEffect(() => {
     // Cargar usuario
-    const userGuardado = JSON.parse(localStorage.getItem('user'));
+    const userGuardado = JSON.parse(sessionStorage.getItem('user'));
     setUsuario(userGuardado);
     if (vantaRef.current && !vantaInstanceRef.current) {
       try {
@@ -65,7 +65,7 @@ const TecnicoLayout = () => {
           </div>
           <button 
             onClick={() => {
-              localStorage.removeItem('user');
+              sessionStorage.removeItem('user');
               window.location.href = '/';
             }}
             className="text-sm text-red-300 hover:text-red-200 font-medium bg-red-500 bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition backdrop-blur-sm border border-red-500 border-opacity-30"

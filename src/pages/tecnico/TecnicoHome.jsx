@@ -12,7 +12,7 @@ const TecnicoHome = () => {
   // 1. Cargar datos al iniciar
   const cargarDatos = async () => {
     setLoading(true);
-    const userGuardado = JSON.parse(localStorage.getItem('user'));
+    const userGuardado = JSON.parse(sessionStorage.getItem('user'));
     setUsuario(userGuardado);
 
     try {

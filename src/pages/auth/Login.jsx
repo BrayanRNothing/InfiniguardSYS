@@ -59,8 +59,8 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Login exitoso - guardamos el usuario en localStorage
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Login exitoso - guardamos el usuario en sessionStorage (independiente por pestaña)
+        sessionStorage.setItem('user', JSON.stringify(data.user));
         
         // Redirigimos según el rol
         const { rol } = data.user;

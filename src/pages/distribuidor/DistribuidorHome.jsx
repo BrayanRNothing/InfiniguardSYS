@@ -16,7 +16,7 @@ const DistribuidorHome = () => {
   });
 
   useEffect(() => {
-    const userGuardado = JSON.parse(localStorage.getItem('user'));
+    const userGuardado = JSON.parse(sessionStorage.getItem('user'));
     setUsuario(userGuardado);
     cargarCotizaciones(userGuardado);
 
