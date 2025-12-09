@@ -160,10 +160,10 @@ function Usuarios() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          <button onClick={() => setVistaActual('admin')} className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
+          <button onClick={() => setVistaActual('admin')} className="bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
             <div className="text-7xl mb-4">👑</div>
             <h2 className="text-2xl font-bold mb-2">Administradores</h2>
-            {admins.length > 0 && <div className="mt-4 bg-red-700/80 rounded-full px-6 py-2"><span className="text-2xl font-bold">{admins.length}</span></div>}
+            {admins.length > 0 && <div className="mt-4 bg-cyan-700/80 rounded-full px-6 py-2"><span className="text-2xl font-bold">{admins.length}</span></div>}
           </button>
 
           <button onClick={() => setVistaActual('tecnico')} className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
