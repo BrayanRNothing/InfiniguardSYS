@@ -140,13 +140,13 @@ function Servicios() {
           {/* Opción 1: Asignar Técnico */}
           <button
             onClick={() => setVistaActual('asignar')}
-            className="bg-gradient-to-br from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 hover:shadow-2xl h-72 flex flex-col items-center justify-center"
+            className="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 hover:shadow-2xl h-72 flex flex-col items-center justify-center"
           >
             <div className="text-7xl mb-4 animate-bounce">⏳</div>
             <h2 className="text-2xl font-bold mb-2">Servicios Pendientes</h2>
-            <p className="text-pink-100 text-sm">Cotizaciones aprobadas sin asignar</p>
+            <p className="text-orange-100 text-sm">Cotizaciones aprobadas sin asignar</p>
             {cotizacionesAprobadas.length > 0 && (
-              <div className="mt-4 bg-pink-700/80 rounded-full px-6 py-2">
+              <div className="mt-4 bg-orange-700/80 rounded-full px-6 py-2">
                 <span className="text-2xl font-bold">{cotizacionesAprobadas.length}</span>
                 <span className="text-sm ml-1">pendientes</span>
               </div>
