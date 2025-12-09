@@ -9,6 +9,8 @@ app.use(cors()); // Permite que React (puerto 5173) hable con Node (puerto 4000)
 app.use(express.json({ limit: '10mb' })); // Entiende JSON y permite hasta 10MB (para imágenes Base64)
 app.use(express.urlencoded({ limit: '10mb', extended: true })); // Para formularios con imágenes
 
+console.log('✅ Servidor con CRUD de usuarios activo - v2.0');
+
 // ==========================================
 // 🧠 BASE DE DATOS FALSA (En Memoria RAM)
 // ==========================================
