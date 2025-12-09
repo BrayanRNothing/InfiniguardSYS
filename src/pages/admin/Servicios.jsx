@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
 function Servicios() {
-  const [vistaActual, setVistaActual] = useState('menu'); // menu | asignar | en-curso | finalizados | crear
+  const [vistaActual, setVistaActual] = useState('menu'); // menu | asignar | en-curso | finalizados | crear | detalle-servicio
   const [tecnicos, setTecnicos] = useState([]);
   const [servicios, setServicios] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -75,8 +75,8 @@ function Servicios() {
       if (res.ok) {
         toast.success('✅ Servicio asignado al técnico');
         setFormAsignar({ cotizacionId: '', tecnicoId: '', fechaServicio: '', horaServicio: '', notas: '' });
+        setCotizacionSeleccionada(null);
         cargarDatos();
-        setVistaActual('menu');
       }
     } catch (error) {
       console.error(error);
@@ -144,7 +144,7 @@ function Servicios() {
           >
             <div className="text-7xl mb-4 animate-bounce">⏳</div>
             <h2 className="text-2xl font-bold mb-2">Servicios Pendientes</h2>
-            <p className="text-orange-100 text-sm">Cotizaciones aprobadas sin asignar</p>
+            <p className="text-orange-100 text-sm">Asignar técnico a servicios</p>
             {cotizacionesAprobadas.length > 0 && (
               <div className="mt-4 bg-orange-700/80 rounded-full px-6 py-2">
                 <span className="text-2xl font-bold">{cotizacionesAprobadas.length}</span>
@@ -202,187 +202,273 @@ function Servicios() {
 
   if (vistaActual === 'asignar') {
     return (
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <button onClick={() => setVistaActual('menu')} className="mb-6 text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2">
           ← Volver al menú
         </button>
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">⏳ Servicios Pendientes</h1>
-          <p className="text-gray-500 text-sm">Selecciona una cotización para asignar técnico</p>
+          <p className="text-gray-500 text-sm">Cotizaciones aprobadas esperando asignación de técnico</p>
         </div>
 
         {cotizacionesAprobadas.length === 0 ? (
-          <div className="text-center py-20">
+          <div className="text-center py-20 bg-white rounded-xl shadow-md">
             <div className="text-6xl mb-4">📭</div>
-            <p className="text-gray-500 text-lg">No hay cotizaciones aprobadas pendientes de asignar</p>
+            <p className="text-gray-500 text-lg font-semibold">No hay servicios pendientes</p>
+            <p className="text-gray-400 text-sm mt-2">Las cotizaciones aprobadas aparecerán aquí</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4">
-              <h2 className="text-lg font-bold">📋 Lista de Cotizaciones Aprobadas</h2>
-              <p className="text-blue-100 text-sm">Click en una para ver detalles y asignar técnico</p>
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-xl shadow-lg">
+              <h2 className="text-xl font-bold">📋 {cotizacionesAprobadas.length} Servicio{cotizacionesAprobadas.length !== 1 ? 's' : ''} Pendiente{cotizacionesAprobadas.length !== 1 ? 's' : ''}</h2>
+              <p className="text-orange-100 text-sm">Haz clic en "Ver Detalles" para expandir y asignar técnico</p>
             </div>
-            
-            <div className="divide-y divide-gray-200">
-              {cotizacionesAprobadas.map(cot => (
-                <button
-                  key={cot.id}
-                  onClick={() => {
-                    setCotizacionSeleccionada(cot);
-                    setFormAsignar({ ...formAsignar, cotizacionId: cot.id });
-                    setVistaActual('form-asignar');
-                  }}
-                  className="w-full px-6 py-4 hover:bg-blue-50 transition text-left flex items-center justify-between group"
-                >
+
+            {/* Lista de tarjetas expandibles */}
+            {cotizacionesAprobadas.map(cot => (
+              <div key={cot.id} className="bg-white rounded-xl border-2 border-gray-200 shadow-md overflow-hidden transition hover:shadow-lg">
+                {/* Resumen siempre visible */}
+                <div className="flex items-center gap-4 p-6 hover:bg-gray-50 transition">
+                  {cot.foto && (
+                    <div className="w-20 h-20 flex-shrink-0">
+                      <img 
+                        src={cot.foto} 
+                        alt="Preview" 
+                        onClick={() => setImagenZoom(cot.foto)}
+                        className="w-full h-full object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition shadow-md"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="font-bold text-gray-800 group-hover:text-blue-600 transition">{cot.titulo}</h3>
-                      <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                        cot.cliente ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {cot.cliente ? '👤 CLIENTE' : '🔧 TÉCNICO'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span className="capitalize">📋 {cot.tipo}</span>
-                      <span>👤 {cot.cliente || cot.usuario}</span>
-                      {cot.direccion && <span className="truncate max-w-xs">📍 {cot.direccion}</span>}
-                    </div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-1">{cot.titulo}</h3>
+                    <p className="text-sm text-gray-600">
+                      👤 {cot.cliente || cot.usuario}
+                      {cot.telefono && <span className="ml-3">📞 {cot.telefono}</span>}
+                    </p>
+                    <span className="inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
+                      {cot.tipo.replace(/_/g, ' ')}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-green-600">${cot.precio || cot.precioEstimado || 'N/A'}</p>
-                      <p className="text-xs text-gray-500">Precio</p>
-                    </div>
-                    <div className="text-blue-600 group-hover:text-blue-700">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
+                  
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-green-600">${cot.precio || cot.precioEstimado || 'N/A'}</p>
+                    <p className="text-xs text-gray-500 mt-1">Precio aprobado</p>
                   </div>
-                </button>
-              ))}
-            </div>
+                  
+                  <button
+                    onClick={() => {
+                      setCotizacionSeleccionada(cot);
+                      setFormAsignar({ ...formAsignar, cotizacionId: cot.id });
+                      setVistaActual('detalle-servicio');
+                    }}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl flex items-center gap-2"
+                  >
+                    📋 Abrir Detalles
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
     );
   }
 
-  if (vistaActual === 'form-asignar') {
+  // Vista de Detalle de Servicio (Pantalla Completa)
+  if (vistaActual === 'detalle-servicio' && cotizacionSeleccionada) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <button onClick={() => { setVistaActual('asignar'); setCotizacionSeleccionada(null); }} className="mb-6 text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2">
-          ← Volver a la lista
-        </button>
-
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">👤 Asignar Técnico</h1>
-          <p className="text-gray-500 text-sm">Servicio: {cotizacionSeleccionada?.titulo}</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        {/* Header fijo */}
+        <div className="bg-white border-b-2 border-gray-200 shadow-md sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+            <button 
+              onClick={() => {
+                setVistaActual('asignar');
+                setCotizacionSeleccionada(null);
+                setFormAsignar({ cotizacionId: '', tecnicoId: '', fechaServicio: '', horaServicio: '', notas: '' });
+              }}
+              className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2 transition text-sm"
+            >
+              ← Volver a la lista
+            </button>
+            <h1 className="text-xl font-bold text-gray-800">📋 Detalles del Servicio</h1>
+            <div className="w-32"></div> {/* Spacer para centrar título */}
+          </div>
         </div>
 
-        {/* DETALLES COMPLETOS DE LA COTIZACIÓN */}
-        {cotizacionSeleccionada && (
-          <div className="bg-white rounded-xl shadow-md p-6 border-2 border-blue-200 mb-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-xl font-bold text-gray-800">{cotizacionSeleccionada.titulo}</h3>
-                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                    cotizacionSeleccionada.cliente ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                  }`}>
-                    {cotizacionSeleccionada.cliente ? '👤 CLIENTE' : '🔧 TÉCNICO'}
+        {/* Contenido principal en 2 columnas */}
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Columna izquierda: Información del servicio (2/3) */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Header del servicio */}
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">{cotizacionSeleccionada.titulo}</h2>
+                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-blue-600">👤</span> {cotizacionSeleccionada.cliente || cotizacionSeleccionada.usuario}
+                  </span>
+                  {cotizacionSeleccionada.telefono && (
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-green-600">📞</span> {cotizacionSeleccionada.telefono}
+                    </span>
+                  )}
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold capitalize">
+                    {cotizacionSeleccionada.tipo.replace(/_/g, ' ')}
+                  </span>
+                  <span className="ml-auto text-4xl font-bold text-green-600">
+                    ${cotizacionSeleccionada.precio || cotizacionSeleccionada.precioEstimado || 'N/A'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 capitalize">📋 Tipo: {cotizacionSeleccionada.tipo}</p>
-                <p className="text-sm text-gray-600">
-                  {cotizacionSeleccionada.cliente ? `👤 Cliente: ${cotizacionSeleccionada.cliente}` : `🔧 Técnico: ${cotizacionSeleccionada.usuario}`}
-                </p>
-                {cotizacionSeleccionada.modelo && <p className="text-sm text-gray-600">📦 Modelo: {cotizacionSeleccionada.modelo}</p>}
-                {cotizacionSeleccionada.cantidad && <p className="text-sm text-gray-600">🔢 Cantidad: {cotizacionSeleccionada.cantidad}</p>}
-                {cotizacionSeleccionada.direccion && <p className="text-sm text-gray-600">📍 {cotizacionSeleccionada.direccion}</p>}
-                {cotizacionSeleccionada.telefono && <p className="text-sm text-gray-600">📞 {cotizacionSeleccionada.telefono}</p>}
-                {cotizacionSeleccionada.foto && (
-                  <div className="mt-3">
-                    <p className="text-xs font-bold text-gray-700 mb-1">📸 Foto adjunta (click para ampliar):</p>
-                    <img 
-                      src={cotizacionSeleccionada.foto} 
-                      alt="Evidencia" 
-                      onClick={() => setImagenZoom(cotizacionSeleccionada.foto)}
-                      className="w-full max-w-xs h-48 object-cover rounded-lg border border-gray-300 shadow-sm cursor-pointer hover:opacity-80 transition" 
+              </div>
+
+              <hr className="border-gray-200" />
+
+              {/* Detalles del producto */}
+              {(cotizacionSeleccionada.modelo || cotizacionSeleccionada.cantidad) && (
+                <div>
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Detalles del Producto</h3>
+                  <div className="space-y-2 ml-4">
+                    {cotizacionSeleccionada.modelo && (
+                      <div className="flex items-center gap-3">
+                        <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                        <span className="text-sm text-gray-600">Modelo:</span>
+                        <span className="text-sm font-semibold text-gray-900">{cotizacionSeleccionada.modelo}</span>
+                      </div>
+                    )}
+                    {cotizacionSeleccionada.cantidad && (
+                      <div className="flex items-center gap-3">
+                        <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                        <span className="text-sm text-gray-600">Cantidad:</span>
+                        <span className="text-sm font-semibold text-gray-900">{cotizacionSeleccionada.cantidad}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Ubicación */}
+              {cotizacionSeleccionada.direccion && (
+                <div>
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Ubicación del Servicio</h3>
+                  <div className="flex items-start gap-3 ml-4">
+                    <span className="text-orange-500 text-lg">📍</span>
+                    <p className="text-sm text-gray-700 leading-relaxed">{cotizacionSeleccionada.direccion}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Imagen */}
+              {cotizacionSeleccionada.foto && (
+                <div>
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Evidencia Fotográfica</h3>
+                  <img 
+                    src={cotizacionSeleccionada.foto} 
+                    alt="Evidencia del servicio" 
+                    onClick={() => setImagenZoom(cotizacionSeleccionada.foto)}
+                    className="w-64 h-48 object-cover rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-all duration-300"
+                  />
+                  <p className="text-xs text-gray-400 mt-2">Click para ver en tamaño completo</p>
+                </div>
+              )}
+
+              {/* Cotización */}
+              {cotizacionSeleccionada.respuestaAdmin && (
+                <div>
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Detalles de la Cotización</h3>
+                  <p className="text-sm text-gray-700 leading-relaxed ml-4 pl-4 border-l-2 border-blue-500">
+                    {cotizacionSeleccionada.respuestaAdmin}
+                  </p>
+                </div>
+              )}
+
+              {/* Notas */}
+              {cotizacionSeleccionada.notas && (
+                <div>
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Notas Adicionales</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed ml-4 pl-4 border-l-2 border-gray-300">
+                    {cotizacionSeleccionada.notas}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Columna derecha: Formulario de asignación (1/3) */}
+            <div className="lg:col-span-1">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">👤 Asignar Técnico</h3>
+                  <p className="text-sm text-gray-500">Completa la información del servicio</p>
+                </div>
+
+                <hr className="border-gray-200" />
+                
+                <form onSubmit={handleAsignar} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Técnico Responsable *</label>
+                    <select 
+                      value={formAsignar.tecnicoId} 
+                      onChange={(e) => setFormAsignar({...formAsignar, tecnicoId: e.target.value})} 
+                      className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white shadow-sm hover:border-gray-300" 
+                      required
+                    >
+                      <option value="">Seleccionar técnico...</option>
+                      {tecnicos.map(tec => (
+                        <option key={tec.id} value={tec.id}>{tec.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Fecha *</label>
+                      <input 
+                        type="date" 
+                        value={formAsignar.fechaServicio} 
+                        onChange={(e) => setFormAsignar({...formAsignar, fechaServicio: e.target.value})} 
+                        className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-300" 
+                        required 
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Hora *</label>
+                      <input 
+                        type="time" 
+                        value={formAsignar.horaServicio} 
+                        onChange={(e) => setFormAsignar({...formAsignar, horaServicio: e.target.value})} 
+                        className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-300" 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Instrucciones</label>
+                    <textarea 
+                      value={formAsignar.notas} 
+                      onChange={(e) => setFormAsignar({...formAsignar, notas: e.target.value})} 
+                      placeholder="Detalles adicionales para el técnico..." 
+                      rows="4" 
+                      className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none shadow-sm hover:border-gray-300" 
                     />
                   </div>
-                )}
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-green-600">${cotizacionSeleccionada.precio || cotizacionSeleccionada.precioEstimado || 'N/A'}</p>
-                <p className="text-xs text-gray-500">Precio aprobado</p>
+
+                  <button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Asignando...' : '✅ Asignar Servicio'}
+                  </button>
+                </form>
               </div>
             </div>
-
-            {cotizacionSeleccionada.respuestaAdmin && (
-              <div className="bg-blue-50 p-3 rounded-lg mb-4 border border-blue-200">
-                <p className="text-xs font-bold text-blue-800 mb-1">💬 Detalles de la cotización:</p>
-                <p className="text-sm text-gray-700">{cotizacionSeleccionada.respuestaAdmin}</p>
-              </div>
-            )}
-
-            {cotizacionSeleccionada.notas && (
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-xs font-bold text-gray-700 mb-1">📝 Notas:</p>
-                <p className="text-sm text-gray-600">{cotizacionSeleccionada.notas}</p>
-              </div>
-            )}
           </div>
-        )}
-
-        {/* FORMULARIO DE ASIGNACIÓN */}
-        <form onSubmit={handleAsignar} className="bg-white rounded-xl shadow-md p-8 border border-gray-200">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Técnico *</label>
-              <select value={formAsignar.tecnicoId} onChange={(e) => setFormAsignar({...formAsignar, tecnicoId: e.target.value})} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-                <option value="">Selecciona un técnico</option>
-                {tecnicos.map(tec => (
-                  <option key={tec.id} value={tec.id}>{tec.nombre}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">📅 Fecha del Servicio *</label>
-                <input 
-                  type="date" 
-                  value={formAsignar.fechaServicio} 
-                  onChange={(e) => setFormAsignar({...formAsignar, fechaServicio: e.target.value})} 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">🕐 Hora del Servicio *</label>
-                <input 
-                  type="time" 
-                  value={formAsignar.horaServicio} 
-                  onChange={(e) => setFormAsignar({...formAsignar, horaServicio: e.target.value})} 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" 
-                  required 
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Notas para el Técnico</label>
-              <textarea value={formAsignar.notas} onChange={(e) => setFormAsignar({...formAsignar, notas: e.target.value})} placeholder="Instrucciones especiales..." rows="3" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-            </div>
-
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg transition disabled:opacity-50">
-              {loading ? 'Asignando...' : '✅ Asignar Servicio'}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     );
   }

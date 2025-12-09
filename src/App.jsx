@@ -11,7 +11,7 @@ import CotizacionForm from './components/forms/CotizacionForm.jsx';
 import CotizacionesTable from './components/ui/CotizacionesTable.jsx';
 
 // Páginas
-import Login from './pages/auth/Login.jsx';
+import Login from './pages/auth/login.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import Servicios from './pages/admin/Servicios.jsx';
 import Cotizaciones from './pages/admin/Cotizaciones.jsx';

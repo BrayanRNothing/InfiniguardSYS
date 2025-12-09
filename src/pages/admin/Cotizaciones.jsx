@@ -6,6 +6,7 @@ function Cotizaciones() {
   const [cotizaciones, setCotizaciones] = useState([]);
   const [cotizando, setCotizando] = useState(null);
   const [respuesta, setRespuesta] = useState({ texto: '', precio: '' });
+  const [imagenZoom, setImagenZoom] = useState(null);
 
   useEffect(() => {
     cargarCotizaciones();
@@ -223,7 +224,17 @@ function Cotizaciones() {
                       {cot.telefono && <p className="text-sm text-gray-500">📞 {cot.telefono}</p>}
                       {cot.notas && <p className="text-sm text-gray-500 mt-2">📝 {cot.notas}</p>}
                     </div>
-                    {cot.foto && <img src={cot.foto} alt="Adjunto" className="w-24 h-24 object-cover rounded-lg ml-3" />}
+                    {cot.foto && (
+                      <div className="ml-3">
+                        <p className="text-xs font-bold text-gray-700 mb-1">📸 Foto (click para ampliar)</p>
+                        <img 
+                          src={cot.foto} 
+                          alt="Evidencia" 
+                          onClick={() => setImagenZoom(cot.foto)}
+                          className="w-32 h-32 object-cover rounded-lg border border-gray-300 shadow-sm cursor-pointer hover:opacity-80 transition"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {esCliente(cot) ? (
@@ -390,6 +401,33 @@ function Cotizaciones() {
       </div>
     );
   }
+
+  return (
+    <>
+      {/* Modal de Zoom para Imágenes */}
+      {imagenZoom && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={() => setImagenZoom(null)}
+        >
+          <div className="relative max-w-7xl max-h-full">
+            <button 
+              onClick={() => setImagenZoom(null)}
+              className="absolute -top-12 right-0 text-white text-4xl font-bold hover:text-gray-300 transition"
+            >
+              ✕
+            </button>
+            <img 
+              src={imagenZoom} 
+              alt="Imagen ampliada" 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 export default Cotizaciones;
