@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 function Servicios() {
   const [vistaActual, setVistaActual] = useState('menu'); // menu | asignar | en-curso | finalizados | crear
@@ -50,7 +51,7 @@ function Servicios() {
   const handleAsignar = async (e) => {
     e.preventDefault();
     if (!formAsignar.cotizacionId || !formAsignar.tecnicoId) {
-      alert('Selecciona una cotización y un técnico');
+      toast.error('Selecciona una cotización y un técnico');
       return;
     }
 
@@ -70,13 +71,14 @@ function Servicios() {
       });
 
       if (res.ok) {
-        alert('✅ Servicio asignado al técnico');
+        toast.success('✅ Servicio asignado al técnico');
         setFormAsignar({ cotizacionId: '', tecnicoId: '', fechaServicio: '', horaServicio: '', notas: '' });
         cargarDatos();
+        setVistaActual('menu');
       }
     } catch (error) {
       console.error(error);
-      alert('Error al asignar servicio');
+      toast.error('Error al asignar servicio');
     } finally {
       setLoading(false);
     }

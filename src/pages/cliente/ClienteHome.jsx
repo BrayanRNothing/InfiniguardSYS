@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 const ClienteHome = () => {
   const [activeTab, setActiveTab] = useState('pendientes'); // pendientes | cotizadas | aprobadas | rechazadas | home | solicitar
@@ -62,7 +63,7 @@ const ClienteHome = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.titulo || !formData.telefono) {
-      alert('Por favor completa los campos obligatorios');
+      toast.error('Por favor completa los campos obligatorios');
       return;
     }
 
@@ -80,14 +81,14 @@ const ClienteHome = () => {
       });
 
       if (res.ok) {
-        alert('✅ Solicitud enviada correctamente');
+        toast.success('✅ Solicitud enviada correctamente');
         setFormData({ titulo: '', tipo: 'equipo', modelo: '', direccion: '', telefono: '', notas: '', foto: null });
         cargarSolicitudes(usuario);
         setActiveTab('pendientes');
       }
     } catch (error) {
       console.error(error);
-      alert('Error al enviar solicitud');
+      toast.error('Error al enviar solicitud');
     } finally {
       setLoading(false);
     }
@@ -105,7 +106,8 @@ const ClienteHome = () => {
       });
 
       if (res.ok) {
-        alert(`Cotización ${respuesta === 'aprobado' ? 'aprobada' : respuesta === 'rechazado' ? 'rechazada' : 'marcada para contacto'}`);
+        const mensaje = respuesta === 'aprobado' ? '✅ Cotización aprobada' : respuesta === 'rechazado' ? '❌ Cotización rechazada' : '📞 Marcada para contacto';
+        toast.success(mensaje);
         cargarSolicitudes(usuario);
       }
     } catch (error) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import ServiceCard from '../../components/ui/ServiceCard';
 
 const TecnicoHome = () => {
@@ -171,7 +172,6 @@ const TecnicoHome = () => {
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={async () => {
-                        if (!confirm('¿Aprobar esta cotización?')) return;
                         try {
                           const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${sol.id}`, {
                             method: 'PUT',
@@ -179,12 +179,12 @@ const TecnicoHome = () => {
                             body: JSON.stringify({ estado: 'aprobado' })
                           });
                           if (res.ok) {
-                            alert('✅ Cotización aprobada');
+                            toast.success('✅ Cotización aprobada');
                             cargarDatos();
                           }
                         } catch (error) {
                           console.error(error);
-                          alert('Error al aprobar');
+                          toast.error('Error al aprobar');
                         }
                       }}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded transition"
@@ -193,7 +193,6 @@ const TecnicoHome = () => {
                     </button>
                     <button
                       onClick={async () => {
-                        if (!confirm('¿Rechazar esta cotización?')) return;
                         try {
                           const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${sol.id}`, {
                             method: 'PUT',
@@ -201,12 +200,12 @@ const TecnicoHome = () => {
                             body: JSON.stringify({ estado: 'rechazado' })
                           });
                           if (res.ok) {
-                            alert('❌ Cotización rechazada');
+                            toast.success('❌ Cotización rechazada');
                             cargarDatos();
                           }
                         } catch (error) {
                           console.error(error);
-                          alert('Error al rechazar');
+                          toast.error('Error al rechazar');
                         }
                       }}
                       className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded transition"

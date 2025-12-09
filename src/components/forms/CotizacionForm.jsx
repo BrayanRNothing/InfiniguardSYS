@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 
 function CotizacionForm({ titulo, tipoServicio }) {
   const [preview, setPreview] = useState(null);
@@ -14,7 +15,7 @@ function CotizacionForm({ titulo, tipoServicio }) {
     if (file) {
       // Validar tamaño (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen es muy grande. Máximo 5MB.');
+        toast.error('La imagen es muy grande. Máximo 5MB.');
         return;
       }
 
@@ -62,17 +63,17 @@ function CotizacionForm({ titulo, tipoServicio }) {
       });
       
       if(response.ok) {
-        alert("¡Solicitud enviada con éxito!");
+        toast.success('¡Solicitud enviada con éxito!');
         // Limpiar form
         setFormDatos({ nombreProyecto: '', modelo: '', cantidad: 1 });
         setPreview(null);
         setFotoBase64(null);
       } else {
-        alert("Error al enviar la solicitud");
+        toast.error('Error al enviar la solicitud');
       }
     } catch (error) {
       console.error("Error enviando:", error);
-      alert("Error al conectar con servidor");
+      toast.error('Error al conectar con servidor');
     }
   };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 function Cotizaciones() {
   const [vistaActual, setVistaActual] = useState('menu'); // menu | pendientes | cotizadas | aprobadas | rechazadas
@@ -29,7 +30,7 @@ function Cotizaciones() {
 
   const handleEnviarCotizacion = async (id) => {
     if (!respuesta.texto || !respuesta.precio) {
-      alert('Completa la respuesta y el precio');
+      toast.error('Completa la respuesta y el precio');
       return;
     }
 
@@ -45,7 +46,7 @@ function Cotizaciones() {
       });
 
       if (res.ok) {
-        alert('✅ Cotización enviada');
+        toast.success('✅ Cotización enviada');
         setRespuesta({ texto: '', precio: '' });
         setCotizando(null);
         cargarCotizaciones();
