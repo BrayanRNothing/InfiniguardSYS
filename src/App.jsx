@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import Servicios from './pages/admin/Servicios.jsx';
 import Cotizaciones from './pages/admin/Cotizaciones.jsx';
 import Usuarios from './pages/admin/Usuarios.jsx';
+import Ajustes from './pages/admin/Ajustes.jsx';
 import TecnicoHome from './pages/tecnico/TecnicoHome.jsx';
 import NuevaSolicitud from './pages/tecnico/NuevaSolicitud.jsx';
 import DistribuidorHome from './pages/distribuidor/DistribuidorHome.jsx';
@@ -65,6 +66,7 @@ function App() {
             <Route path="servicios" element={<Servicios />} />
             <Route path="comisiones" element={<div className="p-10 text-gray-600">Página de Comisiones (En construcción)</div>} />
             <Route path="usuarios" element={<Usuarios />} />
+          <Route path="ajustes" element={<Ajustes />} />
         </Route>
 
         {/* --- DISTRIBUIDOR --- */}
