@@ -1,13 +1,13 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import toast from 'react-hot-toast';
 import Avatar from '../../components/ui/Avatar';
 import * as THREE from 'three';
 import CELLS from 'vanta/dist/vanta.cells.min.js';
+import toast from 'react-hot-toast';
 
 function ModalUsuario({ modoEdicion, formData, setFormData, handleSubmit, cerrarModal }) {
   const vantaRef = useRef(null);
   const vantaInstanceRef = useRef(null);
-
   useEffect(() => {
     if (vantaRef.current && !vantaInstanceRef.current) {
       vantaInstanceRef.current = CELLS({
@@ -25,7 +25,6 @@ function ModalUsuario({ modoEdicion, formData, setFormData, handleSubmit, cerrar
         speed: 0.9,
       });
     }
-
     return () => {
       if (vantaInstanceRef.current) {
         vantaInstanceRef.current.destroy();
@@ -33,13 +32,10 @@ function ModalUsuario({ modoEdicion, formData, setFormData, handleSubmit, cerrar
       }
     };
   }, []);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Fondo animado (no envuelve el formulario para no perder el foco al escribir) */}
       <div ref={vantaRef} className="absolute inset-0" />
       <div className="absolute inset-0 bg-black/30" />
-
       <div className="relative z-10 w-full max-w-md bg-black/30 backdrop-blur-md p-8 rounded-2xl border border-white/10 shadow-2xl text-white">
         <h2 className="text-3xl font-bold mb-6 text-center tracking-wider">
           {modoEdicion ? 'Editar Usuario' : 'Crear Usuario'}
@@ -115,9 +111,36 @@ function ModalUsuario({ modoEdicion, formData, setFormData, handleSubmit, cerrar
   );
 }
 
+function ConfirmarEliminarModal({ visible, nombre, onConfirm, onCancel, loading }) {
+  if (!visible) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70" />
+      <div className="relative z-10 w-full max-w-xs bg-white p-6 rounded-2xl border border-gray-200 shadow-2xl text-gray-800 flex flex-col items-center">
+        <div className="text-4xl mb-2">⚠️</div>
+        <h2 className="text-lg font-bold mb-2 text-center">¿Eliminar usuario?</h2>
+        <p className="mb-4 text-center">Se eliminará <span className="font-semibold">{nombre}</span> y no se podrá recuperar.</p>
+        <div className="flex gap-3 w-full">
+          <button onClick={onCancel} disabled={loading} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 rounded-lg">Cancelar</button>
+          <button
+            onClick={() => {
+              onConfirm();
+            }}
+            disabled={loading}
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg disabled:opacity-60"
+          >
+            {loading ? 'Eliminando...' : 'Eliminar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Usuarios() {
   const API_BASE = 'https://infiniguardsys-production.up.railway.app';
   const [usuarios, setUsuarios] = useState([]);
+  const [cargando, setCargando] = useState(true);
   const [vistaActual, setVistaActual] = useState('menu');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
@@ -129,17 +152,24 @@ function Usuarios() {
     rol: 'cliente'
   });
 
+  // Estado para confirmación de borrado
+  const [confirmarEliminar, setConfirmarEliminar] = useState({ visible: false, id: null, nombre: '' });
+  const [eliminando, setEliminando] = useState(false);
+
   useEffect(() => {
     cargarUsuarios();
   }, []);
 
   const cargarUsuarios = async () => {
+    setCargando(true);
     try {
       const res = await fetch(`${API_BASE}/api/usuarios`);
       const data = await res.json();
       setUsuarios(data);
     } catch (error) {
       console.error('Error:', error);
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -213,14 +243,21 @@ function Usuarios() {
     }
   };
 
-  const handleEliminar = async (id, nombre) => {
+
+  const handleEliminar = (id, nombre) => {
+    setConfirmarEliminar({ visible: true, id, nombre });
+  };
+
+  const confirmarEliminarUsuario = async () => {
+    if (eliminando) return;
+    setEliminando(true);
+    const { id, nombre } = confirmarEliminar;
     try {
       const res = await fetch(`${API_BASE}/api/usuarios/${id}`, {
         method: 'DELETE'
       });
-
       if (res.ok) {
-        toast.success('🗑️ Usuario eliminado');
+        toast.success(`🗑️ Usuario "${nombre}" eliminado`);
         cargarUsuarios();
       } else {
         toast.error('Error al eliminar');
@@ -228,6 +265,9 @@ function Usuarios() {
     } catch (error) {
       console.error(error);
       toast.error('Error de conexión');
+    } finally {
+      setEliminando(false);
+      setConfirmarEliminar({ visible: false, id: null, nombre: '' });
     }
   };
 
@@ -288,50 +328,52 @@ function Usuarios() {
             <h1 className="text-3xl font-bold text-gray-800">👥 Gestión de Usuarios</h1>
             <p className="text-gray-500 text-sm">Administra usuarios por rol</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            <button onClick={() => setVistaActual('admin')} className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
-              <div className="text-7xl mb-4">👑</div>
-              <h2 className="text-2xl font-bold mb-2">Administradores</h2>
-              <p className="text-red-100 text-sm mb-2">Control total del sistema</p>
-              <div className="mt-4 bg-red-700/80 rounded-full px-6 py-2">
-                <span className="text-2xl font-bold">{admins.length}</span>
-                <span className="text-sm ml-2">usuario{admins.length !== 1 ? 's' : ''}</span>
-              </div>
-            </button>
-
-            <button onClick={() => setVistaActual('tecnico')} className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
-              <div className="text-7xl mb-4">🔧</div>
-              <h2 className="text-2xl font-bold mb-2">Técnicos</h2>
-              <p className="text-blue-100 text-sm mb-2">Personal de campo</p>
-              <div className="mt-4 bg-blue-700/80 rounded-full px-6 py-2">
-                <span className="text-2xl font-bold">{tecnicos.length}</span>
-                <span className="text-sm ml-2">técnico{tecnicos.length !== 1 ? 's' : ''}</span>
-              </div>
-            </button>
-
-            <button onClick={() => setVistaActual('distribuidor')} className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
-              <div className="text-7xl mb-4">📦</div>
-              <h2 className="text-2xl font-bold mb-2">Distribuidores</h2>
-              <p className="text-purple-100 text-sm mb-2">Gestión de inventario</p>
-              <div className="mt-4 bg-purple-700/80 rounded-full px-6 py-2">
-                <span className="text-2xl font-bold">{distribuidores.length}</span>
-                <span className="text-sm ml-2">distribuidor{distribuidores.length !== 1 ? 'es' : ''}</span>
-              </div>
-            </button>
-
-            <button onClick={() => setVistaActual('cliente')} className="bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
-              <div className="text-7xl mb-4">👤</div>
-              <h2 className="text-2xl font-bold mb-2">Clientes</h2>
-              <p className="text-green-100 text-sm mb-2">Base de clientes</p>
-              <div className="mt-4 bg-green-700/80 rounded-full px-6 py-2">
-                <span className="text-2xl font-bold">{clientes.length}</span>
-                <span className="text-sm ml-2">cliente{clientes.length !== 1 ? 's' : ''}</span>
-              </div>
-            </button>
-          </div>
+          {cargando ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50 mb-4"></div>
+              <span className="text-blue-600 font-semibold">Cargando usuarios...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+              <button onClick={() => setVistaActual('admin')} className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
+                <div className="text-7xl mb-4">👑</div>
+                <h2 className="text-2xl font-bold mb-2">Administradores</h2>
+                <p className="text-red-100 text-sm mb-2">Control total del sistema</p>
+                <div className="mt-4 bg-red-700/80 rounded-full px-6 py-2">
+                  <span className="text-2xl font-bold">{admins.length}</span>
+                  <span className="text-sm ml-2">usuario{admins.length !== 1 ? 's' : ''}</span>
+                </div>
+              </button>
+              <button onClick={() => setVistaActual('tecnico')} className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
+                <div className="text-7xl mb-4">🔧</div>
+                <h2 className="text-2xl font-bold mb-2">Técnicos</h2>
+                <p className="text-blue-100 text-sm mb-2">Personal de campo</p>
+                <div className="mt-4 bg-blue-700/80 rounded-full px-6 py-2">
+                  <span className="text-2xl font-bold">{tecnicos.length}</span>
+                  <span className="text-sm ml-2">técnico{tecnicos.length !== 1 ? 's' : ''}</span>
+                </div>
+              </button>
+              <button onClick={() => setVistaActual('distribuidor')} className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
+                <div className="text-7xl mb-4">📦</div>
+                <h2 className="text-2xl font-bold mb-2">Distribuidores</h2>
+                <p className="text-purple-100 text-sm mb-2">Gestión de inventario</p>
+                <div className="mt-4 bg-purple-700/80 rounded-full px-6 py-2">
+                  <span className="text-2xl font-bold">{distribuidores.length}</span>
+                  <span className="text-sm ml-2">distribuidor{distribuidores.length !== 1 ? 'es' : ''}</span>
+                </div>
+              </button>
+              <button onClick={() => setVistaActual('cliente')} className="bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
+                <div className="text-7xl mb-4">👤</div>
+                <h2 className="text-2xl font-bold mb-2">Clientes</h2>
+                <p className="text-green-100 text-sm mb-2">Base de clientes</p>
+                <div className="mt-4 bg-green-700/80 rounded-full px-6 py-2">
+                  <span className="text-2xl font-bold">{clientes.length}</span>
+                  <span className="text-sm ml-2">cliente{clientes.length !== 1 ? 's' : ''}</span>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
-
         {modalAbierto && (
           <ModalUsuario
             modoEdicion={modoEdicion}
@@ -341,10 +383,16 @@ function Usuarios() {
             cerrarModal={cerrarModal}
           />
         )}
+        <ConfirmarEliminarModal
+          visible={confirmarEliminar.visible}
+          nombre={confirmarEliminar.nombre}
+          onConfirm={confirmarEliminarUsuario}
+          onCancel={() => setConfirmarEliminar({ visible: false, id: null, nombre: '' })}
+          loading={eliminando}
+        />
       </>
     );
   }
-
   if (vistaActual === 'admin') {
     return (
       <>
@@ -356,7 +404,6 @@ function Usuarios() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{admins.map(user => renderTarjetaUsuario(user, 'red'))}</div>
         </div>
-
         {modalAbierto && (
           <ModalUsuario
             modoEdicion={modoEdicion}
@@ -366,10 +413,16 @@ function Usuarios() {
             cerrarModal={cerrarModal}
           />
         )}
+        <ConfirmarEliminarModal
+          visible={confirmarEliminar.visible}
+          nombre={confirmarEliminar.nombre}
+          onConfirm={confirmarEliminarUsuario}
+          onCancel={() => setConfirmarEliminar({ visible: false, id: null, nombre: '' })}
+          loading={eliminando}
+        />
       </>
     );
   }
-
   if (vistaActual === 'tecnico') {
     return (
       <>
@@ -381,7 +434,6 @@ function Usuarios() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{tecnicos.map(user => renderTarjetaUsuario(user, 'blue'))}</div>
         </div>
-
         {modalAbierto && (
           <ModalUsuario
             modoEdicion={modoEdicion}
@@ -391,10 +443,16 @@ function Usuarios() {
             cerrarModal={cerrarModal}
           />
         )}
+        <ConfirmarEliminarModal
+          visible={confirmarEliminar.visible}
+          nombre={confirmarEliminar.nombre}
+          onConfirm={confirmarEliminarUsuario}
+          onCancel={() => setConfirmarEliminar({ visible: false, id: null, nombre: '' })}
+          loading={eliminando}
+        />
       </>
     );
   }
-
   if (vistaActual === 'distribuidor') {
     return (
       <>
@@ -406,7 +464,6 @@ function Usuarios() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{distribuidores.map(user => renderTarjetaUsuario(user, 'purple'))}</div>
         </div>
-
         {modalAbierto && (
           <ModalUsuario
             modoEdicion={modoEdicion}
@@ -416,10 +473,16 @@ function Usuarios() {
             cerrarModal={cerrarModal}
           />
         )}
+        <ConfirmarEliminarModal
+          visible={confirmarEliminar.visible}
+          nombre={confirmarEliminar.nombre}
+          onConfirm={confirmarEliminarUsuario}
+          onCancel={() => setConfirmarEliminar({ visible: false, id: null, nombre: '' })}
+          loading={eliminando}
+        />
       </>
     );
   }
-
   if (vistaActual === 'cliente') {
     return (
       <>
@@ -431,7 +494,6 @@ function Usuarios() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{clientes.map(user => renderTarjetaUsuario(user, 'green'))}</div>
         </div>
-
         {modalAbierto && (
           <ModalUsuario
             modoEdicion={modoEdicion}
@@ -441,10 +503,16 @@ function Usuarios() {
             cerrarModal={cerrarModal}
           />
         )}
+        <ConfirmarEliminarModal
+          visible={confirmarEliminar.visible}
+          nombre={confirmarEliminar.nombre}
+          onConfirm={confirmarEliminarUsuario}
+          onCancel={() => setConfirmarEliminar({ visible: false, id: null, nombre: '' })}
+          loading={eliminando}
+        />
       </>
     );
   }
-
   return null;
 }
 
