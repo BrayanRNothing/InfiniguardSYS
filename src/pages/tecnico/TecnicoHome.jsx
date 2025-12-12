@@ -21,11 +21,18 @@ const TecnicoHome = () => {
 
       // FILTRO A: TRABAJO (Lo que el admin me asignó)
       // Filtramos servicios donde el técnico asignado sea yo, o servicios de tipo servicio_general aprobados
-      const trabajoTodo = data.filter(item => 
-        item.tecnico === userGuardado?.nombre || // El admin me lo asignó directamente
-        ((item.estado === 'aprobado' || item.estado === 'en-proceso' || item.estado === 'finalizado') 
-        && item.tipo === 'servicio_general' && !item.tecnico) // Servicios generales sin asignar específicamente
-      );
+      const miTecnicoId = userGuardado?.id;
+      const trabajoTodo = data.filter(item => {
+        const asignadoPorId = miTecnicoId != null && item.tecnicoId != null && String(item.tecnicoId) === String(miTecnicoId);
+        const asignadoPorNombre = item.tecnico === userGuardado?.nombre;
+        const esGeneralSinAsignar =
+          (item.estado === 'aprobado' || item.estado === 'en-proceso' || item.estado === 'finalizado') &&
+          item.tipo === 'servicio_general' &&
+          !item.tecnico &&
+          item.tecnicoId == null;
+
+        return asignadoPorId || asignadoPorNombre || esGeneralSinAsignar;
+      });
       setTareas(trabajoTodo);
 
       // FILTRO B: MIS SOLICITUDES (Lo que yo pedí: equipos, garantias, cotizaciones)
@@ -172,14 +179,19 @@ const TecnicoHome = () => {
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={async () => {
+                        const userActual = usuario || JSON.parse(sessionStorage.getItem('user') || 'null');
                         try {
                           const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${sol.id}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ estado: 'aprobado' })
+                            body: JSON.stringify({
+                              estado: 'en-proceso',
+                              tecnico: userActual?.nombre,
+                              tecnicoId: userActual?.id
+                            })
                           });
                           if (res.ok) {
-                            toast.success('✅ Cotización aprobada');
+                            toast.success('✅ Cotización aprobada y asignada');
                             cargarDatos();
                           }
                         } catch (error) {

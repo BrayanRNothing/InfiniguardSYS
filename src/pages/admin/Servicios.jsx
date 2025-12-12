@@ -65,6 +65,7 @@ function Servicios() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tecnico: tecnicoSeleccionado.nombre,
+          tecnicoId: tecnicoSeleccionado.id,
           estado: 'en-proceso',
           fechaServicio: formAsignar.fechaServicio,
           horaServicio: formAsignar.horaServicio,
@@ -102,6 +103,7 @@ function Servicios() {
         body: JSON.stringify({
           ...formCrear,
           tecnico: tecnicoSeleccionado.nombre,
+          tecnicoId: tecnicoSeleccionado.id,
           estado: 'en-proceso'
         })
       });
