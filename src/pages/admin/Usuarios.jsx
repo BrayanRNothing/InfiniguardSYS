@@ -4,6 +4,117 @@ import Avatar from '../../components/ui/Avatar';
 import * as THREE from 'three';
 import CELLS from 'vanta/dist/vanta.cells.min.js';
 
+function ModalUsuario({ modoEdicion, formData, setFormData, handleSubmit, cerrarModal }) {
+  const vantaRef = useRef(null);
+  const vantaInstanceRef = useRef(null);
+
+  useEffect(() => {
+    if (vantaRef.current && !vantaInstanceRef.current) {
+      vantaInstanceRef.current = CELLS({
+        el: vantaRef.current,
+        THREE: THREE,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.0,
+        minWidth: 200.0,
+        scale: 1.0,
+        color1: 0x101025,
+        color2: 0x35b1f2,
+        size: 5.0,
+        speed: 0.9,
+      });
+    }
+
+    return () => {
+      if (vantaInstanceRef.current) {
+        vantaInstanceRef.current.destroy();
+        vantaInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Fondo animado (no envuelve el formulario para no perder el foco al escribir) */}
+      <div ref={vantaRef} className="absolute inset-0" />
+      <div className="absolute inset-0 bg-black/30" />
+
+      <div className="relative z-10 w-full max-w-md bg-black/30 backdrop-blur-md p-8 rounded-2xl border border-white/10 shadow-2xl text-white">
+        <h2 className="text-3xl font-bold mb-6 text-center tracking-wider">
+          {modoEdicion ? 'Editar Usuario' : 'Crear Usuario'}
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Nombre Completo *</label>
+            <input
+              type="text"
+              value={formData.nombre}
+              onChange={(e) => setFormData((prev) => ({ ...prev, nombre: e.target.value }))}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="Juan Pérez"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="usuario@infiniguard.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Contraseña {modoEdicion && '(dejar vacío para no cambiar)'}
+            </label>
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="••••••••"
+              required={!modoEdicion}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Rol *</label>
+            <select
+              value={formData.rol}
+              onChange={(e) => setFormData((prev) => ({ ...prev, rol: e.target.value }))}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none transition"
+              required
+            >
+              <option value="admin" className="bg-gray-800">Administrador</option>
+              <option value="tecnico" className="bg-gray-800">Técnico</option>
+              <option value="distribuidor" className="bg-gray-800">Distribuidor</option>
+              <option value="cliente" className="bg-gray-800">Cliente</option>
+            </select>
+          </div>
+          <div className="flex gap-3 mt-6">
+            <button
+              type="button"
+              onClick={cerrarModal}
+              className="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 rounded-lg transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="flex-1 bg-blue-500 hover:bg-blue-400 text-white font-bold py-3 rounded-lg transition shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+            >
+              {modoEdicion ? 'Actualizar' : 'Crear'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function Usuarios() {
   const API_BASE = 'https://infiniguardsys-production.up.railway.app';
   const [usuarios, setUsuarios] = useState([]);
@@ -17,118 +128,6 @@ function Usuarios() {
     password: '',
     rol: 'cliente'
   });
-
-  // Componente Modal con efecto Vanta
-  function ModalUsuario() {
-    const vantaRef = useRef(null);
-    const vantaInstanceRef = useRef(null);
-
-    useEffect(() => {
-      if (vantaRef.current && !vantaInstanceRef.current) {
-        vantaInstanceRef.current = CELLS({
-          el: vantaRef.current,
-          THREE: THREE,
-          mouseControls: true,
-          touchControls: true,
-          gyroControls: false,
-          minHeight: 200.00,
-          minWidth: 200.00,
-          scale: 1.00,
-          color1: 0x101025,
-          color2: 0x35b1f2,
-          size: 5.00,
-          speed: 0.90
-        });
-      }
-
-      return () => {
-        if (vantaInstanceRef.current) {
-          vantaInstanceRef.current.destroy();
-          vantaInstanceRef.current = null;
-        }
-      };
-    }, []);
-
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Fondo animado (no envuelve el formulario para no perder el foco al escribir) */}
-        <div ref={vantaRef} className="absolute inset-0" />
-        <div className="absolute inset-0 bg-black/30" />
-
-        <div className="relative z-10 w-full max-w-md bg-black/30 backdrop-blur-md p-8 rounded-2xl border border-white/10 shadow-2xl text-white">
-          <h2 className="text-3xl font-bold mb-6 text-center tracking-wider">
-            {modoEdicion ? 'Editar Usuario' : 'Crear Usuario'}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Nombre Completo *</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                placeholder="Juan Pérez"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                placeholder="usuario@infiniguard.com"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Contraseña {modoEdicion && '(dejar vacío para no cambiar)'}
-              </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                placeholder="••••••••"
-                required={!modoEdicion}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Rol *</label>
-              <select
-                value={formData.rol}
-                onChange={(e) => setFormData({...formData, rol: e.target.value})}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none transition"
-                required
-              >
-                <option value="admin" className="bg-gray-800">Administrador</option>
-                <option value="tecnico" className="bg-gray-800">Técnico</option>
-                <option value="distribuidor" className="bg-gray-800">Distribuidor</option>
-                <option value="cliente" className="bg-gray-800">Cliente</option>
-              </select>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                type="button"
-                onClick={cerrarModal}
-                className="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 rounded-lg transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="flex-1 bg-blue-500 hover:bg-blue-400 text-white font-bold py-3 rounded-lg transition shadow-[0_0_20px_rgba(59,130,246,0.5)]"
-              >
-                {modoEdicion ? 'Actualizar' : 'Crear'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   useEffect(() => {
     cargarUsuarios();
@@ -333,7 +332,15 @@ function Usuarios() {
           </div>
         </div>
 
-        {modalAbierto && <ModalUsuario />}
+        {modalAbierto && (
+          <ModalUsuario
+            modoEdicion={modoEdicion}
+            formData={formData}
+            setFormData={setFormData}
+            handleSubmit={handleSubmit}
+            cerrarModal={cerrarModal}
+          />
+        )}
       </>
     );
   }
@@ -350,7 +357,15 @@ function Usuarios() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{admins.map(user => renderTarjetaUsuario(user, 'red'))}</div>
         </div>
 
-        {modalAbierto && <ModalUsuario />}
+        {modalAbierto && (
+          <ModalUsuario
+            modoEdicion={modoEdicion}
+            formData={formData}
+            setFormData={setFormData}
+            handleSubmit={handleSubmit}
+            cerrarModal={cerrarModal}
+          />
+        )}
       </>
     );
   }
@@ -367,7 +382,15 @@ function Usuarios() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{tecnicos.map(user => renderTarjetaUsuario(user, 'blue'))}</div>
         </div>
 
-        {modalAbierto && <ModalUsuario />}
+        {modalAbierto && (
+          <ModalUsuario
+            modoEdicion={modoEdicion}
+            formData={formData}
+            setFormData={setFormData}
+            handleSubmit={handleSubmit}
+            cerrarModal={cerrarModal}
+          />
+        )}
       </>
     );
   }
@@ -384,7 +407,15 @@ function Usuarios() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{distribuidores.map(user => renderTarjetaUsuario(user, 'purple'))}</div>
         </div>
 
-        {modalAbierto && <ModalUsuario />}
+        {modalAbierto && (
+          <ModalUsuario
+            modoEdicion={modoEdicion}
+            formData={formData}
+            setFormData={setFormData}
+            handleSubmit={handleSubmit}
+            cerrarModal={cerrarModal}
+          />
+        )}
       </>
     );
   }
@@ -401,7 +432,15 @@ function Usuarios() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{clientes.map(user => renderTarjetaUsuario(user, 'green'))}</div>
         </div>
 
-        {modalAbierto && <ModalUsuario />}
+        {modalAbierto && (
+          <ModalUsuario
+            modoEdicion={modoEdicion}
+            formData={formData}
+            setFormData={setFormData}
+            handleSubmit={handleSubmit}
+            cerrarModal={cerrarModal}
+          />
+        )}
       </>
     );
   }
