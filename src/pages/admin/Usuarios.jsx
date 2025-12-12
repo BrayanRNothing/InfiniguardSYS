@@ -5,11 +5,15 @@ import * as THREE from 'three';
 import CELLS from 'vanta/dist/vanta.cells.min.js';
 
 function Usuarios() {
+  const API_BASE = 'https://infiniguardsys-production.up.railway.app';
   const [usuarios, setUsuarios] = useState([]);
   const [vistaActual, setVistaActual] = useState('menu');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
+  const [exportandoDb, setExportandoDb] = useState(false);
+  const [importandoDb, setImportandoDb] = useState(false);
+  const importFileRef = useRef(null);
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
@@ -131,11 +135,87 @@ function Usuarios() {
 
   const cargarUsuarios = async () => {
     try {
-      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/usuarios');
+      const res = await fetch(`${API_BASE}/api/usuarios`);
       const data = await res.json();
       setUsuarios(data);
     } catch (error) {
       console.error('Error:', error);
+    }
+  };
+
+  const handleExportarDb = async () => {
+    setExportandoDb(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/db/export?includePasswords=true`);
+      if (!res.ok) {
+        throw new Error('No se pudo exportar (backend no soporta o error de permisos)');
+      }
+      const data = await res.json();
+      const snapshot = data?.snapshot;
+      if (!data?.success || !snapshot) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
+      const fecha = new Date();
+      const yyyy = fecha.getFullYear();
+      const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+      const dd = String(fecha.getDate()).padStart(2, '0');
+      const filename = `infiniguard-backup-${yyyy}-${mm}-${dd}.json`;
+
+      const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      toast.success('✅ Backup descargado');
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.message || 'Error al exportar backup');
+    } finally {
+      setExportandoDb(false);
+    }
+  };
+
+  const handleClickImportarDb = () => {
+    importFileRef.current?.click();
+  };
+
+  const handleImportarDbFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportandoDb(true);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const snapshot = parsed?.snapshot || parsed;
+
+      const res = await fetch(`${API_BASE}/api/db/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(snapshot)
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || 'No se pudo importar el backup');
+      }
+
+      toast.success('✅ Backup importado');
+      cargarUsuarios();
+      setVistaActual('menu');
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.message || 'Error al importar backup');
+    } finally {
+      setImportandoDb(false);
+      // permitir re-seleccionar el mismo archivo
+      e.target.value = '';
     }
   };
 
@@ -175,7 +255,7 @@ function Usuarios() {
 
     try {
       if (modoEdicion) {
-        const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/usuarios/${usuarioEditando.id}`, {
+        const res = await fetch(`${API_BASE}/api/usuarios/${usuarioEditando.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
@@ -189,7 +269,7 @@ function Usuarios() {
           toast.error('Error al actualizar');
         }
       } else {
-        const res = await fetch('https://infiniguardsys-production.up.railway.app/api/usuarios', {
+        const res = await fetch(`${API_BASE}/api/usuarios`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
@@ -211,7 +291,7 @@ function Usuarios() {
 
   const handleEliminar = async (id, nombre) => {
     try {
-      const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/usuarios/${id}`, {
+      const res = await fetch(`${API_BASE}/api/usuarios/${id}`, {
         method: 'DELETE'
       });
 
@@ -283,6 +363,39 @@ function Usuarios() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800">👥 Gestión de Usuarios</h1>
             <p className="text-gray-500 text-sm">Administra usuarios por rol</p>
+          </div>
+
+          <div className="mb-6 bg-white rounded-xl shadow-md p-6 border border-gray-200">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">🗄️ Respaldo de datos</h2>
+                <p className="text-sm text-gray-500">Exporta/Importa usuarios y servicios en un archivo JSON</p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleExportarDb}
+                  disabled={exportandoDb || importandoDb}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg font-bold"
+                >
+                  {exportandoDb ? 'Exportando...' : '⬇️ Exportar'}
+                </button>
+                <button
+                  onClick={handleClickImportarDb}
+                  disabled={exportandoDb || importandoDb}
+                  className="bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg font-bold"
+                >
+                  {importandoDb ? 'Importando...' : '⬆️ Importar'}
+                </button>
+                <input
+                  ref={importFileRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={handleImportarDbFile}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
