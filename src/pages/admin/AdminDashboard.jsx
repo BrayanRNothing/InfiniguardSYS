@@ -9,7 +9,8 @@ const AdminDashboard = () => {
     serviciosFinalizados: 0,
     totalUsuarios: 0,
     tecnicos: 0,
-    clientes: 0
+    clientes: 0,
+    distribuidores: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,7 @@ const AdminDashboard = () => {
       const serviciosFinalizados = servicios.filter(s => s.estado === 'finalizado').length;
       const tecnicos = usuarios.filter(u => u.rol === 'tecnico').length;
       const clientes = usuarios.filter(u => u.rol === 'cliente').length;
+      const distribuidores = usuarios.filter(u => u.rol === 'distribuidor').length;
 
       setStats({
         cotizacionesPendientes,
@@ -50,7 +52,8 @@ const AdminDashboard = () => {
         serviciosFinalizados,
         totalUsuarios: usuarios.length,
         tecnicos,
-        clientes
+        clientes,
+        distribuidores
       });
 
       // Obtener últimas 5 actividades
@@ -140,26 +143,30 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Personal */}
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span className="text-2xl">👨‍💼</span>
+            <span className="text-2xl"></span>
             Personal
           </h3>
+
           <div className="space-y-3">
             <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
               <span className="text-gray-700 font-medium">Técnicos Activos</span>
               <span className="text-2xl font-bold text-blue-600">{stats.tecnicos}</span>
             </div>
+
             <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
               <span className="text-gray-700 font-medium">Clientes Registrados</span>
               <span className="text-2xl font-bold text-green-600">{stats.clientes}</span>
             </div>
           </div>
+
         </div>
 
         {/* Accesos Rápidos */}
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span className="text-2xl">⚡</span>
+            <span className="text-2xl"></span>
             Accesos Rápidos
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -198,7 +205,7 @@ const AdminDashboard = () => {
       {/* 4. Actividad Reciente */}
       <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
         <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="text-2xl">📋</span>
+          <span className="text-2xl"></span>
           Actividad Reciente
         </h2>
         {recentActivity.length === 0 ? (

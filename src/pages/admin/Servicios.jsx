@@ -134,7 +134,7 @@ function Servicios() {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">🔧 Gestión de Servicios</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Gestión de Servicios</h1>
           <p className="text-gray-500 text-sm">Selecciona una opción</p>
         </div>
 
@@ -144,7 +144,7 @@ function Servicios() {
             onClick={() => setVistaActual('asignar')}
             className="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 hover:shadow-2xl h-72 flex flex-col items-center justify-center"
           >
-            <div className="text-7xl mb-4 animate-bounce">⏳</div>
+            <div className="text-7xl mb-4">⏳</div>
             <h2 className="text-2xl font-bold mb-2">Servicios Pendientes</h2>
             <p className="text-orange-100 text-sm">Asignar técnico a servicios</p>
             {cotizacionesAprobadas.length > 0 && (
@@ -190,12 +190,12 @@ function Servicios() {
           {/* Opción 4: Crear Solicitud Directa */}
           <button
             onClick={() => setVistaActual('crear')}
-            className="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 hover:shadow-2xl h-72 flex flex-col items-center justify-center"
+            className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 hover:shadow-2xl h-72 flex flex-col items-center justify-center"
           >
             <div className="text-7xl mb-4">➕</div>
             <h2 className="text-2xl font-bold mb-2">Crear Solicitud</h2>
-            <p className="text-orange-100 text-sm">Directa a técnico</p>
-            <p className="text-xs text-orange-200 mt-2 bg-orange-700/50 px-3 py-1 rounded-full">(Sin cotización)</p>
+            <p className="text-blue-100 text-sm">Directa a técnico</p>
+            <p className="text-xs text-blue-200 mt-2 bg-blue-700/50 px-3 py-1 rounded-full">(Sin cotización)</p>
           </button>
         </div>
       </div>

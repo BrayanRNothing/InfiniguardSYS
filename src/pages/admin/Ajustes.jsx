@@ -78,14 +78,14 @@ function Ajustes() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">⚙️ Ajustes</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Ajustes</h1>
         <p className="text-gray-500 text-sm">Configuración y respaldo de datos</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-lg font-bold text-gray-800">🗄️ Respaldo de datos</h2>
+            <h2 className="text-lg font-bold text-gray-800">Respaldo de datos</h2>
             <p className="text-sm text-gray-500">Exporta/Importa usuarios y servicios en un archivo JSON</p>
           </div>
 

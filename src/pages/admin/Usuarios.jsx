@@ -325,7 +325,7 @@ function Usuarios() {
       <>
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">👥 Gestión de Usuarios</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
             <p className="text-gray-500 text-sm">Administra usuarios por rol</p>
           </div>
           {cargando ? (

@@ -117,7 +117,7 @@ function Cotizaciones() {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">💬 Cotizaciones</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Cotizaciones</h1>
           <p className="text-gray-500 text-sm">Gestiona solicitudes de clientes y técnicos</p>
         </div>
 
@@ -127,7 +127,7 @@ function Cotizaciones() {
             onClick={() => setVistaActual('pendientes')}
             className="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 hover:shadow-2xl h-72 flex flex-col items-center justify-center"
           >
-            <div className="text-7xl mb-4">⏳</div>
+            <div className="text-7xl mb-4">📄</div>
             <h2 className="text-2xl font-bold mb-2">Pendientes</h2>
             <p className="text-orange-100 text-sm">Por cotizar</p>
             {pendientes.length > 0 && (
