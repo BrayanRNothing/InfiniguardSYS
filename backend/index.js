@@ -1,290 +1,211 @@
 import express from 'express';
 import cors from 'cors';
-import fs from 'node:fs/promises';
-import fsSync from 'node:fs'; // Necesario para crear carpetas
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import multer from 'multer'; // <--- IMPORTANTE: Librería para archivos
+import multer from 'multer';
+import Database from 'better-sqlite3'; // <--- NUEVA LIBRERÍA
 
 const app = express();
 const PORT = 4000;
 
+// Configuración de rutas
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DB_FILE = path.join(__dirname, 'db.json');
-// Definimos la carpeta donde se guardarán los archivos
+
+// ==========================================
+// 💾 CONFIGURACIÓN DE SQLITE (BASE DE DATOS)
+// ==========================================
+
+// NOTA PARA RAILWAY: Si configuras un Volumen, cambia esta ruta.
+// Por ejemplo: const DB_PATH = process.env.RAILWAY_VOLUME_MOUNT_PATH ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'database.db') : 'database.db';
+const DB_PATH = 'database.db'; 
+
+const db = new Database(DB_PATH);
+// Habilitar modo WAL para mejor rendimiento y concurrencia
+db.pragma('journal_mode = WAL'); 
+
+console.log(`✅ Base de datos SQLite conectada: ${DB_PATH}`);
+
+// Inicializar Tablas si no existen
+const initDB = () => {
+  // Tabla Usuarios
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      rol TEXT NOT NULL,
+      nombre TEXT NOT NULL
+    )
+  `);
+
+  // Tabla Servicios
+  // Nota: 'foto' se guardará como TEXTO (JSON string) porque SQLite no tiene tipo ARRAY nativo
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS servicios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      titulo TEXT,
+      cliente TEXT,
+      usuario TEXT,
+      tecnico TEXT,
+      tipo TEXT,
+      cantidad INTEGER,
+      direccion TEXT,
+      telefono TEXT,
+      descripcion TEXT,
+      pdf TEXT,
+      foto TEXT, 
+      estado TEXT,
+      respuestaCotizacion TEXT,
+      precioEstimado TEXT,
+      estadoCliente TEXT,
+      fecha TEXT
+    )
+  `);
+  
+  // Crear usuario admin por defecto si no existe nadie
+  const stmt = db.prepare('SELECT count(*) as count FROM usuarios');
+  const result = stmt.get();
+  if (result.count === 0) {
+    console.log('⚡ Creando usuario admin por defecto...');
+    const insert = db.prepare('INSERT INTO usuarios (email, password, rol, nombre) VALUES (?, ?, ?, ?)');
+    insert.run('administrador@infiniguard.com', '123', 'admin', 'Administrador');
+  }
+};
+
+initDB();
+
+// ==========================================
+// 📂 CONFIGURACIÓN DE ARCHIVOS (MULTER)
+// ==========================================
 const UPLOADS_DIR = path.join(__dirname, 'uploads'); 
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''; 
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
-// ==========================================
-// 📂 CONFIGURACIÓN DE CARGA DE ARCHIVOS (MULTER)
-// ==========================================
-
-// 1. Crear la carpeta 'uploads' si no existe
-if (!fsSync.existsSync(UPLOADS_DIR)){
-    fsSync.mkdirSync(UPLOADS_DIR);
-}
-
-// 2. Configurar cómo guardar los archivos
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOADS_DIR); // Guardar en la carpeta uploads
-  },
-  filename: function (req, file, cb) {
-    // Generar nombre único: fecha + nombre original limpio
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+  filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const cleanName = file.originalname.replace(/\s+/g, '_');
     cb(null, uniqueSuffix + '-' + cleanName);
   }
 });
+const upload = multer({ storage });
 
-const upload = multer({ storage: storage });
-
-// ==========================================
-// 🧠 LÓGICA DE BASE DE DATOS (IGUAL QUE ANTES)
-// ==========================================
-
-const hasValidToken = (req) => {
-  if (!ADMIN_TOKEN) return true;
-  const headerToken = req.get('x-admin-token');
-  return headerToken && headerToken === ADMIN_TOKEN;
-};
-
-const buildSnapshot = ({ includePasswords }) => {
-  const usuariosSnapshot = includePasswords
-    ? usuarios
-    : usuarios.map(({ password, ...rest }) => rest);
-
-  return {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    usuarios: usuariosSnapshot,
-    servicios,
-  };
-};
-
-const loadSnapshotIntoMemory = (snapshot) => {
-  if (!snapshot || typeof snapshot !== 'object') throw new Error('Snapshot inválido');
-  if (!Array.isArray(snapshot.usuarios)) throw new Error('Snapshot inválido: usuarios');
-  if (!Array.isArray(snapshot.servicios)) throw new Error('Snapshot inválido: servicios');
-
-  usuarios.length = 0;
-  usuarios.push(...snapshot.usuarios);
-  servicios = snapshot.servicios;
-};
-
-const tryLoadDbFromDisk = async () => {
-  try {
-    const raw = await fs.readFile(DB_FILE, 'utf8');
-    const snapshot = JSON.parse(raw);
-    loadSnapshotIntoMemory(snapshot);
-    console.log(`✅ DB cargada desde archivo: ${DB_FILE}`);
-  } catch (err) {
-    if (err && err.code === 'ENOENT') {
-      console.log('ℹ️ No existe db.json; iniciando con datos en memoria.');
-      return;
-    }
-    console.error('⚠️ No se pudo cargar db.json:', err);
-  }
-};
-
-const saveDbToDisk = async (options = {}) => {
-  const { includePasswords = true } = options;
-  const snapshot = buildSnapshot({ includePasswords });
-  await fs.writeFile(DB_FILE, JSON.stringify(snapshot, null, 2), 'utf8');
-  return snapshot;
-};
-
-// ==========================================
-// ⚙️ MIDDLEWARES
-// ==========================================
-app.use(cors()); 
-app.use(express.json({ limit: '10mb' })); 
-app.use(express.urlencoded({ limit: '10mb', extended: true })); 
-
-// ¡IMPORTANTE! Hacer pública la carpeta uploads para poder descargar los PDFs
-// Ahora puedes entrar a http://localhost:4000/uploads/nombre-archivo.pdf
+// MIDDLEWARES
+app.use(cors());
+app.use(express.json());
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-console.log('✅ Servidor con soporte de ARCHIVOS activo - v3.0');
-
-// DATOS INICIALES
-const usuarios = [
-  { id: 1, email: 'cesar@infiniguard.com', password: '123', rol: 'admin', nombre: 'Cesar' },
-  { id: 6, email: 'administrador@infiniguard.com', password: '123', rol: 'admin', nombre: 'Administrador' },
-  { id: 2, email: 'julio@infiniguard.com', password: '123', rol: 'tecnico', nombre: 'Julio' },
-  { id: 3, email: 'brayan@infiniguard.com', password: '123', rol: 'tecnico', nombre: 'Brayan' },
-  { id: 4, email: 'distribuidor@infiniguard.com', password: '123', rol: 'distribuidor', nombre: 'User' },
-  { id: 5, email: 'cliente@infiniguard.com', password: '123', rol: 'cliente', nombre: 'User' },
-];
-let servicios = [];
-
-// Cargar DB al inicio
-await tryLoadDbFromDisk();
-
 // ==========================================
-// 🔌 RUTAS (ENDPOINTS)
+// 🔌 RUTAS API (CAMBIADAS A SQL)
 // ==========================================
 
-app.get('/api/db/export', (req, res) => {
-  if (!hasValidToken(req)) return res.status(401).json({ success: false, message: 'No autorizado' });
-  const includePasswords = String(req.query.includePasswords || 'false') === 'true';
-  res.json({ success: true, snapshot: buildSnapshot({ includePasswords }) });
-});
-
-app.post('/api/db/import', async (req, res) => {
-  if (!hasValidToken(req)) return res.status(401).json({ success: false, message: 'No autorizado' });
-  try {
-    const snapshot = req.body?.snapshot || req.body;
-    loadSnapshotIntoMemory(snapshot);
-    await saveDbToDisk({ includePasswords: true });
-    res.json({ success: true, message: 'DB importada', counts: { usuarios: usuarios.length, servicios: servicios.length } });
-  } catch (err) {
-    res.status(400).json({ success: false, message: err?.message || 'Snapshot inválido' });
-  }
-});
-
-app.post('/api/db/save', async (req, res) => {
-  if (!hasValidToken(req)) return res.status(401).json({ success: false, message: 'No autorizado' });
-  try {
-    const snapshot = await saveDbToDisk({ includePasswords: true });
-    res.json({ success: true, message: 'DB guardada', file: DB_FILE });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'No se pudo guardar db.json' });
-  }
-});
-
-app.post('/api/db/load', async (req, res) => {
-  if (!hasValidToken(req)) return res.status(401).json({ success: false, message: 'No autorizado' });
-  await tryLoadDbFromDisk();
-  res.json({ success: true, message: 'DB recargada' });
-});
-
+// --- LOGIN ---
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
-  const usuarioEncontrado = usuarios.find(u => u.email === email && u.password === password);
-  if (usuarioEncontrado) {
-    const { password, ...datosSeguros } = usuarioEncontrado;
+  // Buscamos usuario en la DB
+  const stmt = db.prepare('SELECT * FROM usuarios WHERE email = ? AND password = ?');
+  const user = stmt.get(email, password);
+
+  if (user) {
+    const { password, ...datosSeguros } = user;
     res.json({ success: true, user: datosSeguros });
   } else {
     res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
   }
 });
 
+// --- SERVICIOS (GET) ---
 app.get('/api/servicios', (req, res) => {
-  res.json(servicios);
+  const stmt = db.prepare('SELECT * FROM servicios ORDER BY id DESC');
+  const servicios = stmt.all();
+  
+  // Convertimos el campo 'foto' de texto JSON a Array real para que el frontend lo entienda
+  const serviciosFormateados = servicios.map(s => ({
+    ...s,
+    foto: s.foto ? JSON.parse(s.foto) : [] // Parseamos el JSON string
+  }));
+
+  res.json(serviciosFormateados);
 });
 
-app.get('/api/tecnicos', (req, res) => {
-  const tecnicos = usuarios.filter(u => u.rol === 'tecnico');
-  res.json(tecnicos);
-});
-
+// --- SERVICIOS (POST - CREAR) ---
 app.post('/api/servicios', (req, res) => {
-  const nuevosDatos = req.body;
-  const nuevoServicio = {
-    id: Date.now(),
-    titulo: nuevosDatos.titulo, 
-    cliente: nuevosDatos.cliente || null,
-    usuario: nuevosDatos.usuario || null,
-    tecnico: nuevosDatos.tecnico || null,
-    tipo: nuevosDatos.tipo,
-    cantidad: nuevosDatos.cantidad || 1,
-    direccion: nuevosDatos.direccion || '',
-    telefono: nuevosDatos.telefono || '',
-    descripcion: nuevosDatos.descripcion || '',
-    pdf: nuevosDatos.pdf || null,
-    foto: Array.isArray(nuevosDatos.foto) ? nuevosDatos.foto : [nuevosDatos.foto] || null,
-    estado: nuevosDatos.tecnico ? 'aprobado' : 'pendiente',
-    respuestaCotizacion: nuevosDatos.respuestaCotizacion || null,
-    precioEstimado: nuevosDatos.precioEstimado || null,
-    estadoCliente: null,
-    fecha: new Date().toISOString().split('T')[0]
-  };
-  servicios.push(nuevoServicio);
-  saveDbToDisk({ includePasswords: true }).catch(() => {});
-  console.log("Nueva solicitud:", nuevoServicio);
-  res.json({ success: true, servicio: nuevoServicio });
+  const data = req.body;
+  
+  // Preparamos los datos. Convertimos array de fotos a string JSON para guardar en SQLite
+  const fotoString = JSON.stringify(Array.isArray(data.foto) ? data.foto : (data.foto ? [data.foto] : []));
+
+  const stmt = db.prepare(`
+    INSERT INTO servicios (
+      titulo, cliente, usuario, tecnico, tipo, cantidad, direccion, telefono, 
+      descripcion, pdf, foto, estado, fecha
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const info = stmt.run(
+    data.titulo, data.cliente || null, data.usuario || null, data.tecnico || null, 
+    data.tipo, data.cantidad || 1, data.direccion || '', data.telefono || '', 
+    data.descripcion || '', data.pdf || null, fotoString, 
+    data.tecnico ? 'aprobado' : 'pendiente', 
+    new Date().toISOString().split('T')[0]
+  );
+
+  res.json({ success: true, id: info.lastInsertRowid });
 });
 
-// ------------------------------------------------------------------
-// RUTA 4: Actualizar servicio (MODIFICADA PARA ACEPTAR ARCHIVOS)
-// 'upload.single' intercepta el archivo que el frontend envía
-// ------------------------------------------------------------------
+// --- SERVICIOS (PUT - ACTUALIZAR) ---
 app.put('/api/servicios/:id', upload.single('archivo'), (req, res) => {
   const { id } = req.params;
-  const actualizacion = req.body; // Aquí llega el texto (precio, respuesta)
+  const updateData = req.body;
   
-  console.log(`Actualizando Servicio ID: ${id}`);
-  
-  const index = servicios.findIndex(s => s.id == id);
-  
-  if (index !== -1) {
-    // 1. Actualizar campos de texto
-    if (actualizacion.estado) servicios[index].estado = actualizacion.estado;
-    if (actualizacion.respuestaAdmin) servicios[index].respuestaCotizacion = actualizacion.respuestaAdmin; // Unificamos nombre
-    if (actualizacion.precio) servicios[index].precio = actualizacion.precio;
-    
-    // 2. Si llegó un archivo, guardar su ruta en la base de datos
-    if (req.file) {
-      console.log('✅ Archivo recibido:', req.file.filename);
-      // Guardamos la URL relativa: "uploads/nombre-archivo.pdf"
-      servicios[index].pdf = `uploads/${req.file.filename}`;
-    }
+  // Verificamos si existe el servicio
+  const check = db.prepare('SELECT * FROM servicios WHERE id = ?').get(id);
+  if (!check) return res.status(404).json({ success: false, message: 'Servicio no encontrado' });
 
-    // Persistencia
-    saveDbToDisk({ includePasswords: true }).catch(() => {});
-    res.json({ success: true, servicio: servicios[index] });
-  } else {
-    res.status(404).json({ success: false, message: 'Servicio no encontrado' });
+  // Lógica para actualizar campos dinámicamente
+  // 1. Si hay archivo nuevo, actualizamos PDF
+  if (req.file) {
+    const pdfPath = `uploads/${req.file.filename}`;
+    db.prepare('UPDATE servicios SET pdf = ? WHERE id = ?').run(pdfPath, id);
   }
+
+  // 2. Actualizamos campos de texto si vienen
+  if (updateData.estado) db.prepare('UPDATE servicios SET estado = ? WHERE id = ?').run(updateData.estado, id);
+  if (updateData.respuestaAdmin) db.prepare('UPDATE servicios SET respuestaCotizacion = ? WHERE id = ?').run(updateData.respuestaAdmin, id);
+  if (updateData.precio) db.prepare('UPDATE servicios SET precioEstimado = ? WHERE id = ?').run(updateData.precio, id);
+
+  res.json({ success: true, message: 'Actualizado' });
 });
 
+// --- USUARIOS (CRUD BÁSICO) ---
 app.get('/api/usuarios', (req, res) => {
-  res.json(usuarios);
+  const users = db.prepare('SELECT id, nombre, email, rol FROM usuarios').all();
+  res.json(users);
 });
 
 app.post('/api/usuarios', (req, res) => {
   const { nombre, email, password, rol } = req.body;
-  const existe = usuarios.find(u => u.email === email);
-  if (existe) return res.status(400).json({ success: false, message: 'Email registrado' });
-  
-  const nuevoUsuario = { id: Date.now(), nombre, email, password, rol };
-  usuarios.push(nuevoUsuario);
-  saveDbToDisk({ includePasswords: true }).catch(() => {});
-  res.json({ success: true, user: nuevoUsuario });
-});
-
-app.put('/api/usuarios/:id', (req, res) => {
-  const { id } = req.params;
-  const { nombre, email, password, rol } = req.body;
-  const index = usuarios.findIndex(u => u.id == id);
-  if (index !== -1) {
-    if (password && password.trim() !== '') {
-      usuarios[index] = { ...usuarios[index], nombre, email, password, rol };
-    } else {
-      usuarios[index] = { ...usuarios[index], nombre, email, rol };
+  try {
+    const stmt = db.prepare('INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)');
+    const info = stmt.run(nombre, email, password, rol);
+    res.json({ success: true, user: { id: info.lastInsertRowid, nombre, email, rol } });
+  } catch (err) {
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(400).json({ success: false, message: 'Email ya registrado' });
     }
-    saveDbToDisk({ includePasswords: true }).catch(() => {});
-    res.json({ success: true, user: usuarios[index] });
-  } else {
-    res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    res.status(500).json({ error: err.message });
   }
 });
 
 app.delete('/api/usuarios/:id', (req, res) => {
-  const { id } = req.params;
-  const index = usuarios.findIndex(u => u.id == id);
-  if (index !== -1) {
-    usuarios.splice(index, 1);
-    saveDbToDisk({ includePasswords: true }).catch(() => {});
-    res.json({ success: true, message: 'Usuario eliminado' });
-  } else {
-    res.status(404).json({ success: false, message: 'Usuario no encontrado' });
-  }
+  const stmt = db.prepare('DELETE FROM usuarios WHERE id = ?');
+  const info = stmt.run(req.params.id);
+  if (info.changes > 0) res.json({ success: true });
+  else res.status(404).json({ success: false });
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 Servidor corriendo en: http://localhost:${PORT}`);
-  console.log(`📂 Archivos se guardarán en: ${UPLOADS_DIR}`);
+  console.log(`\n🚀 Servidor SQLite corriendo en: http://localhost:${PORT}`);
 });
