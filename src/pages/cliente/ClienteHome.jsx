@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Avatar from '../../components/ui/Avatar';
+import CotizacionForms2 from '../../components/forms/CotizacionForms2.jsx';
+import NuevaSolicitud from '../tecnico/NuevaSolicitud.jsx';
 
 const ClienteHome = () => {
   const [activeTab, setActiveTab] = useState('pendientes'); // pendientes | cotizadas | aprobadas | rechazadas | home | solicitar
@@ -9,12 +11,13 @@ const ClienteHome = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     titulo: '',
-    tipo: 'equipo',
-    modelo: '',
+    tipo: '',
+    cantidad: 1,
+    descripcion: '',
     direccion: '',
     telefono: '',
-    notas: '',
-    foto: null
+    foto: null,
+    pdf: null
   });
 
   useEffect(() => {
@@ -83,7 +86,7 @@ const ClienteHome = () => {
 
       if (res.ok) {
         toast.success('✅ Solicitud enviada correctamente');
-        setFormData({ titulo: '', tipo: 'equipo', modelo: '', direccion: '', telefono: '', notas: '', foto: null });
+        setFormData({ titulo: '', tipo: '', modelo: '', direccion: '', telefono: '', notas: '', foto: null });
         cargarSolicitudes(usuario);
         setActiveTab('pendientes');
       }
@@ -124,95 +127,19 @@ const ClienteHome = () => {
   const rechazadas = misSolicitudes.filter(s => s.estadoCliente === 'rechazado' || s.estado === 'rechazado-cliente');
   const finalizadas = misSolicitudes.filter(s => s.estado === 'finalizado');
 
-  // Vista HOME
+  // Vista HOME 
   const renderHome = () => (
     <div className="space-y-6">
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
-        <div className="flex items-center gap-4 mb-3">
-          <Avatar name={usuario?.nombre} size="xl" />
-          <div>
-            <h2 className="text-2xl font-bold">👋 Bienvenido, {usuario?.nombre?.split(' ')[0]}</h2>
-            <p className="text-blue-100">Gestiona tus solicitudes de servicio</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Resumen rápido */}
-      <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Resumen</h3>
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <div className="p-4 bg-orange-50 rounded-lg">
-            <div className="text-3xl font-bold text-orange-600">{pendientes.length}</div>
-            <div className="text-sm text-gray-600 mt-1">Pendientes</div>
-          </div>
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <div className="text-3xl font-bold text-blue-600">{cotizadas.length}</div>
-            <div className="text-sm text-gray-600 mt-1">Cotizadas</div>
-          </div>
-          <div className="p-4 bg-green-50 rounded-lg">
-            <div className="text-3xl font-bold text-green-600">{aprobadas.length}</div>
-            <div className="text-sm text-gray-600 mt-1">Aprobadas</div>
-          </div>
-          <div className="p-4 bg-red-50 rounded-lg">
-            <div className="text-3xl font-bold text-red-600">{rechazadas.length}</div>
-            <div className="text-sm text-gray-600 mt-1">Rechazadas</div>
-          </div>
-        </div>
-      </div>
+  {/* en construccion */}
+      
     </div>
   );
 
+  // Vista SOLICITAR COTIZACIÓN
   const renderSolicitar = () => (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-8 border border-gray-200 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">📋 Solicitar Cotización</h2>
-      
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Servicio *</label>
-          <select value={formData.tipo} onChange={(e) => setFormData({...formData, tipo: e.target.value})} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-            <option value="equipo">🔧 Equipo Industrial</option>
-            <option value="recubrimiento">🎨 Aplicación de Recubrimiento</option>
-            <option value="instalacion">⚙️ Instalación</option>
-            <option value="mantenimiento">🛠️ Mantenimiento</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Título de la Solicitud *</label>
-          <input type="text" value={formData.titulo} onChange={(e) => setFormData({...formData, titulo: e.target.value})} placeholder="Ej: Recubrimiento para Tanque Industrial" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Modelo o Especificaciones</label>
-          <input type="text" value={formData.modelo} onChange={(e) => setFormData({...formData, modelo: e.target.value})} placeholder="Ej: Modelo X500" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Dirección del Servicio</label>
-          <input type="text" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} placeholder="Calle, colonia, ciudad" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Teléfono de Contacto *</label>
-          <input type="tel" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} placeholder="10 dígitos" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">📷 Adjuntar Foto (Opcional)</label>
-          <input type="file" accept="image/*" onChange={handleFileChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
-          {formData.foto && <img src={formData.foto} alt="Preview" className="mt-3 max-w-xs rounded-lg border" />}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Notas Adicionales</label>
-          <textarea value={formData.notas} onChange={(e) => setFormData({...formData, notas: e.target.value})} placeholder="Detalles adicionales..." rows="4" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-        </div>
-
-        <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg transition disabled:opacity-50">
-          {loading ? 'Enviando...' : '📤 Enviar Solicitud'}
-        </button>
-      </div>
-    </form>
+    <div className="bg-white rounded-xl p-0 max-w-3xl mx-auto">
+      <CotizacionForms2 onSuccess={() => setActiveTab('home')} />
+    </div>
   );
 
   const renderPendientes = () => (
@@ -453,48 +380,63 @@ const ClienteHome = () => {
       </div>
 
       {/* --- MENU DE PESTAÑAS (TABS) --- */}
-      <div className="grid grid-cols-3 gap-1 p-1 bg-gray-200 rounded-xl mb-6">
-        <button 
-          onClick={() => setActiveTab('pendientes')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'pendientes' ? 'bg-white text-orange-600 shadow' : 'text-gray-500'}`}
-        >
-          Pendientes
-        </button>
-        <button 
-          onClick={() => setActiveTab('cotizadas')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'cotizadas' ? 'bg-white text-blue-600 shadow' : 'text-gray-500'}`}
-        >
-          Cotizadas
-        </button>
-        <button 
-          onClick={() => setActiveTab('en-proceso')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'en-proceso' ? 'bg-white text-purple-600 shadow' : 'text-gray-500'}`}
-        >
-          En Proceso
-        </button>
-        <button 
-          onClick={() => setActiveTab('aprobadas')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'aprobadas' ? 'bg-white text-green-600 shadow' : 'text-gray-500'}`}
-        >
-          Aprobadas
-        </button>
-        <button 
-          onClick={() => setActiveTab('finalizadas')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'finalizadas' ? 'bg-white text-gray-600 shadow' : 'text-gray-500'}`}
-        >
-          Finalizadas
-        </button>
-        <button 
-          onClick={() => setActiveTab('rechazadas')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'rechazadas' ? 'bg-white text-red-600 shadow' : 'text-gray-500'}`}
-        >
-          Rechazadas
-        </button>
+      <div className="grid grid-cols-3 gap-1 p-0.5 bg-gray-100 rounded-lg mb-4 border border-gray-200">
+          <button
+            onClick={() => setActiveTab('pendientes')}
+            className={`relative py-1 px-0.5 rounded-md font-semibold transition text-[11px] sm:text-xs md:text-[11px] lg:text-xs ${activeTab === 'pendientes' ? 'bg-white text-orange-600' : 'text-gray-500 hover:bg-orange-50'}`}
+          >
+            Pendientes
+            {pendientes && pendientes.length > 0 && (
+              <span className="absolute -top-1 -right-2 bg-orange-500 text-white text-[10px] px-1.5 rounded-full font-bold min-w-[18px] text-center">
+                {pendientes.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('cotizadas')}
+            className={`relative py-1 px-0.5 rounded-md font-semibold transition text-[11px] sm:text-xs md:text-[11px] lg:text-xs ${activeTab === 'cotizadas' ? 'bg-white text-blue-600' : 'text-gray-500 hover:bg-blue-50'}`}
+          >
+            Cotizadas
+            {cotizadas && cotizadas.length > 0 && (
+              <span className="absolute -top-1 -right-2 bg-blue-500 text-white text-[10px] px-1.5 rounded-full font-bold min-w-[18px] text-center">
+                {cotizadas.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('aprobadas')}
+            className={`py-1 px-0.5 rounded-md font-semibold transition text-[11px] sm:text-xs md:text-[11px] lg:text-xs ${activeTab === 'aprobadas' ? 'bg-white text-green-600' : 'text-gray-500 hover:bg-green-50'}`}
+          >
+            Aprobadas
+          </button>
+          <button
+            onClick={() => setActiveTab('en-proceso')}
+            className={`relative py-1 px-0.5 rounded-md font-semibold transition text-[11px] sm:text-xs md:text-[11px] lg:text-xs ${activeTab === 'en-proceso' ? 'bg-white text-purple-600' : 'text-gray-500 hover:bg-purple-50'}`}
+          >
+            En Proceso
+            {enProceso && enProceso.length > 0 && (
+              <span className="absolute -top-1 -right-2 bg-purple-500 text-white text-[10px] px-1.5 rounded-full font-bold min-w-[18px] text-center">
+                {enProceso.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('finalizadas')}
+            className={`py-1 px-0.5 rounded-md font-semibold transition text-[11px] sm:text-xs md:text-[11px] lg:text-xs ${activeTab === 'finalizadas' ? 'bg-white text-gray-600' : 'text-gray-500 hover:bg-gray-100'}`}
+          >
+            Finalizadas
+          </button>
+          <button
+            onClick={() => setActiveTab('rechazadas')}
+            className={`py-1 px-0.5 rounded-md font-semibold transition text-[11px] sm:text-xs md:text-[11px] lg:text-xs ${activeTab === 'rechazadas' ? 'bg-white text-red-600' : 'text-gray-500 hover:bg-red-50'}`}
+          >
+            Rechazadas
+          </button>
       </div>
 
       {/* --- CONTENIDO DINÁMICO --- */}
       <div className="space-y-4">
-        {activeTab === 'home' && renderHome()}
+       {activeTab === 'home' && renderHome()} 
         {activeTab === 'solicitar' && renderSolicitar()}
         {activeTab === 'pendientes' && renderPendientes()}
         {activeTab === 'cotizadas' && renderCotizadas()}

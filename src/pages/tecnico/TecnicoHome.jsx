@@ -1,30 +1,43 @@
+
+// Página principal del técnico: muestra tareas asignadas, completadas y solicitudes propias
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import ServiceCard from '../../components/ui/ServiceCard';
 
+
 const TecnicoHome = () => {
-  const [activeTab, setActiveTab] = useState('pendientes'); // pendientes | completadas | solicitudes
+  // Estado para la pestaña activa (tareas pendientes, completadas o solicitudes propias)
+  const [activeTab, setActiveTab] = useState('pendientes');
+  // Lista de tareas asignadas al técnico
   const [tareas, setTareas] = useState([]);
+  // Solicitudes creadas por el propio técnico
   const [misSolicitudes, setMisSolicitudes] = useState([]);
+  // Usuario logueado
   const [usuario, setUsuario] = useState(null);
+  // Estado de carga
   const [loading, setLoading] = useState(true);
 
-  // 1. Cargar datos al iniciar
+
+  // 1. Cargar datos al iniciar o refrescar
+  // Obtiene servicios y filtra los que corresponden al técnico y sus solicitudes
   const cargarDatos = async () => {
     setLoading(true);
     const userGuardado = JSON.parse(sessionStorage.getItem('user'));
     setUsuario(userGuardado);
 
     try {
+      // Traer todos los servicios del backend
       const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios');
       const data = await res.json();
 
-      // FILTRO A: TRABAJO (Lo que el admin me asignó)
-      // Filtramos servicios donde el técnico asignado sea yo, o servicios de tipo servicio_general aprobados
+      // FILTRO A: Tareas asignadas al técnico (por id, por nombre o servicios generales sin asignar)
       const miTecnicoId = userGuardado?.id;
       const trabajoTodo = data.filter(item => {
+        // Asignado por id
         const asignadoPorId = miTecnicoId != null && item.tecnicoId != null && String(item.tecnicoId) === String(miTecnicoId);
+        // Asignado por nombre
         const asignadoPorNombre = item.tecnico === userGuardado?.nombre;
+        // Servicios generales aprobados, sin técnico asignado
         const esGeneralSinAsignar =
           (item.estado === 'aprobado' || item.estado === 'en-proceso' || item.estado === 'finalizado') &&
           item.tipo === 'servicio_general' &&
@@ -35,10 +48,8 @@ const TecnicoHome = () => {
       });
       setTareas(trabajoTodo);
 
-      // FILTRO B: MIS SOLICITUDES (Lo que yo pedí: equipos, garantias, cotizaciones)
-      // Incluimos TODAS las solicitudes creadas por el técnico, independientemente del estado
+      // FILTRO B: Solicitudes creadas por el técnico (equipos, garantías, cotizaciones, etc)
       const misPedidos = data.filter(item => {
-        // El técnico lo creó (campo usuario)
         return item.usuario === userGuardado?.nombre;
       });
       setMisSolicitudes(misPedidos);
@@ -50,28 +61,27 @@ const TecnicoHome = () => {
     }
   };
 
+
+  // 2. Efecto: cargar datos al montar y refrescar cada 10 segundos
   useEffect(() => {
     cargarDatos();
-    
     // Auto-refresh cada 10 segundos
     const interval = setInterval(() => {
       cargarDatos();
     }, 10000);
-    
     return () => clearInterval(interval);
   }, []);
 
-  // 2. Función para marcar como FINALIZADO
+
+  // 3. Marcar una tarea como finalizada (PUT al backend)
   const handleFinalizar = async (id) => {
     if(!window.confirm("¿Confirmas que terminaste este servicio?")) return;
-
     try {
       const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado: 'finalizado' })
       });
-
       if(res.ok) {
         alert("¡Excelente trabajo! Servicio registrado como completado.");
         cargarDatos(); // Recargar para moverlo al historial
@@ -81,16 +91,18 @@ const TecnicoHome = () => {
     }
   };
 
-  // 3. Renderizado condicional según la pestaña
+
+  // 4. Renderizado condicional según la pestaña activa
+  // Muestra tareas activas, completadas o solicitudes propias
   const renderContenido = () => {
     if (loading) return <div className="text-center py-10">Cargando...</div>;
 
     // --- PESTAÑA 1: TAREAS ACTIVAS ---
     if (activeTab === 'pendientes') {
+      // Filtra tareas no finalizadas
       const pendientes = tareas.filter(t => t.estado !== 'finalizado');
-      
       if (pendientes.length === 0) return <div className="text-center py-10 text-gray-400">No tienes tareas activas 🎉</div>;
-      
+      // Muestra cada tarea como ServiceCard, con botón de detalles y finalizar
       return pendientes.map(t => (
         <ServiceCard 
           key={t.id}
@@ -101,6 +113,7 @@ const TecnicoHome = () => {
           fecha={t.fecha}
           estado={t.estado}
           onDetalles={() => {
+            // Muestra detalles en un alert
             const detalles = `
 📝 ${t.titulo}
 🏭 ${t.cliente}
@@ -118,10 +131,10 @@ const TecnicoHome = () => {
 
     // --- PESTAÑA 2: COMPLETADAS ---
     if (activeTab === 'completadas') {
+      // Filtra tareas finalizadas
       const finalizadas = tareas.filter(t => t.estado === 'finalizado');
-
       if (finalizadas.length === 0) return <div className="text-center py-10 text-gray-400">Aún no has completado servicios.</div>;
-
+      // Muestra cada tarea finalizada como ServiceCard
       return finalizadas.map(t => (
         <ServiceCard 
           key={t.id}
@@ -132,6 +145,7 @@ const TecnicoHome = () => {
           fecha={t.fecha}
           estado={t.estado}
           onDetalles={() => {
+            // Muestra detalles en un alert
             const detalles = `
 📝 ${t.titulo}
 🏭 ${t.cliente}
@@ -148,7 +162,7 @@ const TecnicoHome = () => {
     // --- PESTAÑA 3: MIS SOLICITUDES (COTIZACIONES) ---
     if (activeTab === 'solicitudes') {
       if (misSolicitudes.length === 0) return <div className="text-center py-10 text-gray-400">No has solicitado cotizaciones.</div>;
-
+      // Muestra cada solicitud creada por el técnico
       return (
         <div className="space-y-3">
           {misSolicitudes.map(sol => (
@@ -158,6 +172,7 @@ const TecnicoHome = () => {
                   <h4 className="font-bold text-gray-800">{sol.titulo}</h4>
                   <p className="text-xs text-gray-500 capitalize">Tipo: {sol.tipo} • {sol.fecha}</p>
                 </div>
+                {/* Badge de estado */}
                 <span className={`px-3 py-1 text-xs font-bold rounded-full capitalize whitespace-nowrap
                   ${sol.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' : ''}
                   ${sol.estado === 'cotizado' ? 'bg-blue-100 text-blue-800' : ''}
@@ -167,18 +182,17 @@ const TecnicoHome = () => {
                   {sol.estado}
                 </span>
               </div>
-              
-              {/* RESPUESTA DEL ADMIN */}
+              {/* Respuesta del admin si está cotizado */}
               {sol.estado === 'cotizado' && sol.respuestaAdmin && (
                 <div className="mt-2 p-3 bg-blue-50 rounded border border-blue-200">
                   <p className="text-xs font-bold text-blue-800 mb-1">💬 Respuesta del Admin:</p>
                   <p className="text-sm text-gray-700">{sol.respuestaAdmin}</p>
                   {sol.precio && <p className="text-sm font-bold text-blue-900 mt-1">💰 Precio: ${sol.precio}</p>}
-                  
-                  {/* BOTONES PARA APROBAR/RECHAZAR */}
+                  {/* Botones para aprobar/rechazar cotización */}
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={async () => {
+                        // Aprobar cotización: asigna técnico y cambia estado
                         const userActual = usuario || JSON.parse(sessionStorage.getItem('user') || 'null');
                         try {
                           const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${sol.id}`, {
@@ -205,6 +219,7 @@ const TecnicoHome = () => {
                     </button>
                     <button
                       onClick={async () => {
+                        // Rechazar cotización
                         try {
                           const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${sol.id}`, {
                             method: 'PUT',
@@ -227,6 +242,7 @@ const TecnicoHome = () => {
                   </div>
                 </div>
               )}
+              {/* Mensaje según estado */}
               {sol.estado === 'aprobado' && <p className="text-xs text-green-600 font-bold mt-2">✅ Autorizado - En espera de procesamiento</p>}
               {sol.estado === 'rechazado' && <p className="text-xs text-red-600 font-bold mt-2">❌ Rechazada</p>}
             </div>
@@ -236,9 +252,11 @@ const TecnicoHome = () => {
     }
   };
 
+
+  // Render principal: título, tabs y contenido dinámico
   return (
     <div className="max-w-md mx-auto">
-      
+      {/* Saludo y subtítulo */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Hola, {usuario?.nombre || 'Técnico'} 👋</h1>
         <p className="text-gray-500 text-sm">Panel de Operaciones</p>

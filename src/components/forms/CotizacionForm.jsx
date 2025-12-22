@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 
+// Componente principal del formulario de cotización
 function CotizacionForm({ titulo, tipoServicio }) {
+  // Estado para la vista previa de la imagen
   const [preview, setPreview] = useState(null);
+  // Estado para almacenar la imagen en base64
   const [fotoBase64, setFotoBase64] = useState(null);
+  // Estado para los datos del formulario
   const [formDatos, setFormDatos] = useState({
     nombreProyecto: '',
     modelo: '',
     cantidad: 1
   });
 
+
+  // Maneja el cambio de imagen: valida tamaño, genera preview y convierte a base64
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -18,10 +24,8 @@ function CotizacionForm({ titulo, tipoServicio }) {
         toast.error('La imagen es muy grande. Máximo 5MB.');
         return;
       }
-
       // Crear preview
       setPreview(URL.createObjectURL(file));
-
       // Convertir a Base64
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -31,6 +35,8 @@ function CotizacionForm({ titulo, tipoServicio }) {
     }
   };
 
+
+  // Maneja el cambio de los campos del formulario
   const handleChange = (e) => {
     setFormDatos({
       ...formDatos,
@@ -38,13 +44,13 @@ function CotizacionForm({ titulo, tipoServicio }) {
     });
   };
 
+
+  // Maneja el envío del formulario: prepara datos y los envía al backend
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     // Obtener el usuario actual del sessionStorage
     const userStorage = sessionStorage.getItem('user');
     const usuario = userStorage ? JSON.parse(userStorage) : null;
-    
     // Preparamos el objeto para enviar al Backend
     const nuevaSolicitud = {
       titulo: formDatos.nombreProyecto,
@@ -54,14 +60,12 @@ function CotizacionForm({ titulo, tipoServicio }) {
       cantidad: formDatos.cantidad,
       foto: fotoBase64 || null // Incluimos la foto en Base64
     };
-
     try {
       const response = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(nuevaSolicitud)
       });
-      
       if(response.ok) {
         toast.success('¡Solicitud enviada con éxito!');
         // Limpiar form
@@ -77,17 +81,18 @@ function CotizacionForm({ titulo, tipoServicio }) {
     }
   };
 
+  // Renderizado del formulario y sus campos
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 max-w-2xl mx-auto">
-      
+      {/* Encabezado del formulario */}
       <div className="mb-6 border-b border-gray-100 pb-4">
         <h2 className="text-xl font-bold text-gray-800">Solicitar Cotización</h2>
         <p className="text-sm text-blue-600 font-medium">{titulo} - {tipoServicio}</p>
       </div>
 
+      {/* Formulario principal */}
       <form onSubmit={handleSubmit} className="space-y-5">
-        
-        {/* 1. Nombre del Proyecto */}
+        {/* Campo: Nombre del Proyecto */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre del Proyecto</label>
           <input 
@@ -101,8 +106,9 @@ function CotizacionForm({ titulo, tipoServicio }) {
           />
         </div>
 
+        {/* Fila: Modelo y Cantidad */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* 2. Tipo / Modelo */}
+          {/* Campo: Tipo / Modelo */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo / Modelo</label>
             <input 
@@ -114,8 +120,7 @@ function CotizacionForm({ titulo, tipoServicio }) {
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition"
             />
           </div>
-
-          {/* 3. Cantidad */}
+          {/* Campo: Cantidad */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Cantidad</label>
             <input 
@@ -130,18 +135,18 @@ function CotizacionForm({ titulo, tipoServicio }) {
           </div>
         </div>
 
-        {/* 4. Subir Foto (Área visual) */}
+        {/* Campo: Subir Foto / Evidencia */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Foto / Evidencia</label>
           <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:bg-gray-50 transition text-center group">
-            
+            {/* Input de archivo oculto */}
             <input 
               type="file" 
               accept="image/*"
               onChange={handleImageChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
-            
+            {/* Vista previa de la imagen o instrucciones */}
             {preview ? (
               // Si ya subió foto, la mostramos
               <div className="relative">
@@ -161,17 +166,18 @@ function CotizacionForm({ titulo, tipoServicio }) {
           </div>
         </div>
 
-        {/* Botón Enviar */}
+        {/* Botón para enviar el formulario */}
         <button 
           type="submit"
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98]"
         >
           Enviar Solicitud
         </button>
-
       </form>
     </div>
   );
 }
 
+
+// Exportación del componente
 export default CotizacionForm;

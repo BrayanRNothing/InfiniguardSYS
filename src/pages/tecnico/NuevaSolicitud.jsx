@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import CotizacionForm from '../../components/forms/CotizacionForm.jsx';
+import CotizacionForms2 from '../../components/forms/CotizacionForms2.jsx';
 
 function NuevaSolicitud() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState('');
 
   const tipos = [
-    { id: 'Compra de Equipo', label: 'Equipos', icon: '🛠️', descripcion: 'Solicitar cotización de equipos' },
-    { id: 'Servicio Industrial', label: 'Recubrimientos', icon: '🎨', descripcion: 'Solicitar servicio de recubrimiento' },
+    { id: 'Mantenimiento', label: 'Mantenimiento', icon: '🛠️', descripcion: 'Solicitar Mantenimiento' },
+    { id: 'Servicio Industrial', label: 'Recubrimientos', icon: '🛡️', descripcion: 'Solicitar servicio de recubrimiento' },
     { id: 'Extensión', label: 'Garantías', icon: '📋', descripcion: 'Solicitar extensión de garantía' },
   ];
 
@@ -21,7 +21,7 @@ function NuevaSolicitud() {
         >
           ← Cambiar tipo de solicitud
         </button>
-        <CotizacionForm 
+        <CotizacionForms2 
           titulo={`Cotización de ${tipoInfo.label}`}
           tipoServicio={tipoSeleccionado}
         />
