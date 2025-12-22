@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import CotizacionForms2 from '../../components/forms/CotizacionForms2.jsx';
+import CotizacionForm from '../../components/forms/CotizacionForm.jsx';
 
 function NuevaSolicitud() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState('');
@@ -15,13 +15,13 @@ function NuevaSolicitud() {
     const tipoInfo = tipos.find(t => t.id === tipoSeleccionado);
     return (
       <div className="max-w-2xl mx-auto">
-        <button 
+        <button
           onClick={() => setTipoSeleccionado('')}
           className="mb-4 text-blue-600 font-medium flex items-center gap-2"
         >
           ← Cambiar tipo de solicitud
         </button>
-        <CotizacionForms2 
+        <CotizacionForm
           titulo={`Cotización de ${tipoInfo.label}`}
           tipoServicio={tipoSeleccionado}
         />

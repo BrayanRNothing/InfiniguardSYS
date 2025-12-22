@@ -7,8 +7,7 @@ import AdminLayout from './layouts/AdminLayout.jsx';
 import TecnicoLayout from './layouts/TecnicoLayout.jsx';
 import DistribuidorLayout from './layouts/DistribuidorLayout.jsx';
 import ClienteLayout from './layouts/ClienteLayout.jsx';
-import CotizacionForm from './components/forms/CotizacionForm.jsx';
-import CotizacionesTable from './components/ui/CotizacionesTable.jsx';
+
 
 // Páginas
 import React, { Suspense, lazy } from 'react';
@@ -27,7 +26,7 @@ const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 function App() {
   return (
     <BrowserRouter>
-      <Toaster 
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
@@ -94,11 +93,11 @@ function App() {
           {/* --- RUTAS DE TUS 4 ROLES --- */}
           {/* Admin - Rutas Protegidas con Layout */}
           <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="cotizaciones" element={<Cotizaciones />} />
-              <Route path="servicios" element={<Servicios />} />
-              <Route path="comisiones" element={<div className="p-10 text-gray-600">Página de Comisiones (En construcción)</div>} />
-              <Route path="usuarios" element={<Usuarios />} />
+            <Route index element={<AdminDashboard />} />
+            <Route path="cotizaciones" element={<Cotizaciones />} />
+            <Route path="servicios" element={<Servicios />} />
+            <Route path="comisiones" element={<div className="p-10 text-gray-600">Página de Comisiones (En construcción)</div>} />
+            <Route path="usuarios" element={<Usuarios />} />
             <Route path="ajustes" element={<Ajustes />} />
           </Route>
 
@@ -109,7 +108,7 @@ function App() {
             <Route path="garantias" element={<div>Garantía Extendida</div>} />
           </Route>
 
-         {/* --- TÉCNICO --- */}
+          {/* --- TÉCNICO --- */}
           <Route path="/tecnico" element={<TecnicoLayout />}>
             <Route index element={<TecnicoHome />} />
             <Route path="nueva-solicitud" element={<NuevaSolicitud />} />
