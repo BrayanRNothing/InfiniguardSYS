@@ -90,7 +90,7 @@ app.get('/api/servicios', (req, res) => {
   // Convertimos el string de la foto a un array real para el frontend
   const formateados = servicios.map(s => ({
     ...s,
-    foto: s.foto ? JSON.parse(s.foto) : [] 
+    foto: s.foto ? JSON.parse(s.foto) : []
   }));
   res.json(formateados);
 });
@@ -98,7 +98,7 @@ app.get('/api/servicios', (req, res) => {
 // RUTA CLAVE: Acepta archivos con upload.fields
 app.post('/api/servicios', upload.fields([{ name: 'foto', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), (req, res) => {
   const data = req.body;
-  
+
   // Convertimos archivos a rutas
   let fotoPath = JSON.stringify([]);
   let pdfPath = null;
@@ -119,9 +119,9 @@ app.post('/api/servicios', upload.fields([{ name: 'foto', maxCount: 1 }, { name:
     `);
 
     const info = stmt.run(
-      data.titulo, data.cliente || null, data.usuario || 'Anónimo', data.tecnico || null, 
-      data.tipo, data.cantidad || 1, data.direccion || '', data.telefono || '', 
-      data.descripcion || '', pdfPath, fotoPath, 'pendiente', 
+      data.titulo, data.cliente || null, data.usuario || 'Anónimo', data.tecnico || null,
+      data.tipo, data.cantidad || 1, data.direccion || '', data.telefono || '',
+      data.descripcion || '', pdfPath, fotoPath, 'pendiente',
       new Date().toISOString().split('T')[0], null, null
     );
 
@@ -140,8 +140,11 @@ app.put('/api/servicios/:id', upload.single('archivo'), (req, res) => {
   }
   if (update.estado) db.prepare('UPDATE servicios SET estado = ? WHERE id = ?').run(update.estado, id);
   if (update.estadoCliente) db.prepare('UPDATE servicios SET estadoCliente = ? WHERE id = ?').run(update.estadoCliente, id);
-  
+
   res.json({ success: true });
 });
 
-app.listen(PORT, () => console.log(`🚀 Server en puerto ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server en puerto ${PORT}`);
+  console.log("✅ BACKEND NUEVO ACTIVO - SOPORTE PDF + FOTOS (Multer + SQLite)");
+});
