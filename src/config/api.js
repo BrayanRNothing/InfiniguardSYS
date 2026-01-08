@@ -7,5 +7,3 @@ const API_URL = isDevelopment
     : 'https://updm-infiniguard-production.up.railway.app';  // Producción en Railway
 
 export default API_URL;
-
-// Julio: updm-infiniguard-production.up.railway.app

@@ -208,10 +208,36 @@ const CrearCotizaciones = () => {
 
             yPos += 10;
 
-            // Client Info Box
+            // Client Info Box - Calculate height dynamically
+            const boxStartY = yPos;
+            let boxContentHeight = 5; // Initial top padding
+
+            // Calculate how many lines each field will take
+            boxContentHeight += 4; // Cliente (always present)
+
+            if (formData.clienteEmpresa) {
+                boxContentHeight += 5;
+            }
+
+            if (formData.clienteEmail) {
+                boxContentHeight += 5;
+            }
+
+            if (formData.clienteTelefono) {
+                boxContentHeight += 5;
+            }
+
+            if (formData.clienteDireccion) {
+                const direccionLines = doc.splitTextToSize(formData.clienteDireccion, pageWidth - 60);
+                boxContentHeight += 5 + (direccionLines.length - 1) * 4; // First line + additional lines
+            }
+
+            boxContentHeight += 4; // Bottom padding
+
+            // Draw the box with calculated height
             doc.setDrawColor(200, 200, 200);
             doc.setFillColor(248, 250, 252);
-            doc.roundedRect(14, yPos, pageWidth - 28, 25, 2, 2, 'FD');
+            doc.roundedRect(14, boxStartY, pageWidth - 28, boxContentHeight, 2, 2, 'FD');
 
             yPos += 6;
             doc.setFontSize(9);
@@ -243,6 +269,7 @@ const CrearCotizaciones = () => {
                 doc.text('Dirección:', 18, yPos);
                 const direccionLines = doc.splitTextToSize(formData.clienteDireccion, pageWidth - 60);
                 doc.text(direccionLines, 35, yPos);
+                yPos += (direccionLines.length - 1) * 4; // Add extra space for wrapped lines
             }
 
             yPos += 12;
@@ -327,7 +354,7 @@ const CrearCotizaciones = () => {
             doc.text('TOTAL:', totalsLabelX, yPos);
             doc.text(formatCurrency(calcularTotal()), totalsX, yPos, { align: 'right' });
 
-            yPos += 15;
+            yPos += 30; // Increased spacing to push notes and terms lower
 
             // Notes section (above terms and conditions)
             if (formData.notas) {
@@ -346,7 +373,7 @@ const CrearCotizaciones = () => {
                 doc.setFont('helvetica', 'normal');
                 const notasLines = doc.splitTextToSize(formData.notas, pageWidth - 28);
                 doc.text(notasLines, 14, yPos);
-                yPos += notasLines.length * 4 + 8;
+                yPos += notasLines.length * 4 + 12; // Increased spacing between sections
             }
 
             // Terms and Conditions (moved lower)
@@ -702,13 +729,13 @@ const CrearCotizaciones = () => {
                             )}
 
                             {/* Client Info */}
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <div className="text-xs space-y-1">
-                                    <div><span className="font-bold">Cliente:</span> {formData.clienteNombre || 'Sin especificar'}</div>
-                                    {formData.clienteEmpresa && <div><span className="font-bold">Empresa:</span> {formData.clienteEmpresa}</div>}
-                                    {formData.clienteEmail && <div><span className="font-bold">Email:</span> {formData.clienteEmail}</div>}
-                                    {formData.clienteTelefono && <div><span className="font-bold">Tel:</span> {formData.clienteTelefono}</div>}
-                                    {formData.clienteDireccion && <div><span className="font-bold">Dir:</span> {formData.clienteDireccion}</div>}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div className="text-xs space-y-1.5">
+                                    <div className="break-words"><span className="font-bold">Cliente:</span> {formData.clienteNombre || 'Sin especificar'}</div>
+                                    {formData.clienteEmpresa && <div className="break-words"><span className="font-bold">Empresa:</span> {formData.clienteEmpresa}</div>}
+                                    {formData.clienteEmail && <div className="break-words"><span className="font-bold">Email:</span> {formData.clienteEmail}</div>}
+                                    {formData.clienteTelefono && <div className="break-words"><span className="font-bold">Tel:</span> {formData.clienteTelefono}</div>}
+                                    {formData.clienteDireccion && <div className="break-words"><span className="font-bold">Dir:</span> {formData.clienteDireccion}</div>}
                                 </div>
                             </div>
 
