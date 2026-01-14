@@ -29,32 +29,10 @@ function CrearOrdenTrabajo() {
 
     // Items de productos/servicios
     const [items, setItems] = useState([
-        { id: 1, partida: 1, cantidad: 1, clave: '', descripcion: '', atributos: '', fechaEntrega: '', unidad: '' }
+        { id: 1, partida: 1, cantidad: 1, clave: '', descripcion: '', medida: '', unidad: '' }
     ]);
 
-    // Checklist de verificación
-    const [checklist, setChecklist] = useState([
-        { id: 1, pregunta: '¿Se verificó la limpieza de la superficie?', respuesta: '', comentarios: '' },
-        { id: 2, pregunta: '¿Se aplicó el producto según especificaciones?', respuesta: '', comentarios: '' },
-        { id: 3, pregunta: '¿Se respetaron los tiempos de secado?', respuesta: '', comentarios: '' },
-        { id: 4, pregunta: '¿Se utilizó el equipo de protección adecuado?', respuesta: '', comentarios: '' },
-        { id: 5, pregunta: '¿Se verificó la calidad del acabado?', respuesta: '', comentarios: '' },
-        { id: 6, pregunta: '¿Se cumplieron las medidas de seguridad?', respuesta: '', comentarios: '' },
-        { id: 7, pregunta: '¿Se documentaron las condiciones ambientales?', respuesta: '', comentarios: '' },
-        { id: 8, pregunta: '¿Se realizó prueba de adherencia?', respuesta: '', comentarios: '' },
-        { id: 9, pregunta: '¿Se verificó el espesor de la capa?', respuesta: '', comentarios: '' },
-        { id: 10, pregunta: '¿Se entregó la documentación al cliente?', respuesta: '', comentarios: '' },
-        { id: 11, pregunta: '¿Se realizó limpieza del área de trabajo?', respuesta: '', comentarios: '' },
-        { id: 12, pregunta: '¿Se verificó la satisfacción del cliente?', respuesta: '', comentarios: '' },
-        { id: 13, pregunta: '¿Se registraron los materiales utilizados?', respuesta: '', comentarios: '' },
-        { id: 14, pregunta: '¿Se cumplió con el tiempo estimado?', respuesta: '', comentarios: '' },
-        { id: 15, pregunta: '¿Se identificaron áreas de mejora?', respuesta: '', comentarios: '' },
-        { id: 16, pregunta: '¿Se actualizó el inventario?', respuesta: '', comentarios: '' },
-        { id: 17, pregunta: '¿Se tomaron fotografías del trabajo?', respuesta: '', comentarios: '' },
-        { id: 18, pregunta: '¿Se firmó el acta de entrega?', respuesta: '', comentarios: '' },
-        { id: 19, pregunta: '¿Se programó el seguimiento?', respuesta: '', comentarios: '' },
-        { id: 20, pregunta: '¿Se archivó la documentación?', respuesta: '', comentarios: '' }
-    ]);
+
 
     // Handlers
     const handleInputChange = (e) => {
@@ -73,8 +51,7 @@ function CrearOrdenTrabajo() {
             cantidad: 1,
             clave: '',
             descripcion: '',
-            atributos: '',
-            fechaEntrega: '',
+            medida: '',
             unidad: ''
         }]);
     };
@@ -93,11 +70,7 @@ function CrearOrdenTrabajo() {
         ));
     };
 
-    const actualizarChecklist = (id, campo, valor) => {
-        setChecklist(checklist.map(item =>
-            item.id === id ? { ...item, [campo]: valor } : item
-        ));
-    };
+
 
 
     const generarPDF = async () => {
@@ -299,74 +272,7 @@ function CrearOrdenTrabajo() {
                 yPos += obsLines.length * 4;
             }
 
-            // === CHECKLIST ===
-            // Solo agregar nueva página si no hay suficiente espacio
-            if (yPos > pageHeight - 100) {
-                doc.addPage();
-                yPos = margin;
-            } else {
-                yPos += 10;
-            }
 
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(40, 40, 40);
-            doc.text('VERIFICACIÓN DE CHECKLIST', margin, yPos);
-            yPos += 8;
-
-            doc.setFontSize(8);
-            doc.setTextColor(60, 60, 60);
-            doc.setFont('helvetica', 'normal');
-
-            // Dividir checklist en dos columnas
-            const checkCol1X = margin;
-            const checkCol2X = pageWidth / 2 + 5;
-            const colWidth = (pageWidth / 2) - margin - 10;
-
-            let col1Y = yPos;
-            let col2Y = yPos;
-
-            checklist.forEach((item, index) => {
-                const isLeftColumn = index < 10;
-                const currentX = isLeftColumn ? checkCol1X : checkCol2X;
-                let currentY = isLeftColumn ? col1Y : col2Y;
-
-                // Check if we need a new page
-                if (currentY > pageHeight - 30) {
-                    doc.addPage();
-                    col1Y = margin;
-                    col2Y = margin;
-                    currentY = margin;
-                }
-
-                const respuesta = item.respuesta || '';
-                const checkbox = respuesta === 'Si' ? '☑' : respuesta === 'No' ? '☒' : '☐';
-
-                doc.text(`${item.id}. ${checkbox}`, currentX, currentY);
-                const preguntaLines = doc.splitTextToSize(item.pregunta, colWidth - 10);
-                doc.text(preguntaLines, currentX + 8, currentY);
-                currentY += Math.max(4, preguntaLines.length * 3.5);
-
-                if (item.comentarios) {
-                    doc.setFontSize(7);
-                    doc.setFont('helvetica', 'italic');
-                    const comentLines = doc.splitTextToSize(`Obs: ${item.comentarios}`, colWidth - 10);
-                    doc.text(comentLines, currentX + 8, currentY);
-                    currentY += comentLines.length * 3;
-                    doc.setFontSize(8);
-                    doc.setFont('helvetica', 'normal');
-                }
-
-                currentY += 2;
-
-                if (isLeftColumn) {
-                    col1Y = currentY;
-                } else {
-                    col2Y = currentY;
-                }
-            });
-
-            yPos = Math.max(col1Y, col2Y) + 8;
 
             // === FIRMAS ===
             if (yPos > pageHeight - 40) {
@@ -729,49 +635,7 @@ function CrearOrdenTrabajo() {
                     </div>
                 </section>
 
-                {/* Sección 4: Checklist de Verificación */}
-                <section>
-                    <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-orange-500">
-                        ✅ Checklist de Verificación
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {checklist.map((item) => (
-                            <div key={item.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <div className="flex items-start gap-3 mb-2">
-                                    <span className="text-sm font-semibold text-gray-600 min-w-[20px]">{item.id}.</span>
-                                    <p className="text-sm font-medium text-gray-700 flex-1">{item.pregunta}</p>
-                                </div>
-                                <div className="flex gap-2 ml-7">
-                                    <button
-                                        onClick={() => actualizarChecklist(item.id, 'respuesta', 'Si')}
-                                        className={`px-3 py-1 text-xs font-semibold rounded transition ${item.respuesta === 'Si'
-                                            ? 'bg-green-600 text-white'
-                                            : 'bg-gray-200 text-gray-600 hover:bg-green-100'
-                                            }`}
-                                    >
-                                        Sí
-                                    </button>
-                                    <button
-                                        onClick={() => actualizarChecklist(item.id, 'respuesta', 'No')}
-                                        className={`px-3 py-1 text-xs font-semibold rounded transition ${item.respuesta === 'No'
-                                            ? 'bg-red-600 text-white'
-                                            : 'bg-gray-200 text-gray-600 hover:bg-red-100'
-                                            }`}
-                                    >
-                                        No
-                                    </button>
-                                    <input
-                                        type="text"
-                                        value={item.comentarios}
-                                        onChange={(e) => actualizarChecklist(item.id, 'comentarios', e.target.value)}
-                                        placeholder="Comentarios..."
-                                        className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-orange-500"
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+
 
                 {/* Sección 5: Firmas */}
                 <section>
