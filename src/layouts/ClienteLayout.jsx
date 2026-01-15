@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import * as THREE from 'three';
 import CELLS from 'vanta/dist/vanta.cells.min.js';
 import Avatar from '../components/ui/Avatar';
+import { getUser } from '../utils/authUtils';
 
 const ClienteLayout = () => {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ const ClienteLayout = () => {
 
   useEffect(() => {
     // Cargar usuario
-    const userGuardado = JSON.parse(sessionStorage.getItem('user'));
+    const userGuardado = getUser();
     setUsuario(userGuardado);
     if (vantaRef.current && !vantaInstanceRef.current) {
       try {

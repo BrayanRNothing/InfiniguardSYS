@@ -59,6 +59,20 @@ const initDB = () => {
     )
   `);
 
+  // Tabla para encuestas HVACR
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS encuestas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      email TEXT NOT NULL,
+      telefono TEXT,
+      respuestas TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      puntuacionTotal REAL,
+      nivel TEXT
+    )
+  `);
+
   // Migración: Agregar columnas si no existen (para bases de datos existentes)
   try {
     db.exec(`ALTER TABLE servicios ADD COLUMN modelo TEXT`);
@@ -391,6 +405,152 @@ app.post('/api/db/reset', (req, res) => {
     res.json({ success: true, message: 'Base de datos reiniciada correctamente' });
   } catch (error) {
     console.error('Error reiniciando base de datos:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// --- ENDPOINTS DE ENCUESTAS ---
+
+// Función auxiliar para calcular puntuación
+const calcularPuntuacion = (respuestas) => {
+  const valores = {
+    'NE': 0,
+    'B': 25,
+    'ED': 50,
+    'A': 75,
+    'BC': 100
+  };
+
+  const puntos = Object.values(respuestas).map(r => valores[r] || 0);
+  const total = puntos.reduce((sum, p) => sum + p, 0);
+  const promedio = total / puntos.length;
+
+  return Math.round(promedio * 10) / 10; // Redondear a 1 decimal
+};
+
+// Función auxiliar para determinar nivel de madurez
+const determinarNivel = (puntuacion) => {
+  if (puntuacion <= 20) return 'Inicial';
+  if (puntuacion <= 40) return 'Básico';
+  if (puntuacion <= 60) return 'En Desarrollo';
+  if (puntuacion <= 80) return 'Avanzado';
+  return 'Best in Class';
+};
+
+// POST - Recibir respuesta de encuesta
+app.post('/api/encuestas/responder', (req, res) => {
+  try {
+    const { nombre, email, telefono, respuestas, fecha } = req.body;
+
+    if (!nombre || !email || !respuestas) {
+      return res.status(400).json({
+        success: false,
+        message: 'Faltan datos requeridos (nombre, email, respuestas)'
+      });
+    }
+
+    // Calcular puntuación y nivel
+    const puntuacionTotal = calcularPuntuacion(respuestas);
+    const nivel = determinarNivel(puntuacionTotal);
+
+    // Guardar en base de datos
+    const stmt = db.prepare(`
+      INSERT INTO encuestas (nombre, email, telefono, respuestas, fecha, puntuacionTotal, nivel)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const info = stmt.run(
+      nombre,
+      email,
+      telefono || null,
+      JSON.stringify(respuestas),
+      fecha || new Date().toISOString(),
+      puntuacionTotal,
+      nivel
+    );
+
+    console.log(`✅ Encuesta guardada - ${nombre} (${puntuacionTotal}/100 - ${nivel})`);
+
+    res.json({
+      success: true,
+      id: info.lastInsertRowid,
+      puntuacionTotal,
+      nivel
+    });
+  } catch (error) {
+    console.error('Error guardando encuesta:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET - Obtener todas las encuestas
+app.get('/api/encuestas', (req, res) => {
+  try {
+    const encuestas = db.prepare(`
+      SELECT id, nombre, email, telefono, fecha, puntuacionTotal, nivel
+      FROM encuestas
+      ORDER BY id DESC
+    `).all();
+
+    res.json({ success: true, encuestas });
+  } catch (error) {
+    console.error('Error obteniendo encuestas:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET - Obtener detalle de una encuesta específica
+app.get('/api/encuestas/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const encuesta = db.prepare('SELECT * FROM encuestas WHERE id = ?').get(id);
+
+    if (!encuesta) {
+      return res.status(404).json({ success: false, message: 'Encuesta no encontrada' });
+    }
+
+    // Parsear respuestas
+    encuesta.respuestas = JSON.parse(encuesta.respuestas);
+
+    // Calcular puntuaciones por categoría
+    const categorias = [
+      { nombre: "Clientes y Mercado", preguntas: 10 },
+      { nombre: "Estrategia y Gobierno del Negocio", preguntas: 9 },
+      { nombre: "Marketing y Generación de Demanda", preguntas: 11 },
+      { nombre: "Ventas y Ejecución Comercial", preguntas: 10 },
+      { nombre: "Portafolio de Producto y Soporte Técnico", preguntas: 9 },
+      { nombre: "Inventario y Supply Chain", preguntas: 9 },
+      { nombre: "Tecnología y Digitalización", preguntas: 7 },
+      { nombre: "Finanzas y Control de Gestión", preguntas: 9 },
+      { nombre: "Benchmarking y Mejores Prácticas", preguntas: 5 },
+      { nombre: "Talento, Cultura y Organización", preguntas: 9 },
+      { nombre: "Relación Fabricante–Distribuidor", preguntas: 8 }
+    ];
+
+    const valores = { 'NE': 0, 'B': 25, 'ED': 50, 'A': 75, 'BC': 100 };
+    const puntuacionesPorCategoria = [];
+
+    let preguntaIndex = 0;
+    categorias.forEach((cat, catIndex) => {
+      let sumaPuntos = 0;
+      for (let i = 0; i < cat.preguntas; i++) {
+        const respuestaKey = `cat${catIndex}_preg${i}`;
+        const respuesta = encuesta.respuestas[respuestaKey];
+        sumaPuntos += valores[respuesta] || 0;
+      }
+      const promedio = sumaPuntos / cat.preguntas;
+      puntuacionesPorCategoria.push({
+        categoria: cat.nombre,
+        puntuacion: Math.round(promedio * 10) / 10
+      });
+      preguntaIndex += cat.preguntas;
+    });
+
+    encuesta.puntuacionesPorCategoria = puntuacionesPorCategoria;
+
+    res.json({ success: true, encuesta });
+  } catch (error) {
+    console.error('Error obteniendo detalle de encuesta:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

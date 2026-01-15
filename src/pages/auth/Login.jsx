@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import CELLS from 'vanta/dist/vanta.cells.min.js';
 import Register from './Register';
+import { getUser, saveUser } from '../../utils/authUtils';
 
 // URL DEL BACKEND (Ajústala si pruebas en local)
 import API_URL from '../../config/api';
@@ -12,12 +13,26 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const vantaRef = useRef(null);
   const vantaInstanceRef = useRef(null);
 
   useEffect(() => {
+    // Auto-login si hay sesión guardada
+    const user = getUser();
+    if (user) {
+      const { rol } = user;
+      switch (rol) {
+        case 'admin': navigate('/admin'); break;
+        case 'tecnico': navigate('/tecnico'); break;
+        case 'distribuidor': navigate('/distribuidor'); break;
+        case 'cliente': navigate('/cliente'); break;
+        default: break;
+      }
+    }
+
     // Inicialización del efecto de fondo (Vanta JS)
     if (vantaRef.current && !vantaInstanceRef.current) {
       try {
@@ -45,7 +60,7 @@ const Login = () => {
         vantaInstanceRef.current = null;
       }
     };
-  }, []);
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -64,8 +79,8 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Login exitoso
-        sessionStorage.setItem('user', JSON.stringify(data.user));
+        // Login exitoso - guardar según preferencia de "recordar sesión"
+        saveUser(data.user, rememberMe);
 
         // Redirigimos según el rol
         const { rol } = data.user;
@@ -130,6 +145,20 @@ const Login = () => {
                 required
               />
             </div>
+          </div>
+
+          {/* Checkbox Recordar Sesión */}
+          <div className="flex items-center gap-2 px-1">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+            />
+            <label htmlFor="rememberMe" className="text-sm text-blue-100 cursor-pointer select-none">
+              Recordar sesión
+            </label>
           </div>
 
           <button

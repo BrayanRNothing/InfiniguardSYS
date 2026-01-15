@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import * as THREE from 'three';
 import CELLS from 'vanta/dist/vanta.cells.min.js';
 import Avatar from '../components/ui/Avatar';
+import { getUser, logout } from '../utils/authUtils';
 
 const TecnicoLayout = () => {
   const location = useLocation();
@@ -12,7 +13,7 @@ const TecnicoLayout = () => {
 
   useEffect(() => {
     // Cargar usuario
-    const userGuardado = JSON.parse(sessionStorage.getItem('user'));
+    const userGuardado = getUser();
     setUsuario(userGuardado);
     if (vantaRef.current && !vantaInstanceRef.current) {
       try {
@@ -54,7 +55,7 @@ const TecnicoLayout = () => {
       <header ref={vantaRef} className="shadow-lg px-6 py-4 flex justify-between items-center z-10 relative overflow-hidden">
         {/* Overlay para legibilidad */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-950 via-transparent to-blue-950 bg-opacity-50 pointer-events-none z-0"></div>
-        
+
         <div className="relative z-10 flex justify-between items-center w-full">
           <div className="flex items-center gap-3">
             {usuario && <Avatar name={usuario.nombre} size="md" />}
@@ -63,9 +64,9 @@ const TecnicoLayout = () => {
               {usuario && <p className="text-xs text-blue-200">{usuario.nombre}</p>}
             </div>
           </div>
-          <button 
+          <button
             onClick={() => {
-              sessionStorage.removeItem('user');
+              logout();
               window.location.href = '/';
             }}
             className="text-sm text-red-300 hover:text-red-200 font-medium bg-red-500 bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition backdrop-blur-sm border border-red-500 border-opacity-30"
@@ -87,9 +88,8 @@ const TecnicoLayout = () => {
               <li key={item.name} className="w-full">
                 <Link
                   to={item.path}
-                  className={`flex flex-col items-center justify-center h-full space-y-1 ${
-                    isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className={`flex flex-col items-center justify-center h-full space-y-1 ${isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+                    }`}
                 >
                   <span className="text-xl">{item.icon}</span>
                   <span className="text-[10px] font-medium">{item.name}</span>

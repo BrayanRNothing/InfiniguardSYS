@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import * as THREE from 'three';
 import CELLS from 'vanta/dist/vanta.cells.min.js';
 import Avatar from '../components/ui/Avatar';
+import { getUser, logout } from '../utils/authUtils';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -12,7 +13,7 @@ const AdminLayout = () => {
 
   useEffect(() => {
     // Cargar usuario
-    const userGuardado = JSON.parse(sessionStorage.getItem('user'));
+    const userGuardado = getUser();
     setUsuario(userGuardado);
     if (vantaRef.current && !vantaInstanceRef.current) {
       try {
@@ -165,7 +166,7 @@ const AdminLayout = () => {
           <div className="p-4">
             <button
               onClick={() => {
-                sessionStorage.removeItem('user');
+                logout();
                 window.location.href = '/';
               }}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-95"
