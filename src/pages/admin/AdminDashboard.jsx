@@ -10,7 +10,7 @@ const AdminDashboard = () => {
     serviciosFinalizados: 0,
     totalUsuarios: 0,
     tecnicos: 0,
-    clientes: 0,
+    usuarios: 0,
     distribuidores: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
@@ -43,7 +43,7 @@ const AdminDashboard = () => {
       const serviciosActivos = servicios.filter(s => s.estado === 'en-proceso').length;
       const serviciosFinalizados = servicios.filter(s => s.estado === 'finalizado').length;
       const tecnicos = usuarios.filter(u => u.rol === 'tecnico').length;
-      const clientes = usuarios.filter(u => u.rol === 'cliente').length;
+      const usuariosCount = usuarios.filter(u => u.rol === 'usuario').length;
       const distribuidores = usuarios.filter(u => u.rol === 'distribuidor').length;
 
       setStats({
@@ -53,7 +53,7 @@ const AdminDashboard = () => {
         serviciosFinalizados,
         totalUsuarios: usuarios.length,
         tecnicos,
-        clientes,
+        usuarios: usuariosCount,
         distribuidores
       });
 
@@ -157,8 +157,8 @@ const AdminDashboard = () => {
             </div>
 
             <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-              <span className="text-gray-700 font-medium">Clientes Registrados</span>
-              <span className="text-2xl font-bold text-green-600">{stats.clientes}</span>
+              <span className="text-gray-700 font-medium">Usuarios Registrados</span>
+              <span className="text-2xl font-bold text-green-600">{stats.usuarios}</span>
             </div>
 
             <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">

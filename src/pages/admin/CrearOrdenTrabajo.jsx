@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import { guardarPDFEnBackend } from '../../utils/pdfHelper';
+import API_URL from '../../config/api';
 
 function CrearOrdenTrabajo() {
     const navigate = useNavigate();
@@ -335,7 +336,7 @@ function CrearOrdenTrabajo() {
             // NUEVO: Guardar en backend también
             try {
                 // Crear servicio para vincular el documento
-                const servicioResponse = await fetch('http://localhost:4000/api/servicios', {
+                const servicioResponse = await fetch(`${API_URL}/api/servicios`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

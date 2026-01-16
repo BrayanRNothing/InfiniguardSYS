@@ -96,7 +96,7 @@ const ClienteHome = () => {
         className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-lg transition-all cursor-pointer"
       >
         <h3 className="font-bold text-gray-900 mb-1 text-base line-clamp-1">{cotizacion.titulo}</h3>
-        <p className="text-sm text-gray-500 mb-3">{cotizacion.cliente || cotizacion.usuario || 'Cliente'}</p>
+        <p className="text-sm text-gray-500 mb-3">{cotizacion.cliente || cotizacion.usuario || 'Usuario'}</p>
 
         {/* Badge de técnico asignado */}
         {tieneAsignacion && (
@@ -257,15 +257,15 @@ const ClienteHome = () => {
 
       {!tipoServicio ? (
         <div className="space-y-3">
-          {/* Instalación de Recubrimiento */}
+          {/* Aplicación de Recubrimiento */}
           <button
-            onClick={() => setTipoServicio('Instalación de Recubrimiento')}
+            onClick={() => setTipoServicio('Aplicación de Recubrimiento')}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all group text-left active:scale-98"
           >
             <div className="flex items-center gap-4">
               <div className="text-5xl">🏗️</div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold mb-1">Instalación de Recubrimiento</h3>
+                <h3 className="text-xl font-bold mb-1">Aplicación de Recubrimiento</h3>
                 <p className="text-blue-100 text-sm">Instalación de sistemas de protección y recubrimiento</p>
               </div>
               <svg className="w-6 h-6 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">

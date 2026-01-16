@@ -10,6 +10,7 @@ const AdminLayout = () => {
   const vantaRef = useRef(null);
   const vantaInstanceRef = useRef(null);
   const [usuario, setUsuario] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Cargar usuario
@@ -117,7 +118,10 @@ const AdminLayout = () => {
     <div className="flex h-screen bg-gray-100">
 
       {/* 1. SIDEBAR (Barra Lateral) con Vanta.js */}
-      <aside ref={vantaRef} className="w-64 hidden md:flex flex-col relative overflow-hidden">
+      <aside
+        ref={vantaRef}
+        className={`fixed inset-y-0 left-0 z-50 w-64 md:relative md:flex flex-col transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} overflow-hidden shadow-2xl md:shadow-none`}
+      >
 
         {/* Overlay para mejorar legibilidad */}
         <div className="absolute inset-0 bg-linear-to-b from-blue-950 via-transparent to-blue-950 bg-opacity-40 pointer-events-none z-0"></div>
@@ -182,10 +186,37 @@ const AdminLayout = () => {
 
       {/* 2. ÁREA DE CONTENIDO (Aquí cambia lo que ves) */}
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <header className="h-16 bg-white shrink-0 shadow-sm flex items-center justify-between px-8 md:hidden">
-          {/* Header móvil simple */}
-          <span className="font-bold text-gray-700">Menú</span>
+        <header className="h-16 bg-white shrink-0 shadow-sm flex items-center justify-between px-6 md:hidden">
+          {/* Header móvil funcional */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 -ml-2 text-gray-600 hover:text-blue-600 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {sidebarOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+            <span className="font-bold text-gray-800 tracking-tight">INFINIGUARD ADMIN</span>
+          </div>
+
+          {usuario && <Avatar name={usuario.nombre} size="sm" />}
         </header>
+
+        {/* Overlay para móvil */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          ></div>
+        )}
 
         <div className="flex-1 p-4 lg:p-8 overflow-auto flex flex-col min-h-0">
           {/* <Outlet /> es el hueco donde se renderiza la página hija (ej. DashboardAdmin) */}

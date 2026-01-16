@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API_URL from '../../config/api';
 import BotonMenu from '../../components/ui/BotonMenu';
 import { obtenerDocumentos } from '../../utils/documentStorage';
 import TimelineDocumentos from '../../components/documentos/TimelineDocumentos';
@@ -18,7 +19,7 @@ function Documentos() {
 
     const cargarServicios = async () => {
         try {
-            const response = await fetch('http://localhost:4000/api/servicios');
+            const response = await fetch(`${API_URL}/api/servicios`);
             const data = await response.json();
             setServicios(data);
         } catch (error) {
@@ -39,7 +40,7 @@ function Documentos() {
 
     const handleDescargar = (documento) => {
         if (documento.pdfUrl) {
-            window.open(`http://localhost:4000/${documento.pdfUrl}`, '_blank');
+            window.open(`${API_URL}/${documento.pdfUrl}`, '_blank');
         } else {
             toast.error('PDF no disponible');
         }
@@ -64,7 +65,7 @@ function Documentos() {
                 {/* Encabezado */}
                 <div className="mb-6 shrink-0">
                     <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-500">Gestión de Documentos</h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-lg">Crear y administrar documentos del sistema</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-lg hidden md:block">Crear y administrar documentos del sistema</p>
                 </div>
 
                 {/* Grid de 4 botones */}

@@ -13,7 +13,8 @@ function CotizacionForm({ titulo, tipoServicio, onSuccess }) {
     modelo: '',
     cantidad: 1,
     direccion: '',
-    descripcion: ''
+    descripcion: '',
+    clienteFinal: '' // Nuevo campo para distribuidores
   });
 
   const handleChange = (e) => setFormDatos({ ...formDatos, [e.target.name]: e.target.value });
@@ -50,7 +51,12 @@ function CotizacionForm({ titulo, tipoServicio, onSuccess }) {
     formData.append('cantidad', formDatos.cantidad);
     formData.append('direccion', formDatos.direccion);
     formData.append('telefono', usuario ? usuario.telefono || '' : '');
+
+    // Si es distribuidor, usamos el clienteFinal. Si no, el nombre del usuario logueado.
+    const esDistribuidor = usuario?.rol === 'distribuidor';
     formData.append('usuario', usuario ? usuario.nombre : 'Usuario Externo');
+    formData.append('cliente', esDistribuidor ? (formDatos.clienteFinal || 'Consumidor Final') : (usuario?.nombre || 'Consumidor Final'));
+
     formData.append('modelo', formDatos.modelo || '');
 
     // Adjuntar la primera imagen (por compatibilidad con el backend actual)
@@ -97,6 +103,21 @@ function CotizacionForm({ titulo, tipoServicio, onSuccess }) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Nombre del cliente final (Solo distribuidores) */}
+        {JSON.parse(sessionStorage.getItem('user'))?.rol === 'distribuidor' && (
+          <div>
+            <input
+              required
+              type="text"
+              name="clienteFinal"
+              value={formDatos.clienteFinal}
+              onChange={handleChange}
+              placeholder="Nombre del Cliente Final"
+              className="w-full bg-gray-100 border-0 p-4 rounded-xl text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+            />
+          </div>
+        )}
+
         {/* Nombre del proyecto */}
         <div>
           <input

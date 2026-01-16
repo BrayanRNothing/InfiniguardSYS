@@ -27,19 +27,19 @@ const usuarios = [
     {
         email: 'maria.gonzalez@email.com',
         password: 'cliente123',
-        rol: 'cliente',
+        rol: 'usuario',
         nombre: 'María González'
     },
     {
         email: 'contacto@empresaabc.com',
         password: 'cliente123',
-        rol: 'cliente',
+        rol: 'usuario',
         nombre: 'Empresa ABC S.A.'
     },
     {
         email: 'roberto.sanchez@email.com',
         password: 'cliente123',
-        rol: 'cliente',
+        rol: 'usuario',
         nombre: 'Roberto Sánchez'
     }
 ];

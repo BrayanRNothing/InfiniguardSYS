@@ -51,7 +51,7 @@ const ClienteLayout = () => {
 
   const handleTabChange = (tab) => {
     // Navegar a clientehome y cambiar el tab internamente
-    navigate('/cliente');
+    navigate('/usuario');
     // El componente ClienteHome manejará el cambio de tab
     window.dispatchEvent(new CustomEvent('changeClienteTab', { detail: tab }));
   };
@@ -66,7 +66,7 @@ const ClienteLayout = () => {
           <div className="flex items-center gap-3">
             {usuario && <Avatar name={usuario.nombre} size="md" />}
             <div>
-              <h2 className="text-lg font-bold text-white drop-shadow-[0_2px_8px_rgba(37,99,235,0.5)]">🏠 Portal Cliente</h2>
+              <h2 className="text-lg font-bold text-white drop-shadow-[0_2px_8px_rgba(37,99,235,0.5)]">🏠 Portal Usuario</h2>
               {usuario && <p className="text-xs text-blue-200">{usuario.nombre}</p>}
             </div>
           </div>

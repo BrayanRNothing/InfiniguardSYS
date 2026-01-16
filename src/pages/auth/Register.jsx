@@ -76,7 +76,7 @@ const Register = () => {
                     case 'admin': navigate('/admin'); break;
                     case 'tecnico': navigate('/tecnico'); break;
                     case 'distribuidor': navigate('/distribuidor'); break;
-                    case 'cliente': navigate('/cliente'); break;
+                    case 'usuario': navigate('/usuario'); break;
                     default: navigate('/'); // Por seguridad
                 }
             } else {

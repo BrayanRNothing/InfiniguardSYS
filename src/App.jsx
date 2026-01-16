@@ -127,8 +127,8 @@ function App() {
             <Route path="nueva-solicitud" element={<NuevaSolicitud />} />
           </Route>
 
-          {/* --- CLIENTE --- */}
-          <Route path="/cliente" element={<ClienteLayout />}>
+          {/* --- USUARIO --- */}
+          <Route path="/usuario" element={<ClienteLayout />}>
             <Route index element={<ClienteHome />} />
             <Route path="nuevo-equipo" element={<div>Formulario Equipo</div>} />
             <Route path="nuevo-recubrimiento" element={<div>Formulario Recubrimiento</div>} />

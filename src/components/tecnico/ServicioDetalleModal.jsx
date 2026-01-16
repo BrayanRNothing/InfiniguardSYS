@@ -59,10 +59,10 @@ function ServicioDetalleModal({ servicio, onClose }) {
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-bold text-gray-600">Estado del Servicio</span>
                                 <span className={`px-3 py-1 text-xs font-bold uppercase tracking-widest rounded-full ${servicio.estado === 'pendiente' ? 'bg-orange-100 text-orange-700' :
-                                        servicio.estado === 'aprobado' ? 'bg-green-100 text-green-700' :
-                                            servicio.estado === 'en-proceso' ? 'bg-blue-100 text-blue-700' :
-                                                servicio.estado === 'finalizado' ? 'bg-purple-100 text-purple-700' :
-                                                    'bg-gray-100 text-gray-700'
+                                    servicio.estado === 'aprobado' ? 'bg-green-100 text-green-700' :
+                                        servicio.estado === 'en-proceso' ? 'bg-blue-100 text-blue-700' :
+                                            servicio.estado === 'finalizado' ? 'bg-purple-100 text-purple-700' :
+                                                'bg-gray-100 text-gray-700'
                                     }`}>
                                     {servicio.estado}
                                 </span>
@@ -73,7 +73,7 @@ function ServicioDetalleModal({ servicio, onClose }) {
                         <div>
                             <h3 className="text-sm font-bold text-gray-600 uppercase mb-3">Información del Cliente</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <InfoItem label="Cliente" value={servicio.cliente} icon="👤" />
+                                <InfoItem label="Usuario" value={servicio.cliente} icon="👤" />
                                 <InfoItem label="Teléfono" value={servicio.telefono} icon="📞" />
                                 <InfoItem label="Dirección" value={servicio.direccion} icon="📍" />
                                 <InfoItem label="Fecha" value={servicio.fecha} icon="📅" />

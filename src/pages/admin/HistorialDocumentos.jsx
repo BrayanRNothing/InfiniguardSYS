@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { obtenerDocumentos, obtenerHistorial } from '../../utils/documentStorage';
 import TimelineDocumentos from '../../components/documentos/TimelineDocumentos';
+import API_URL from '../../config/api';
 import toast from 'react-hot-toast';
 
 /**
@@ -25,7 +26,7 @@ function HistorialDocumentos() {
 
     const cargarServicios = async () => {
         try {
-            const response = await fetch('http://localhost:4000/api/servicios');
+            const response = await fetch(`${API_URL}/api/servicios`);
             const data = await response.json();
             setServicios(data);
             setCargando(false);
@@ -51,7 +52,7 @@ function HistorialDocumentos() {
 
     const handleDescargar = (documento) => {
         if (documento.pdfUrl) {
-            window.open(`http://localhost:4000/${documento.pdfUrl}`, '_blank');
+            window.open(`${API_URL}/${documento.pdfUrl}`, '_blank');
         } else {
             toast.error('PDF no disponible');
         }

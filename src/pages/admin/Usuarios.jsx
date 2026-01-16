@@ -90,7 +90,7 @@ function ModalUsuario({ modoEdicion, formData, setFormData, handleSubmit, cerrar
               <option value="admin" className="bg-gray-800">Administrador</option>
               <option value="tecnico" className="bg-gray-800">Técnico</option>
               <option value="distribuidor" className="bg-gray-800">Distribuidor</option>
-              <option value="cliente" className="bg-gray-800">Cliente</option>
+              <option value="usuario" className="bg-gray-800">Usuario</option>
             </select>
           </div>
           <div className="flex gap-3 mt-6">
@@ -152,7 +152,7 @@ function Usuarios() {
     nombre: '',
     email: '',
     password: '',
-    rol: 'cliente'
+    rol: 'usuario'
   });
 
   // Estado para confirmación de borrado
@@ -197,7 +197,7 @@ function Usuarios() {
 
   const cerrarModal = () => {
     setModalAbierto(false);
-    setFormData({ nombre: '', email: '', password: '', rol: 'cliente' });
+    setFormData({ nombre: '', email: '', password: '', rol: 'usuario' });
     setModoEdicion(false);
     setUsuarioEditando(null);
   };
@@ -277,7 +277,7 @@ function Usuarios() {
   const admins = usuarios.filter(u => u.rol === 'admin');
   const tecnicos = usuarios.filter(u => u.rol === 'tecnico');
   const distribuidores = usuarios.filter(u => u.rol === 'distribuidor');
-  const clientes = usuarios.filter(u => u.rol === 'cliente');
+  const usuariosFinales = usuarios.filter(u => u.rol === 'usuario');
 
   const renderTarjetaUsuario = (user, color) => (
     <div key={user.id} className={`bg-${color}-50 border-2 border-${color}-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all`}>
@@ -289,7 +289,7 @@ function Usuarios() {
             <span>📧</span> {user.email}
           </p>
           <div className={`bg-${color}-200 text-${color}-800 px-3 py-1 rounded-full text-xs font-bold inline-block mt-2 uppercase`}>
-            {user.rol === 'admin' && '👑 '}{user.rol === 'tecnico' && '🔧 '}{user.rol === 'distribuidor' && '📦 '}{user.rol === 'cliente' && '👤 '}
+            {user.rol === 'admin' && '👑 '}{user.rol === 'tecnico' && '🔧 '}{user.rol === 'distribuidor' && '📦 '}{user.rol === 'usuario' && '👤 '}
             {user.rol}
           </div>
         </div>
@@ -362,9 +362,9 @@ function Usuarios() {
             <BotonMenu
               gradient="from-green-500/80 to-green-600/80 hover:from-green-600/90 hover:to-green-700/90"
               icon="👤"
-              titulo="Clientes"
-              count={clientes.length}
-              onClick={() => setVistaActual('cliente')}
+              titulo="Usuarios"
+              count={usuariosFinales.length}
+              onClick={() => setVistaActual('usuario')}
             />
           </div>
         )}
@@ -469,18 +469,18 @@ function Usuarios() {
       </>
     );
   }
-  if (vistaActual === 'cliente') {
+  if (vistaActual === 'usuario') {
     return (
       <>
         <div className="max-w-7xl mx-auto animate-fadeInUp pb-12 w-full h-screen overflow-auto">
           <button onClick={() => setVistaActual('menu')} className="mb-6 text-gray-600 hover:text-gray-700 font-semibold flex items-center gap-2 transition-colors">← Volver al menú</button>
           <div className="mb-0 flex justify-between items-center flex-wrap gap-4">
             <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">{clientes.length} clientes registrados</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{usuariosFinales.length} usuarios registrados</p>
             </div>
-            <button onClick={() => abrirModal('cliente')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition-all active:scale-95">+ Crear Cliente</button>
+            <button onClick={() => abrirModal('usuario')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition-all active:scale-95">+ Crear Usuario</button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{clientes.map(user => renderTarjetaUsuario(user, 'green'))}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{usuariosFinales.map(user => renderTarjetaUsuario(user, 'green'))}</div>
         </div>
         {modalAbierto && (
           <ModalUsuario
