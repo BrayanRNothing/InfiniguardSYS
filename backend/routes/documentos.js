@@ -47,16 +47,16 @@ const uploadPDF = multer({
 /**
  * Crear rutas de documentos
  */
-export function crearRutasDocumentos(db) {
+export function crearRutasDocumentos(pool) {
 
     // ==========================================
     // OBTENER DOCUMENTOS DE UN SERVICIO
     // ==========================================
-    router.get('/servicios/:id/documentos', (req, res) => {
+    router.get('/servicios/:id/documentos', async (req, res) => {
         const { id } = req.params;
 
         try {
-            const documentos = DocumentoHelpers.obtenerDocumentos(db, id);
+            const documentos = await DocumentoHelpers.obtenerDocumentos(pool, id);
             res.json({ success: true, documentos });
         } catch (error) {
             console.error('Error obteniendo documentos:', error);
@@ -67,11 +67,11 @@ export function crearRutasDocumentos(db) {
     // ==========================================
     // OBTENER HISTORIAL DE UN SERVICIO
     // ==========================================
-    router.get('/servicios/:id/historial', (req, res) => {
+    router.get('/servicios/:id/historial', async (req, res) => {
         const { id } = req.params;
 
         try {
-            const historial = DocumentoHelpers.obtenerHistorial(db, id);
+            const historial = await DocumentoHelpers.obtenerHistorial(pool, id);
             res.json({ success: true, historial });
         } catch (error) {
             console.error('Error obteniendo historial:', error);
@@ -82,7 +82,7 @@ export function crearRutasDocumentos(db) {
     // ==========================================
     // GUARDAR COTIZACIÓN
     // ==========================================
-    router.post('/servicios/:id/cotizacion', uploadPDF.single('pdf'), (req, res) => {
+    router.post('/servicios/:id/cotizacion', uploadPDF.single('pdf'), async (req, res) => {
         const { id } = req.params;
         const data = JSON.parse(req.body.data || '{}');
 
@@ -99,7 +99,7 @@ export function crearRutasDocumentos(db) {
             validarDocumento(cotizacion, TipoDocumento.COTIZACION);
 
             // Guardar en base de datos
-            DocumentoHelpers.agregarDocumento(db, id, cotizacion.toJSON());
+            await DocumentoHelpers.agregarDocumento(pool, id, cotizacion.toJSON());
 
             // Agregar evento al historial
             const evento = new EventoHistorial(
@@ -108,7 +108,7 @@ export function crearRutasDocumentos(db) {
                 data.creadoPor,
                 { numero: cotizacion.numero, total: cotizacion.total }
             );
-            DocumentoHelpers.agregarEvento(db, id, evento.toJSON());
+            await DocumentoHelpers.agregarEvento(pool, id, evento.toJSON());
 
             res.json({ success: true, cotizacion });
         } catch (error) {
@@ -120,7 +120,7 @@ export function crearRutasDocumentos(db) {
     // ==========================================
     // CREAR ORDEN DE TRABAJO (desde cotización o independiente)
     // ==========================================
-    router.post('/servicios/:id/orden-trabajo', uploadPDF.single('pdf'), (req, res) => {
+    router.post('/servicios/:id/orden-trabajo', uploadPDF.single('pdf'), async (req, res) => {
         const { id } = req.params;
         const data = JSON.parse(req.body.data || '{}');
 
@@ -128,7 +128,7 @@ export function crearRutasDocumentos(db) {
             // Si viene de una cotización, obtener datos base
             let datosBase = data;
             if (data.desdeCotizacion && data.cotizacionNumero) {
-                const documentos = DocumentoHelpers.obtenerDocumentos(db, id);
+                const documentos = await DocumentoHelpers.obtenerDocumentos(pool, id);
                 const cotizacion = documentos.find(
                     doc => doc.tipo === TipoDocumento.COTIZACION && doc.numero === data.cotizacionNumero
                 );
@@ -153,7 +153,7 @@ export function crearRutasDocumentos(db) {
             validarDocumento(orden, TipoDocumento.ORDEN_TRABAJO);
 
             // Guardar
-            DocumentoHelpers.agregarDocumento(db, id, orden.toJSON());
+            await DocumentoHelpers.agregarDocumento(pool, id, orden.toJSON());
 
             // Evento al historial
             const evento = new EventoHistorial(
@@ -162,7 +162,7 @@ export function crearRutasDocumentos(db) {
                 data.creadoPor,
                 { numero: orden.numero, cotizacionRef: orden.cotizacionRef }
             );
-            DocumentoHelpers.agregarEvento(db, id, evento.toJSON());
+            await DocumentoHelpers.agregarEvento(pool, id, evento.toJSON());
 
             res.json({ success: true, orden });
         } catch (error) {
@@ -174,7 +174,7 @@ export function crearRutasDocumentos(db) {
     // ==========================================
     // CREAR REPORTE DE TRABAJO (desde orden o independiente)
     // ==========================================
-    router.post('/servicios/:id/reporte', uploadPDF.single('pdf'), (req, res) => {
+    router.post('/servicios/:id/reporte', uploadPDF.single('pdf'), async (req, res) => {
         const { id } = req.params;
         const data = JSON.parse(req.body.data || '{}');
 
@@ -182,7 +182,7 @@ export function crearRutasDocumentos(db) {
             // Si viene de una orden, obtener datos base
             let datosBase = data;
             if (data.desdeOrden && data.ordenNumero) {
-                const documentos = DocumentoHelpers.obtenerDocumentos(db, id);
+                const documentos = await DocumentoHelpers.obtenerDocumentos(pool, id);
                 const orden = documentos.find(
                     doc => doc.tipo === TipoDocumento.ORDEN_TRABAJO && doc.numero === data.ordenNumero
                 );
@@ -207,7 +207,7 @@ export function crearRutasDocumentos(db) {
             validarDocumento(reporte, TipoDocumento.REPORTE_TRABAJO);
 
             // Guardar
-            DocumentoHelpers.agregarDocumento(db, id, reporte.toJSON());
+            await DocumentoHelpers.agregarDocumento(pool, id, reporte.toJSON());
 
             // Evento al historial
             const evento = new EventoHistorial(
@@ -216,7 +216,7 @@ export function crearRutasDocumentos(db) {
                 data.creadoPor,
                 { numero: reporte.numero, ordenRef: reporte.ordenTrabajoRef }
             );
-            DocumentoHelpers.agregarEvento(db, id, evento.toJSON());
+            await DocumentoHelpers.agregarEvento(pool, id, evento.toJSON());
 
             res.json({ success: true, reporte });
         } catch (error) {
@@ -228,11 +228,11 @@ export function crearRutasDocumentos(db) {
     // ==========================================
     // OBTENER DATOS PARA CONVERSIÓN
     // ==========================================
-    router.get('/servicios/:id/convertir/:tipo/:numero', (req, res) => {
+    router.get('/servicios/:id/convertir/:tipo/:numero', async (req, res) => {
         const { id, tipo, numero } = req.params;
 
         try {
-            const documentos = DocumentoHelpers.obtenerDocumentos(db, id);
+            const documentos = await DocumentoHelpers.obtenerDocumentos(pool, id);
             const documento = documentos.find(doc => doc.tipo === tipo && doc.numero === numero);
 
             if (!documento) {
@@ -259,5 +259,6 @@ export function crearRutasDocumentos(db) {
 
     return router;
 }
+
 
 export default crearRutasDocumentos;

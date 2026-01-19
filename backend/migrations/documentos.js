@@ -1,94 +1,72 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 /**
  * Migración para agregar soporte de documentos sincronizados
  * Agrega columnas JSON para almacenar documentos e historial
  */
-export function migrarDocumentos(db) {
-    console.log('🔄 Iniciando migración de documentos...');
+export async function migrarDocumentos(pool) {
+    console.log('🔄 Iniciando migración de documentos (PostgreSQL)...');
 
     try {
-        // Agregar columna para almacenar documentos (JSON)
+        // Agregar columna para almacenar documentos (JSONB)
         try {
-            db.exec(`ALTER TABLE servicios ADD COLUMN documentos TEXT DEFAULT '[]'`);
-            console.log('✅ Columna "documentos" agregada');
+            await pool.query(`ALTER TABLE servicios ADD COLUMN IF NOT EXISTS documentos JSONB DEFAULT '[]'`);
+            console.log('✅ Columna "documentos" verificada/agregada');
         } catch (e) {
-            if (e.message.includes('duplicate column name')) {
-                console.log('ℹ️  Columna "documentos" ya existe');
-            } else {
-                throw e;
-            }
+            console.error('Error al verificar/agregar columna documentos:', e.message);
         }
 
-        // Agregar columna para almacenar historial (JSON)
+        // Agregar columna para almacenar historial (JSONB)
         try {
-            db.exec(`ALTER TABLE servicios ADD COLUMN historial TEXT DEFAULT '[]'`);
-            console.log('✅ Columna "historial" agregada');
+            await pool.query(`ALTER TABLE servicios ADD COLUMN IF NOT EXISTS historial JSONB DEFAULT '[]'`);
+            console.log('✅ Columna "historial" verificada/agregada');
         } catch (e) {
-            if (e.message.includes('duplicate column name')) {
-                console.log('ℹ️  Columna "historial" ya existe');
-            } else {
-                throw e;
-            }
+            console.error('Error al verificar/agregar columna historial:', e.message);
         }
 
         // Inicializar columnas vacías para registros existentes
-        const updateStmt = db.prepare(`
-      UPDATE servicios 
-      SET documentos = '[]', historial = '[]' 
-      WHERE documentos IS NULL OR historial IS NULL
-    `);
-        const result = updateStmt.run();
+        const result = await pool.query(`
+            UPDATE servicios 
+            SET documentos = '[]'::jsonb, historial = '[]'::jsonb 
+            WHERE documentos IS NULL OR historial IS NULL
+        `);
 
-        if (result.changes > 0) {
-            console.log(`✅ ${result.changes} registros actualizados con valores por defecto`);
+        if (result.rowCount > 0) {
+            console.log(`✅ ${result.rowCount} registros previos actualizados con valores por defecto`);
         }
 
         console.log('✅ Migración de documentos completada exitosamente');
         return true;
     } catch (error) {
-        console.error('❌ Error en migración de documentos:', error);
+        console.error('❌ Error en migración de documentos:', error.message);
         throw error;
     }
 }
 
 /**
- * Helpers para trabajar con documentos en SQLite
+ * Helpers para trabajar con documentos en PostgreSQL
  */
 export const DocumentoHelpers = {
     /**
      * Obtener documentos de un servicio
      */
-    obtenerDocumentos(db, servicioId) {
-        const stmt = db.prepare('SELECT documentos FROM servicios WHERE id = ?');
-        const row = stmt.get(servicioId);
+    async obtenerDocumentos(pool, servicioId) {
+        const res = await pool.query('SELECT documentos FROM servicios WHERE id = $1', [servicioId]);
+        const row = res.rows[0];
 
         if (!row) {
             throw new Error(`Servicio ${servicioId} no encontrado`);
         }
 
-        try {
-            return JSON.parse(row.documentos || '[]');
-        } catch (e) {
-            console.error('Error parseando documentos:', e);
-            return [];
-        }
+        return row.documentos || [];
     },
 
     /**
      * Agregar documento a un servicio
      */
-    agregarDocumento(db, servicioId, documento) {
-        const documentos = this.obtenerDocumentos(db, servicioId);
+    async agregarDocumento(pool, servicioId, documento) {
+        const documentos = await this.obtenerDocumentos(pool, servicioId);
         documentos.push(documento);
 
-        const stmt = db.prepare('UPDATE servicios SET documentos = ? WHERE id = ?');
-        stmt.run(JSON.stringify(documentos), servicioId);
+        await pool.query('UPDATE servicios SET documentos = $1 WHERE id = $2', [JSON.stringify(documentos), servicioId]);
 
         return documentos;
     },
@@ -96,31 +74,25 @@ export const DocumentoHelpers = {
     /**
      * Obtener historial de un servicio
      */
-    obtenerHistorial(db, servicioId) {
-        const stmt = db.prepare('SELECT historial FROM servicios WHERE id = ?');
-        const row = stmt.get(servicioId);
+    async obtenerHistorial(pool, servicioId) {
+        const res = await pool.query('SELECT historial FROM servicios WHERE id = $1', [servicioId]);
+        const row = res.rows[0];
 
         if (!row) {
             throw new Error(`Servicio ${servicioId} no encontrado`);
         }
 
-        try {
-            return JSON.parse(row.historial || '[]');
-        } catch (e) {
-            console.error('Error parseando historial:', e);
-            return [];
-        }
+        return row.historial || [];
     },
 
     /**
      * Agregar evento al historial
      */
-    agregarEvento(db, servicioId, evento) {
-        const historial = this.obtenerHistorial(db, servicioId);
+    async agregarEvento(pool, servicioId, evento) {
+        const historial = await this.obtenerHistorial(pool, servicioId);
         historial.push(evento);
 
-        const stmt = db.prepare('UPDATE servicios SET historial = ? WHERE id = ?');
-        stmt.run(JSON.stringify(historial), servicioId);
+        await pool.query('UPDATE servicios SET historial = $1 WHERE id = $2', [JSON.stringify(historial), servicioId]);
 
         return historial;
     },
@@ -128,8 +100,8 @@ export const DocumentoHelpers = {
     /**
      * Buscar documento por tipo y número
      */
-    buscarDocumento(db, servicioId, tipo, numero = null) {
-        const documentos = this.obtenerDocumentos(db, servicioId);
+    async buscarDocumento(pool, servicioId, tipo, numero = null) {
+        const documentos = await this.obtenerDocumentos(pool, servicioId);
 
         if (numero) {
             return documentos.find(doc => doc.tipo === tipo && doc.numero === numero);
@@ -138,3 +110,4 @@ export const DocumentoHelpers = {
         return documentos.filter(doc => doc.tipo === tipo);
     }
 };
+
