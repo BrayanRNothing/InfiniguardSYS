@@ -37,7 +37,7 @@ const CrearCotizaciones = () => {
         // Quotation info
         titulo: editData?.titulo || '',
         descripcion: editData?.descripcion || '',
-        fecha: editData?.fecha || new Date().toISOString().split('T')[0],
+        fecha: editData?.fecha ? new Date(editData.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         validez: editData?.validez || '30', // días
         creadoPor: editData?.creadoPor || '', // Nombre de quien crea la cotización
         notas: editData?.notas || '', // Notas adicionales
@@ -515,7 +515,7 @@ const CrearCotizaciones = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Tefoloono</label>
+                                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Teléfono</label>
                                     <input
                                         type="tel"
                                         value={formData.clienteTelefono}
