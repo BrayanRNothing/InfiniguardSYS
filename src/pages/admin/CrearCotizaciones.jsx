@@ -3,10 +3,19 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 import logoImg from '../../assets/LOGOUPDM.png';
+import { guardarCotizacionSimple, subirPDFCotizacion } from '../../utils/documentStorage';
+import API_URL from '../../config/api';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const CrearCotizaciones = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+
+    // Determinar si estamos en modo edición
+    const editData = location.state?.cotizacion;
+    const isEditing = !!editData;
 
     // Get next quotation number for preview
     const getNextQuotationNumber = () => {
@@ -19,29 +28,29 @@ const CrearCotizaciones = () => {
     // Form data
     const [formData, setFormData] = useState({
         // Client info
-        clienteNombre: '',
-        clienteEmpresa: '',
-        clienteEmail: '',
-        clienteTelefono: '',
-        clienteDireccion: '',
+        clienteNombre: editData?.cliente?.nombre || '',
+        clienteEmpresa: editData?.cliente?.empresa || '',
+        clienteEmail: editData?.cliente?.email || '',
+        clienteTelefono: editData?.cliente?.telefono || '',
+        clienteDireccion: editData?.cliente?.direccion || '',
 
         // Quotation info
-        titulo: '',
-        descripcion: '',
-        fecha: new Date().toISOString().split('T')[0],
-        validez: '30', // días
-        creadoPor: '', // Nombre de quien crea la cotización
-        notas: '', // Notas adicionales
+        titulo: editData?.titulo || '',
+        descripcion: editData?.descripcion || '',
+        fecha: editData?.fecha || new Date().toISOString().split('T')[0],
+        validez: editData?.validez || '30', // días
+        creadoPor: editData?.creadoPor || '', // Nombre de quien crea la cotización
+        notas: editData?.notas || '', // Notas adicionales
 
         // Financial
-        moneda: 'MXN', // MXN o USD
-        impuesto: '16', // IVA %
-        descuento: '0', // %
-        terminosCondiciones: 'Se requiere contar con toma de agua y suministro eléctrico cercanos para poder llevar a cabo el servicio de recubrimiento. Se otorga una garantía de 2 años contra la corrosión. ¡En caso de que el serpentín sea reemplazado antes de que concluya dicho periodo, el serpentín sustituido será recubierto nuevamente sin costo adicional por nuestra parte!',
+        moneda: editData?.moneda || 'MXN', // MXN o USD
+        impuesto: editData?.impuesto || '16', // IVA %
+        descuento: editData?.descuento || '0', // %
+        terminosCondiciones: editData?.terminosCondiciones || 'Se requiere contar con toma de agua y suministro eléctrico cercanos para poder llevar a cabo el servicio de recubrimiento. Se otorga una garantía de 2 años contra la corrosión. ¡En caso de que el serpentín sea reemplazado antes de que concluya dicho periodo, el serpentín sustituido será recubierto nuevamente sin costo adicional por nuestra parte!',
     });
 
     // Line items
-    const [items, setItems] = useState([
+    const [items, setItems] = useState(editData?.productos || [
         { id: 1, descripcion: '', cantidad: 1, precioUnitario: 0 }
     ]);
 
@@ -109,7 +118,7 @@ const CrearCotizaciones = () => {
             toast.error('El título de la cotización es requerido');
             return false;
         }
-        if (items.some(item => !item.descripcion.trim())) {
+        if (items.some(item => !item.descripcion || !item.descripcion.trim())) {
             toast.error('Todos los items deben tener descripción');
             return false;
         }
@@ -120,24 +129,27 @@ const CrearCotizaciones = () => {
         return true;
     };
 
-    // Generate PDF
-    const generarPDF = () => {
+    // Generate PDF and Save
+    const generarPDF = async () => {
         if (loading) return; // Prevent multiple clicks
         if (!validarFormulario()) return;
 
         setLoading(true);
-        const loadingToast = toast.loading('Generando PDF...');
+        const loadingToast = toast.loading(isEditing ? 'Actualizando cotización...' : 'Generando y guardando cotización...');
 
         try {
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.width;
             let yPos = 10;
 
-            // Generate incremental quotation number from localStorage
-            let currentQuotationNumber = parseInt(localStorage.getItem('lastQuotationNumber') || '12999', 10);
-            currentQuotationNumber += 1;
-            localStorage.setItem('lastQuotationNumber', currentQuotationNumber.toString());
-            const quotationNumber = `COT-${currentQuotationNumber.toString().padStart(6, '0')}`;
+            // Generate/Use quotation number
+            let quotationNumber = editData?.numero;
+            if (!isEditing) {
+                let currentQuotationNumber = parseInt(localStorage.getItem('lastQuotationNumber') || '12999', 10);
+                currentQuotationNumber += 1;
+                localStorage.setItem('lastQuotationNumber', currentQuotationNumber.toString());
+                quotationNumber = `COT-${currentQuotationNumber.toString().padStart(6, '0')}`;
+            }
 
             // Logo on the left
             const logoWidth = 40;
@@ -408,16 +420,48 @@ const CrearCotizaciones = () => {
                 doc.text(`Creado por: ${formData.creadoPor}`, 14, footerY);
             }
 
-            // Save PDF
+            // Save PDF locally
             const fileName = `${quotationNumber}_${formData.clienteNombre.replace(/\s+/g, '_')}.pdf`;
             doc.save(fileName);
 
-            toast.dismiss(loadingToast);
-            toast.success('PDF generado exitosamente');
+            // 1. Subir el PDF al servidor
+            const pdfBlob = doc.output('blob');
+            const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+            const uploadRes = await subirPDFCotizacion(pdfFile);
+
+            // 2. Guardar datos en la tabla de cotizaciones
+            const datosDocumento = {
+                numero: quotationNumber,
+                fecha: formData.fecha,
+                cliente: {
+                    nombre: formData.clienteNombre,
+                    empresa: formData.clienteEmpresa,
+                    email: formData.clienteEmail,
+                    telefono: formData.clienteTelefono,
+                    direccion: formData.clienteDireccion
+                },
+                titulo: formData.titulo,
+                descripcion: formData.descripcion,
+                productos: items,
+                subtotal: calcularTotalItems(),
+                iva: calcularImpuesto(),
+                total: calcularTotal(),
+                moneda: formData.moneda,
+                validez: formData.validez,
+                notas: formData.notas,
+                terminosCondiciones: formData.terminosCondiciones,
+                creadoPor: formData.creadoPor || 'Admin',
+                pdfUrl: uploadRes.url
+            };
+
+            await guardarCotizacionSimple(datosDocumento);
+
+            toast.success(isEditing ? 'Cotización actualizada' : 'Cotización guardada', { id: loadingToast });
+            setTimeout(() => navigate('/admin/documentos'), 1500);
         } catch (error) {
-            console.error('Error al generar PDF:', error);
+            console.error('Error al procesar cotización:', error);
             toast.dismiss(loadingToast);
-            toast.error('Error al generar el PDF');
+            toast.error('Error al guardar la cotización');
         } finally {
             setLoading(false);
         }

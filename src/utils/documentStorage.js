@@ -129,3 +129,74 @@ export function agruparPorTipo(documentos) {
         return grupos;
     }, {});
 }
+/**
+ * Obtener todas las cotizaciones del nuevo sistema simple
+ */
+export async function obtenerTodasLasCotizaciones() {
+    try {
+        const response = await fetch(`${API_URL}/api/standalone-cotizaciones`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Error obteniendo cotizaciones');
+        }
+        const data = await response.json();
+        return (data.cotizaciones || []).map(c => ({
+            ...c.datos,
+            id: c.id,
+            numero: c.numero,
+            fecha: c.fecha,
+            pdfUrl: c.pdf_url,
+            total: c.total
+        }));
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Guardar o actualizar una cotización
+ */
+export async function guardarCotizacionSimple(datos) {
+    const response = await fetch(`${API_URL}/api/standalone-cotizaciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            numero: datos.numero,
+            fecha: datos.fecha,
+            cliente_nombre: datos.cliente?.nombre || datos.clienteNombre,
+            titulo: datos.titulo,
+            datos: datos,
+            pdf_url: datos.pdfUrl,
+            total: datos.total
+        })
+    });
+    if (!response.ok) throw new Error('Error al guardar la cotización');
+    return await response.json();
+}
+
+/**
+ * Eliminar una cotización por número
+ */
+export async function eliminarCotizacionSimple(numero) {
+    const response = await fetch(`${API_URL}/api/standalone-cotizaciones/${numero}`, {
+        method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Error al eliminar');
+    return await response.json();
+}
+
+/**
+ * Subir el PDF de una cotización independiente
+ */
+export async function subirPDFCotizacion(pdfFile) {
+    const formData = new FormData();
+    formData.append('pdf', pdfFile);
+
+    const response = await fetch(`${API_URL}/api/standalone-cotizaciones/upload`, {
+        method: 'POST',
+        body: formData
+    });
+    if (!response.ok) throw new Error('Error al subir el PDF');
+    return await response.json();
+}

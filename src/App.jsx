@@ -22,7 +22,6 @@ const Documentos = lazy(() => import('./pages/admin/Documentos.jsx'));
 const CrearCotizaciones = lazy(() => import('./pages/admin/CrearCotizaciones.jsx'));
 const CrearOrdenTrabajo = lazy(() => import('./pages/admin/CrearOrdenTrabajo.jsx'));
 const CrearReporteTrabajo = lazy(() => import('./pages/admin/CrearReporteTrabajo.jsx'));
-const HistorialDocumentos = lazy(() => import('./pages/admin/HistorialDocumentos.jsx'));
 const Ajustes = lazy(() => import('./pages/admin/Ajustes.jsx'));
 const TecnicoHome = lazy(() => import('./pages/tecnico/TecnicoHome.jsx'));
 const NuevaSolicitud = lazy(() => import('./pages/tecnico/NuevaSolicitud.jsx'));
@@ -110,7 +109,6 @@ function App() {
             <Route path="crear-cotizaciones" element={<CrearCotizaciones />} />
             <Route path="crear-orden-trabajo" element={<CrearOrdenTrabajo />} />
             <Route path="crear-reporte-trabajo" element={<CrearReporteTrabajo />} />
-            <Route path="historial-documentos" element={<HistorialDocumentos />} />
             <Route path="ajustes" element={<Ajustes />} />
           </Route>
 
