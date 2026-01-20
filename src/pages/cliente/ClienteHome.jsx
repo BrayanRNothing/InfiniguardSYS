@@ -1,508 +1,393 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import CotizacionForm from '../../components/forms/CotizacionForm.jsx';
+import ClienteCotizacionDetalle from '../../components/cliente/ClienteCotizacionDetalle.jsx';
 import Avatar from '../../components/ui/Avatar';
+import API_URL from '../../config/api';
 
 const ClienteHome = () => {
-  const [activeTab, setActiveTab] = useState('pendientes'); // pendientes | cotizadas | aprobadas | rechazadas | home | solicitar
+  const [activeView, setActiveView] = useState('home'); // home, crear, ajustes
+  const [activeStatusTab, setActiveStatusTab] = useState('pendientes'); // pendientes, en-proceso, terminadas
+  const [tipoServicio, setTipoServicio] = useState('');
   const [misSolicitudes, setMisSolicitudes] = useState([]);
   const [usuario, setUsuario] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    titulo: '',
-    tipo: 'equipo',
-    modelo: '',
-    direccion: '',
-    telefono: '',
-    notas: '',
-    foto: null
-  });
+  const [detalleSeleccionado, setDetalleSeleccionado] = useState(null);
+  const [showAllPendientes, setShowAllPendientes] = useState(false);
+  const [showAllEnProceso, setShowAllEnProceso] = useState(false);
+  const [showAllTerminadas, setShowAllTerminadas] = useState(false);
 
   useEffect(() => {
     const userGuardado = JSON.parse(sessionStorage.getItem('user'));
     setUsuario(userGuardado);
-    cargarSolicitudes(userGuardado);
+    if (userGuardado) cargarSolicitudes(userGuardado);
 
-    // Escuchar eventos de cambio de tab desde el layout
-    const handleTabChange = (event) => {
-      setActiveTab(event.detail);
-    };
-    window.addEventListener('changeClienteTab', handleTabChange);
-
-    // Auto-refresh cada 10 segundos
     const interval = setInterval(() => {
-      cargarSolicitudes(userGuardado);
+      if (userGuardado) cargarSolicitudes(userGuardado);
     }, 10000);
 
+    const handleTabChange = (e) => {
+      if (e.detail === 'home') setActiveView('home');
+      if (e.detail === 'solicitar') {
+        setTipoServicio('');
+        setActiveView('crear');
+      }
+      if (e.detail === 'ajustes') setActiveView('ajustes');
+    };
+
+    window.addEventListener('changeClienteTab', handleTabChange);
+
     return () => {
-      window.removeEventListener('changeClienteTab', handleTabChange);
       clearInterval(interval);
+      window.removeEventListener('changeClienteTab', handleTabChange);
     };
   }, []);
 
   const cargarSolicitudes = async (user) => {
     try {
-      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios');
+      const res = await fetch(`${API_URL}/api/servicios`);
       const data = await res.json();
-      const misData = data.filter(s => s.cliente === user?.nombre || s.usuario === user?.nombre);
+      const misData = data.filter(s => s.usuario === user?.nombre || s.cliente === user?.nombre);
       setMisSolicitudes(misData);
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, foto: reader.result });
-      };
-      reader.readAsDataURL(file);
-    }
+  const irACotizar = (tipo) => {
+    setTipoServicio(tipo);
+    setActiveView('crear');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.titulo || !formData.telefono) {
-      toast.error('Por favor completa los campos obligatorios');
-      return;
-    }
+  // Filtros de estado
+  const pendientes = misSolicitudes.filter(s => s.estado === 'pendiente' || s.estado === 'cotizado');
+  const enProceso = misSolicitudes.filter(s => s.estado === 'aprobado' || s.estado === 'en-proceso');
+  const terminadas = misSolicitudes.filter(s => s.estado === 'finalizado');
 
-    setLoading(true);
-    try {
-      const res = await fetch('https://infiniguardsys-production.up.railway.app/api/servicios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          cliente: usuario?.nombre,
-          usuario: usuario?.nombre,
-          estado: 'pendiente'
-        })
-      });
-
-      if (res.ok) {
-        toast.success('✅ Solicitud enviada correctamente');
-        setFormData({ titulo: '', tipo: 'equipo', modelo: '', direccion: '', telefono: '', notas: '', foto: null });
-        cargarSolicitudes(usuario);
-        setActiveTab('pendientes');
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error('Error al enviar solicitud');
-    } finally {
-      setLoading(false);
-    }
+  // Mapeo de estados a badges
+  const getEstadoBadge = (estado) => {
+    const badges = {
+      'pendiente': { text: 'Pendiente', color: 'bg-orange-100 text-orange-700' },
+      'cotizado': { text: 'Cotizado', color: 'bg-blue-100 text-blue-700' },
+      'aprobado': { text: 'Aprobado', color: 'bg-green-100 text-green-700' },
+      'en-proceso': { text: 'En Proceso', color: 'bg-purple-100 text-purple-700' },
+      'finalizado': { text: 'Finalizado', color: 'bg-gray-100 text-gray-700' },
+      'rechazado': { text: 'Rechazado', color: 'bg-red-100 text-red-700' }
+    };
+    return badges[estado] || { text: estado, color: 'bg-gray-100 text-gray-700' };
   };
 
-  const handleRespuestaCliente = async (id, respuesta) => {
-    try {
-      const res = await fetch(`https://infiniguardsys-production.up.railway.app/api/servicios/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          estadoCliente: respuesta,
-          estado: respuesta === 'aprobado' ? 'aprobado-cliente' : 'rechazado-cliente'
-        })
-      });
-
-      if (res.ok) {
-        const mensaje = respuesta === 'aprobado' ? '✅ Cotización aprobada' : respuesta === 'rechazado' ? '❌ Cotización rechazada' : '📞 Marcada para contacto';
-        toast.success(mensaje);
-        cargarSolicitudes(usuario);
-      }
-    } catch (error) {
-      console.error(error);
-    }
+  // Formatear fecha
+  const formatearFecha = (fecha) => {
+    if (!fecha) return '';
+    const date = new Date(fecha);
+    const day = date.getDate();
+    const month = date.toLocaleDateString('es-ES', { month: 'short' });
+    return `${day} ${month.charAt(0).toUpperCase() + month.slice(1)}`;
   };
 
-  // Filtrar solicitudes
-  const pendientes = misSolicitudes.filter(s => s.estado === 'pendiente');
-  const cotizadas = misSolicitudes.filter(s => s.estado === 'cotizado');
-  const enProceso = misSolicitudes.filter(s => s.estado === 'en-proceso');
-  const aprobadas = misSolicitudes.filter(s => s.estadoCliente === 'aprobado' || s.estado === 'aprobado-cliente');
-  const rechazadas = misSolicitudes.filter(s => s.estadoCliente === 'rechazado' || s.estado === 'rechazado-cliente');
-  const finalizadas = misSolicitudes.filter(s => s.estado === 'finalizado');
+  // Render de tarjeta de cotización en mosaico
+  const CotizacionCard = ({ cotizacion }) => {
+    const badge = getEstadoBadge(cotizacion.estado);
+    const tieneAsignacion = (cotizacion.estado === 'aprobado' || cotizacion.estado === 'en-proceso') && cotizacion.tecnicoAsignado;
+
+    return (
+      <div
+        onClick={() => setDetalleSeleccionado(cotizacion)}
+        className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-lg transition-all cursor-pointer"
+      >
+        <h3 className="font-bold text-gray-900 mb-1 text-base line-clamp-1">{cotizacion.titulo}</h3>
+        <p className="text-sm text-gray-500 mb-3">{cotizacion.cliente || cotizacion.usuario || 'Usuario'}</p>
+
+        {/* Badge de técnico asignado */}
+        {tieneAsignacion && (
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-3 mb-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
+                {cotizacion.tecnicoAsignado.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1">
+                <div className="text-xs text-gray-600">Técnico Asignado</div>
+                <div className="font-bold text-gray-900 text-sm">{cotizacion.tecnicoAsignado}</div>
+              </div>
+            </div>
+            {cotizacion.telefonoTecnico && (
+              <div className="text-xs text-gray-700 flex items-center gap-1 mb-1">
+                <span>📞</span>
+                <span>{cotizacion.telefonoTecnico}</span>
+              </div>
+            )}
+            {cotizacion.fechaProgramada && (
+              <div className="text-xs text-gray-700 flex items-center gap-1">
+                <span>📅</span>
+                <span>{new Date(cotizacion.fechaProgramada).toLocaleDateString('es-ES', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-sm text-gray-400">📅 {formatearFecha(cotizacion.fecha)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.color}`}>
+            {badge.text}
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setDetalleSeleccionado(cotizacion);
+            }}
+            className="text-blue-600 font-semibold text-sm hover:text-blue-700 flex items-center gap-1"
+          >
+            Ver detalles <span>≫</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render de lista de cotizaciones con "Ver más"
+  const ListaCotizaciones = ({ lista, showAll, setShowAll }) => {
+    const limit = 3;
+    const displayList = showAll ? lista : lista.slice(0, limit);
+    const hasMore = lista.length > limit;
+
+    return (
+      <div className="space-y-3">
+        {displayList.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">
+            <p className="text-sm">No hay cotizaciones aquí</p>
+          </div>
+        ) : (
+          <>
+            {displayList.map(cot => (
+              <CotizacionCard key={cot.id} cotizacion={cot} />
+            ))}
+            {hasMore && !showAll && (
+              <button
+                onClick={() => setShowAll(true)}
+                className="w-full py-3 text-blue-600 font-semibold text-sm hover:bg-blue-50 rounded-xl transition-all"
+              >
+                Ver más ({lista.length - limit} más)
+              </button>
+            )}
+            {showAll && lista.length > limit && (
+              <button
+                onClick={() => setShowAll(false)}
+                className="w-full py-3 text-gray-600 font-semibold text-sm hover:bg-gray-50 rounded-xl transition-all"
+              >
+                Ver menos
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
 
   // Vista HOME
   const renderHome = () => (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
-        <div className="flex items-center gap-4 mb-3">
-          <Avatar name={usuario?.nombre} size="xl" />
-          <div>
-            <h2 className="text-2xl font-bold">👋 Bienvenido, {usuario?.nombre?.split(' ')[0]}</h2>
-            <p className="text-blue-100">Gestiona tus solicitudes de servicio</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Resumen rápido */}
-      <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Resumen</h3>
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <div className="p-4 bg-orange-50 rounded-lg">
-            <div className="text-3xl font-bold text-orange-600">{pendientes.length}</div>
-            <div className="text-sm text-gray-600 mt-1">Pendientes</div>
-          </div>
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <div className="text-3xl font-bold text-blue-600">{cotizadas.length}</div>
-            <div className="text-sm text-gray-600 mt-1">Cotizadas</div>
-          </div>
-          <div className="p-4 bg-green-50 rounded-lg">
-            <div className="text-3xl font-bold text-green-600">{aprobadas.length}</div>
-            <div className="text-sm text-gray-600 mt-1">Aprobadas</div>
-          </div>
-          <div className="p-4 bg-red-50 rounded-lg">
-            <div className="text-3xl font-bold text-red-600">{rechazadas.length}</div>
-            <div className="text-sm text-gray-600 mt-1">Rechazadas</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderSolicitar = () => (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-8 border border-gray-200 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">📋 Solicitar Cotización</h2>
-      
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Servicio *</label>
-          <select value={formData.tipo} onChange={(e) => setFormData({...formData, tipo: e.target.value})} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-            <option value="equipo">🔧 Equipo Industrial</option>
-            <option value="recubrimiento">🎨 Aplicación de Recubrimiento</option>
-            <option value="instalacion">⚙️ Instalación</option>
-            <option value="mantenimiento">🛠️ Mantenimiento</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Título de la Solicitud *</label>
-          <input type="text" value={formData.titulo} onChange={(e) => setFormData({...formData, titulo: e.target.value})} placeholder="Ej: Recubrimiento para Tanque Industrial" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Modelo o Especificaciones</label>
-          <input type="text" value={formData.modelo} onChange={(e) => setFormData({...formData, modelo: e.target.value})} placeholder="Ej: Modelo X500" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Dirección del Servicio</label>
-          <input type="text" value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value})} placeholder="Calle, colonia, ciudad" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Teléfono de Contacto *</label>
-          <input type="tel" value={formData.telefono} onChange={(e) => setFormData({...formData, telefono: e.target.value})} placeholder="10 dígitos" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">📷 Adjuntar Foto (Opcional)</label>
-          <input type="file" accept="image/*" onChange={handleFileChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
-          {formData.foto && <img src={formData.foto} alt="Preview" className="mt-3 max-w-xs rounded-lg border" />}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Notas Adicionales</label>
-          <textarea value={formData.notas} onChange={(e) => setFormData({...formData, notas: e.target.value})} placeholder="Detalles adicionales..." rows="4" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-        </div>
-
-        <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg transition disabled:opacity-50">
-          {loading ? 'Enviando...' : '📤 Enviar Solicitud'}
-        </button>
-      </div>
-    </form>
-  );
-
-  const renderPendientes = () => (
-    <div>
-      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <span className="text-2xl">⏳</span> Solicitudes Pendientes
-      </h3>
-      {pendientes.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">No hay solicitudes pendientes</div>
-      ) : (
-        <div className="space-y-4">
-          {pendientes.map(sol => (
-            <div key={sol.id} className="bg-orange-50 border border-orange-200 rounded-lg p-4 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg text-orange-900">{sol.titulo}</h3>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-200 text-orange-800">
-                  PENDIENTE
-                </span>
-              </div>
-              <div className="text-sm text-gray-700 space-y-1">
-                <p><strong>Tipo:</strong> {sol.tipo}</p>
-                {sol.modelo && <p><strong>Modelo:</strong> {sol.modelo}</p>}
-                <p><strong>Dirección:</strong> {sol.direccion}</p>
-                <p><strong>Teléfono:</strong> {sol.telefono}</p>
-                {sol.notas && <p><strong>Notas:</strong> {sol.notas}</p>}
-                {sol.foto && <img src={sol.foto} alt="Foto" className="w-full max-w-xs rounded mt-2" />}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderCotizadas = () => (
-    <div>
-      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <span className="text-2xl">💬</span> Cotizaciones Recibidas
-      </h3>
-      {cotizadas.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">No hay cotizaciones disponibles</div>
-      ) : (
-        <div className="space-y-4">
-          {cotizadas.map(sol => (
-            <div key={sol.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg text-blue-900">{sol.titulo}</h3>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-200 text-blue-800">
-                  COTIZADO
-                </span>
-              </div>
-              <div className="text-sm text-gray-700 space-y-1 mb-3">
-                <p><strong>Tipo:</strong> {sol.tipo}</p>
-                {sol.modelo && <p><strong>Modelo:</strong> {sol.modelo}</p>}
-                <p><strong>Dirección:</strong> {sol.direccion}</p>
-                <p><strong>Teléfono:</strong> {sol.telefono}</p>
-              </div>
-              {!sol.estadoCliente && (sol.respuestaAdmin || sol.respuestaCotizacion) && (
-                <div className="bg-white border border-blue-300 rounded p-3">
-                  <p className="text-sm font-semibold text-blue-800 mb-1">💬 Respuesta del Admin:</p>
-                  <p className="text-sm text-blue-900 mb-1">{sol.respuestaAdmin || sol.respuestaCotizacion}</p>
-                  {(sol.precio || sol.precioEstimado) && <p className="text-sm font-bold text-blue-900 mb-3">Precio: ${sol.precio || sol.precioEstimado}</p>}
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => handleRespuestaCliente(sol.id, 'aprobado')}
-                      className="flex-1 bg-green-600 text-white py-2 px-3 rounded hover:bg-green-700 text-sm font-semibold"
-                    >
-                      ✅ Aprobar
-                    </button>
-                    <button
-                      onClick={() => handleRespuestaCliente(sol.id, 'rechazado')}
-                      className="flex-1 bg-red-600 text-white py-2 px-3 rounded hover:bg-red-700 text-sm font-semibold"
-                    >
-                      ❌ Rechazar
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderAprobadas = () => (
-    <div>
-      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <span className="text-2xl">✅</span> Solicitudes Aprobadas
-      </h3>
-      {aprobadas.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">No hay solicitudes aprobadas</div>
-      ) : (
-        <div className="space-y-4">
-          {aprobadas.map(sol => (
-            <div key={sol.id} className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg text-green-900">{sol.titulo}</h3>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-200 text-green-800">
-                  APROBADA
-                </span>
-              </div>
-              <div className="text-sm text-gray-700 space-y-1">
-                <p><strong>Tipo:</strong> {sol.tipo}</p>
-                {(sol.precio || sol.precioEstimado) && <p><strong>Precio:</strong> ${sol.precio || sol.precioEstimado}</p>}
-                <p><strong>Dirección:</strong> {sol.direccion}</p>
-                <p><strong>Teléfono:</strong> {sol.telefono}</p>
-                {(sol.respuestaAdmin || sol.respuestaCotizacion) && <p><strong>Nota Admin:</strong> {sol.respuestaAdmin || sol.respuestaCotizacion}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderRechazadas = () => (
-    <div>
-      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <span className="text-2xl">❌</span> Solicitudes Rechazadas
-      </h3>
-      {rechazadas.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">No hay solicitudes rechazadas</div>
-      ) : (
-        <div className="space-y-4">
-          {rechazadas.map(sol => (
-            <div key={sol.id} className="bg-red-50 border border-red-200 rounded-lg p-4 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg text-red-900">{sol.titulo}</h3>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-200 text-red-800">
-                  RECHAZADA
-                </span>
-              </div>
-              <div className="text-sm text-gray-700 space-y-1">
-                <p><strong>Tipo:</strong> {sol.tipo}</p>
-                <p><strong>Dirección:</strong> {sol.direccion}</p>
-                {(sol.respuestaAdmin || sol.respuestaCotizacion) && <p><strong>Motivo:</strong> {sol.respuestaAdmin || sol.respuestaCotizacion}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderEnProceso = () => (
-    <div>
-      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <span className="text-2xl">🔧</span> Servicios en Proceso
-      </h3>
-      {enProceso.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">No hay servicios en proceso</div>
-      ) : (
-        <div className="space-y-4">
-          {enProceso.map(sol => (
-            <div key={sol.id} className="bg-purple-50 border-2 border-purple-300 rounded-lg p-5 shadow-md">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-bold text-lg text-purple-900">{sol.titulo}</h3>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-200 text-purple-800 animate-pulse">
-                  EN PROCESO
-                </span>
-              </div>
-              
-              {/* Información del técnico asignado */}
-              {sol.tecnico && (
-                <div className="bg-white rounded-lg p-4 mb-3 border border-purple-200">
-                  <p className="text-sm font-bold text-purple-800 mb-2">👨‍🔧 Técnico Asignado:</p>
-                  <p className="text-base font-semibold text-gray-800">{sol.tecnico}</p>
-                </div>
-              )}
-              
-              {/* Fecha y hora programada */}
-              {(sol.fechaServicio || sol.horaServicio) && (
-                <div className="bg-blue-50 rounded-lg p-4 mb-3 border border-blue-200">
-                  <p className="text-sm font-bold text-blue-800 mb-2">📅 Servicio Programado:</p>
-                  {sol.fechaServicio && <p className="text-base text-gray-800"><strong>Fecha:</strong> {sol.fechaServicio}</p>}
-                  {sol.horaServicio && <p className="text-base text-gray-800"><strong>Hora:</strong> {sol.horaServicio}</p>}
-                </div>
-              )}
-              
-              {/* Detalles del servicio */}
-              <div className="text-sm text-gray-700 space-y-1 mt-3">
-                <p><strong>Tipo:</strong> {sol.tipo}</p>
-                {sol.precio && <p><strong>Precio:</strong> ${sol.precio}</p>}
-                <p><strong>Dirección:</strong> {sol.direccion}</p>
-                <p><strong>Teléfono:</strong> {sol.telefono}</p>
-                {sol.notas && <p><strong>Notas:</strong> {sol.notas}</p>}
-              </div>
-              
-              <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
-                <p className="text-xs text-green-700 text-center">
-                  ℹ️ El técnico llegará en la fecha y hora indicada
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderFinalizadas = () => (
-    <div>
-      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <span className="text-2xl">✅</span> Servicios Finalizados
-      </h3>
-      {finalizadas.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">No hay servicios finalizados</div>
-      ) : (
-        <div className="space-y-4">
-          {finalizadas.map(sol => (
-            <div key={sol.id} className="bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg text-gray-900">{sol.titulo}</h3>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-300 text-gray-800">
-                  FINALIZADO
-                </span>
-              </div>
-              <div className="text-sm text-gray-700 space-y-1">
-                <p><strong>Tipo:</strong> {sol.tipo}</p>
-                {sol.tecnico && <p><strong>Técnico:</strong> {sol.tecnico}</p>}
-                {sol.precio && <p><strong>Precio:</strong> ${sol.precio}</p>}
-                <p><strong>Fecha:</strong> {sol.fecha}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="space-y-6">
-      
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Hola, {usuario?.nombre || 'Cliente'} 👋</h1>
-        <p className="text-gray-500 text-sm">Panel de Solicitudes</p>
-      </div>
-
-      {/* --- MENU DE PESTAÑAS (TABS) --- */}
-      <div className="grid grid-cols-3 gap-1 p-1 bg-gray-200 rounded-xl mb-6">
-        <button 
-          onClick={() => setActiveTab('pendientes')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'pendientes' ? 'bg-white text-orange-600 shadow' : 'text-gray-500'}`}
+    <div className="pb-4">
+      {/* Pestañas de estado */}
+      <div className="flex gap-2 mb-6 overflow-x-auto px-1 pb-2 scrollbar-hide">
+        <button
+          onClick={() => {
+            setActiveStatusTab('pendientes');
+            setShowAllPendientes(false);
+          }}
+          className={`px-5 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${activeStatusTab === 'pendientes'
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
         >
           Pendientes
         </button>
-        <button 
-          onClick={() => setActiveTab('cotizadas')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'cotizadas' ? 'bg-white text-blue-600 shadow' : 'text-gray-500'}`}
+        <button
+          onClick={() => {
+            setActiveStatusTab('en-proceso');
+            setShowAllEnProceso(false);
+          }}
+          className={`px-5 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${activeStatusTab === 'en-proceso'
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
         >
-          Cotizadas
+          En proceso
         </button>
-        <button 
-          onClick={() => setActiveTab('en-proceso')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'en-proceso' ? 'bg-white text-purple-600 shadow' : 'text-gray-500'}`}
+        <button
+          onClick={() => {
+            setActiveStatusTab('terminadas');
+            setShowAllTerminadas(false);
+          }}
+          className={`px-5 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${activeStatusTab === 'terminadas'
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
         >
-          En Proceso
-        </button>
-        <button 
-          onClick={() => setActiveTab('aprobadas')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'aprobadas' ? 'bg-white text-green-600 shadow' : 'text-gray-500'}`}
-        >
-          Aprobadas
-        </button>
-        <button 
-          onClick={() => setActiveTab('finalizadas')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'finalizadas' ? 'bg-white text-gray-600 shadow' : 'text-gray-500'}`}
-        >
-          Finalizadas
-        </button>
-        <button 
-          onClick={() => setActiveTab('rechazadas')}
-          className={`py-2 text-xs font-bold rounded-lg transition ${activeTab === 'rechazadas' ? 'bg-white text-red-600 shadow' : 'text-gray-500'}`}
-        >
-          Rechazadas
+          Terminadas
         </button>
       </div>
 
-      {/* --- CONTENIDO DINÁMICO --- */}
+      {/* Contenido según pestaña activa */}
+      {activeStatusTab === 'pendientes' && (
+        <ListaCotizaciones lista={pendientes} showAll={showAllPendientes} setShowAll={setShowAllPendientes} />
+      )}
+      {activeStatusTab === 'en-proceso' && (
+        <ListaCotizaciones lista={enProceso} showAll={showAllEnProceso} setShowAll={setShowAllEnProceso} />
+      )}
+      {activeStatusTab === 'terminadas' && (
+        <ListaCotizaciones lista={terminadas} showAll={showAllTerminadas} setShowAll={setShowAllTerminadas} />
+      )}
+    </div>
+  );
+
+  // Vista CREAR
+  const renderCrear = () => (
+    <div className="pb-28">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Nueva Solicitud</h2>
+        <p className="text-gray-500">Selecciona el tipo de servicio que necesitas</p>
+      </div>
+
+      {!tipoServicio ? (
+        <div className="space-y-3">
+          {/* Aplicación de Recubrimiento */}
+          <button
+            onClick={() => setTipoServicio('Aplicación de Recubrimiento')}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all group text-left active:scale-98"
+          >
+            <div className="flex items-center gap-4">
+              <div className="text-5xl">🏗️</div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-1">Aplicación de Recubrimiento</h3>
+                <p className="text-blue-100 text-sm">Instalación de sistemas de protección y recubrimiento</p>
+              </div>
+              <svg className="w-6 h-6 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+
+          {/* Mantenimiento */}
+          <button
+            onClick={() => setTipoServicio('Mantenimiento')}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all group text-left active:scale-98"
+          >
+            <div className="flex items-center gap-4">
+              <div className="text-5xl">🔧</div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-1">Mantenimiento</h3>
+                <p className="text-orange-100 text-sm">Mantenimiento preventivo y correctivo de sistemas</p>
+              </div>
+              <svg className="w-6 h-6 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+
+          {/* Garantía Extendida */}
+          <button
+            onClick={() => setTipoServicio('Garantía Extendida')}
+            className="w-full bg-purple-500 hover:bg-purple-600 text-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all group text-left active:scale-98"
+          >
+            <div className="flex items-center gap-4">
+              <div className="text-5xl">🛡️</div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-1">Garantía Extendida</h3>
+                <p className="text-purple-100 text-sm">Extensión de cobertura y protección adicional</p>
+              </div>
+              <svg className="w-6 h-6 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+        </div>
+      ) : (
+        <div>
+          <button
+            onClick={() => setTipoServicio('')}
+            className="mb-4 text-gray-500 hover:text-blue-600 text-sm flex items-center gap-1"
+          >
+            ← Cambiar tipo de servicio
+          </button>
+          <CotizacionForm
+            titulo={`Solicitud de ${tipoServicio}`}
+            tipoServicio={tipoServicio}
+            onSuccess={() => {
+              setActiveView('home');
+              setTipoServicio('');
+              toast.success('Solicitud enviada correctamente');
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  // Vista AJUSTES
+  const renderAjustes = () => (
+    <div className="pb-4">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Ajustes</h2>
       <div className="space-y-4">
-        {activeTab === 'home' && renderHome()}
-        {activeTab === 'solicitar' && renderSolicitar()}
-        {activeTab === 'pendientes' && renderPendientes()}
-        {activeTab === 'cotizadas' && renderCotizadas()}
-        {activeTab === 'en-proceso' && renderEnProceso()}
-        {activeTab === 'aprobadas' && renderAprobadas()}
-        {activeTab === 'finalizadas' && renderFinalizadas()}
-        {activeTab === 'rechazadas' && renderRechazadas()}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+          <h3 className="font-bold text-gray-900 mb-3">Información del Perfil</h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between py-2 border-b border-gray-100">
+              <span className="text-gray-500">Nombre:</span>
+              <span className="font-semibold text-gray-900">{usuario?.nombre}</span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-gray-100">
+              <span className="text-gray-500">Usuario:</span>
+              <span className="font-semibold text-gray-900">{usuario?.usuario}</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-gray-500">Rol:</span>
+              <span className="font-semibold text-gray-900 capitalize">{usuario?.rol}</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            sessionStorage.clear();
+            window.location.href = '/';
+          }}
+          className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-2xl transition-all shadow-md active:scale-95"
+        >
+          🚪 Cerrar Sesión
+        </button>
       </div>
     </div>
   );
-};export default ClienteHome;
+
+
+  // Si hay detalle seleccionado, mostrar solo el detalle
+  if (detalleSeleccionado) {
+    return (
+      <ClienteCotizacionDetalle
+        cotizacion={detalleSeleccionado}
+        onClose={() => setDetalleSeleccionado(null)}
+        onUpdate={() => {
+          cargarSolicitudes(usuario);
+          setDetalleSeleccionado(null);
+        }}
+      />
+    );
+  }
+
+  return (
+    <>
+      {activeView === 'home' && renderHome()}
+      {activeView === 'crear' && renderCrear()}
+      {activeView === 'ajustes' && renderAjustes()}
+    </>
+  );
+};
+
+export default ClienteHome;

@@ -3,16 +3,18 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import * as THREE from 'three';
 import CELLS from 'vanta/dist/vanta.cells.min.js';
 import Avatar from '../components/ui/Avatar';
+import { getUser, logout } from '../utils/authUtils';
 
 const AdminLayout = () => {
   const location = useLocation();
   const vantaRef = useRef(null);
   const vantaInstanceRef = useRef(null);
   const [usuario, setUsuario] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Cargar usuario
-    const userGuardado = JSON.parse(sessionStorage.getItem('user'));
+    const userGuardado = getUser();
     setUsuario(userGuardado);
     if (vantaRef.current && !vantaInstanceRef.current) {
       try {
@@ -46,8 +48,8 @@ const AdminLayout = () => {
 
   // Las opciones basadas en TU diagrama
   const menuItems = [
-    { 
-      name: 'Dashboard', 
+    {
+      name: 'Dashboard',
       path: '/admin',
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -55,8 +57,8 @@ const AdminLayout = () => {
         </svg>
       )
     },
-    { 
-      name: 'Cotizaciones', 
+    {
+      name: 'Cotizaciones',
       path: '/admin/cotizaciones',
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -64,8 +66,8 @@ const AdminLayout = () => {
         </svg>
       )
     },
-    { 
-      name: 'Servicios', 
+    {
+      name: 'Servicios',
       path: '/admin/servicios',
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -73,8 +75,8 @@ const AdminLayout = () => {
         </svg>
       )
     },
-    { 
-      name: 'Comisiones', 
+    {
+      name: 'Comisiones',
       path: '/admin/comisiones',
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -83,8 +85,8 @@ const AdminLayout = () => {
         </svg>
       )
     },
-    { 
-      name: 'Usuarios', 
+    {
+      name: 'Usuarios',
       path: '/admin/usuarios',
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -92,8 +94,17 @@ const AdminLayout = () => {
         </svg>
       )
     },
-    { 
-      name: 'Ajustes', 
+    {
+      name: 'Documentos',
+      path: '/admin/documentos',
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
+        </svg>
+      )
+    },
+    {
+      name: 'Ajustes',
       path: '/admin/ajustes',
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -105,12 +116,15 @@ const AdminLayout = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      
+
       {/* 1. SIDEBAR (Barra Lateral) con Vanta.js */}
-      <aside ref={vantaRef} className="w-64 hidden md:flex flex-col relative overflow-hidden">
-        
+      <aside
+        ref={vantaRef}
+        className={`fixed inset-y-0 left-0 z-50 w-64 md:relative md:flex flex-col transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} overflow-hidden shadow-2xl md:shadow-none`}
+      >
+
         {/* Overlay para mejorar legibilidad */}
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-950 via-transparent to-blue-950 bg-opacity-40 pointer-events-none z-0"></div>
+        <div className="absolute inset-0 bg-linear-to-b from-blue-950 via-transparent to-blue-950 bg-opacity-40 pointer-events-none z-0"></div>
 
         {/* Contenido del sidebar */}
         <div className="relative z-10 flex flex-col h-full">
@@ -139,11 +153,10 @@ const AdminLayout = () => {
                 <li key={item.name}>
                   <Link
                     to={item.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                      location.pathname === item.path
-                        ? 'bg-blue-500 bg-opacity-30 text-white font-semibold shadow-lg shadow-blue-500/20 backdrop-blur-sm border border-blue-400 border-opacity-20'
-                        : 'text-blue-100 hover:bg-blue-500 hover:bg-opacity-20 hover:text-white'
-                    }`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${location.pathname === item.path
+                      ? 'bg-blue-500 bg-opacity-30 text-white font-semibold shadow-lg shadow-blue-500/20 backdrop-blur-sm border border-blue-400 border-opacity-20'
+                      : 'text-blue-100 hover:bg-blue-500 hover:bg-opacity-20 hover:text-white'
+                      }`}
                   >
                     {item.icon}
                     <span>{item.name}</span>
@@ -155,12 +168,12 @@ const AdminLayout = () => {
 
           {/* Botón Salir */}
           <div className="p-4">
-            <button 
+            <button
               onClick={() => {
-                sessionStorage.removeItem('user');
+                logout();
                 window.location.href = '/';
               }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-95"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-95"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
@@ -172,15 +185,42 @@ const AdminLayout = () => {
       </aside>
 
       {/* 2. ÁREA DE CONTENIDO (Aquí cambia lo que ves) */}
-      <main className="flex-1 overflow-auto">
-        <header className="h-16 bg-white shadow-sm flex items-center justify-between px-8 md:hidden">
-            {/* Header móvil simple */}
-            <span className="font-bold text-gray-700">Menú</span>
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <header className="h-16 bg-white shrink-0 shadow-sm flex items-center justify-between px-6 md:hidden">
+          {/* Header móvil funcional */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 -ml-2 text-gray-600 hover:text-blue-600 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {sidebarOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+            <span className="font-bold text-gray-800 tracking-tight">INFINIGUARD ADMIN</span>
+          </div>
+
+          {usuario && <Avatar name={usuario.nombre} size="sm" />}
         </header>
-        
-        <div className="p-8">
-            {/* <Outlet /> es el hueco donde se renderiza la página hija (ej. DashboardAdmin) */}
-            <Outlet />
+
+        {/* Overlay para móvil */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          ></div>
+        )}
+
+        <div className="flex-1 p-4 lg:p-8 overflow-auto flex flex-col min-h-0">
+          {/* <Outlet /> es el hueco donde se renderiza la página hija (ej. DashboardAdmin) */}
+          <Outlet />
         </div>
       </main>
 

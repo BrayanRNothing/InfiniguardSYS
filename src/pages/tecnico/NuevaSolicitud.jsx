@@ -5,8 +5,8 @@ function NuevaSolicitud() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState('');
 
   const tipos = [
-    { id: 'Compra de Equipo', label: 'Equipos', icon: '🛠️', descripcion: 'Solicitar cotización de equipos' },
-    { id: 'Servicio Industrial', label: 'Recubrimientos', icon: '🎨', descripcion: 'Solicitar servicio de recubrimiento' },
+    { id: 'Mantenimiento', label: 'Mantenimiento', icon: '🛠️', descripcion: 'Solicitar Mantenimiento' },
+    { id: 'Servicio Industrial', label: 'Recubrimientos', icon: '🛡️', descripcion: 'Solicitar servicio de recubrimiento' },
     { id: 'Extensión', label: 'Garantías', icon: '📋', descripcion: 'Solicitar extensión de garantía' },
   ];
 
@@ -15,13 +15,13 @@ function NuevaSolicitud() {
     const tipoInfo = tipos.find(t => t.id === tipoSeleccionado);
     return (
       <div className="max-w-2xl mx-auto">
-        <button 
+        <button
           onClick={() => setTipoSeleccionado('')}
           className="mb-4 text-blue-600 font-medium flex items-center gap-2"
         >
           ← Cambiar tipo de solicitud
         </button>
-        <CotizacionForm 
+        <CotizacionForm
           titulo={`Cotización de ${tipoInfo.label}`}
           tipoServicio={tipoSeleccionado}
         />

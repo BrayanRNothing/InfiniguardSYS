@@ -23,3 +23,18 @@ dist-ssr
 *.sln
 *.sw?
 backend/db.json
+
+# Base de datos SQLite
+*.db
+*.db-shm
+*.db-wal
+backend/database.db*
+
+# Uploads de usuarios
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Variables de entorno
+.env
+.env.local
+.env.production

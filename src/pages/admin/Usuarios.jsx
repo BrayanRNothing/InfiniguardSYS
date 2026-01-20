@@ -1,9 +1,12 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import Avatar from '../../components/ui/Avatar';
 import * as THREE from 'three';
 import CELLS from 'vanta/dist/vanta.cells.min.js';
 import toast from 'react-hot-toast';
+import API_URL from '../../config/api';
+import BotonMenu from '../../components/ui/BotonMenu';
 
 function ModalUsuario({ modoEdicion, formData, setFormData, handleSubmit, cerrarModal }) {
   const vantaRef = useRef(null);
@@ -87,7 +90,7 @@ function ModalUsuario({ modoEdicion, formData, setFormData, handleSubmit, cerrar
               <option value="admin" className="bg-gray-800">Administrador</option>
               <option value="tecnico" className="bg-gray-800">Técnico</option>
               <option value="distribuidor" className="bg-gray-800">Distribuidor</option>
-              <option value="cliente" className="bg-gray-800">Cliente</option>
+              <option value="usuario" className="bg-gray-800">Usuario</option>
             </select>
           </div>
           <div className="flex gap-3 mt-6">
@@ -114,7 +117,7 @@ function ModalUsuario({ modoEdicion, formData, setFormData, handleSubmit, cerrar
 function ConfirmarEliminarModal({ visible, nombre, onConfirm, onCancel, loading }) {
   if (!visible) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-100 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70" />
       <div className="relative z-10 w-full max-w-xs bg-white p-6 rounded-2xl border border-gray-200 shadow-2xl text-gray-800 flex flex-col items-center">
         <div className="text-4xl mb-2">⚠️</div>
@@ -138,7 +141,7 @@ function ConfirmarEliminarModal({ visible, nombre, onConfirm, onCancel, loading 
 }
 
 function Usuarios() {
-  const API_BASE = 'https://infiniguardsys-production.up.railway.app';
+  const API_BASE = API_URL;
   const [usuarios, setUsuarios] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [vistaActual, setVistaActual] = useState('menu');
@@ -149,7 +152,7 @@ function Usuarios() {
     nombre: '',
     email: '',
     password: '',
-    rol: 'cliente'
+    rol: 'usuario'
   });
 
   // Estado para confirmación de borrado
@@ -194,14 +197,14 @@ function Usuarios() {
 
   const cerrarModal = () => {
     setModalAbierto(false);
-    setFormData({ nombre: '', email: '', password: '', rol: 'cliente' });
+    setFormData({ nombre: '', email: '', password: '', rol: 'usuario' });
     setModoEdicion(false);
     setUsuarioEditando(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.nombre || !formData.email || (!modoEdicion && !formData.password)) {
       toast.error('Completa todos los campos obligatorios');
       return;
@@ -274,7 +277,7 @@ function Usuarios() {
   const admins = usuarios.filter(u => u.rol === 'admin');
   const tecnicos = usuarios.filter(u => u.rol === 'tecnico');
   const distribuidores = usuarios.filter(u => u.rol === 'distribuidor');
-  const clientes = usuarios.filter(u => u.rol === 'cliente');
+  const usuariosFinales = usuarios.filter(u => u.rol === 'usuario');
 
   const renderTarjetaUsuario = (user, color) => (
     <div key={user.id} className={`bg-${color}-50 border-2 border-${color}-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all`}>
@@ -286,12 +289,12 @@ function Usuarios() {
             <span>📧</span> {user.email}
           </p>
           <div className={`bg-${color}-200 text-${color}-800 px-3 py-1 rounded-full text-xs font-bold inline-block mt-2 uppercase`}>
-            {user.rol === 'admin' && '👑 '}{user.rol === 'tecnico' && '🔧 '}{user.rol === 'distribuidor' && '📦 '}{user.rol === 'cliente' && '👤 '}
+            {user.rol === 'admin' && '👑 '}{user.rol === 'tecnico' && '🔧 '}{user.rol === 'distribuidor' && '📦 '}{user.rol === 'usuario' && '👤 '}
             {user.rol}
           </div>
         </div>
       </div>
-      
+
       <div className="bg-white/50 rounded-lg p-3 mb-4 space-y-1">
         <p className="text-xs text-gray-600 flex items-center gap-2">
           <span className="font-semibold">🆔 ID:</span>
@@ -319,88 +322,67 @@ function Usuarios() {
       </div>
     </div>
   );
-
+  {/*####################################### 4 Tarjetas ######################################################*/ }
   if (vistaActual === 'menu') {
     return (
-      <>
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
-            <p className="text-gray-500 text-sm">Administra usuarios por rol</p>
-          </div>
-          {cargando ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50 mb-4"></div>
-              <span className="text-blue-600 font-semibold">Cargando usuarios...</span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-              <button onClick={() => setVistaActual('admin')} className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
-                <div className="text-7xl mb-4">👑</div>
-                <h2 className="text-2xl font-bold mb-2">Administradores</h2>
-                <p className="text-red-100 text-sm mb-2">Control total del sistema</p>
-                <div className="mt-4 bg-red-700/80 rounded-full px-6 py-2">
-                  <span className="text-2xl font-bold">{admins.length}</span>
-                  <span className="text-sm ml-2">usuario{admins.length !== 1 ? 's' : ''}</span>
-                </div>
-              </button>
-              <button onClick={() => setVistaActual('tecnico')} className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
-                <div className="text-7xl mb-4">🔧</div>
-                <h2 className="text-2xl font-bold mb-2">Técnicos</h2>
-                <p className="text-blue-100 text-sm mb-2">Personal de campo</p>
-                <div className="mt-4 bg-blue-700/80 rounded-full px-6 py-2">
-                  <span className="text-2xl font-bold">{tecnicos.length}</span>
-                  <span className="text-sm ml-2">técnico{tecnicos.length !== 1 ? 's' : ''}</span>
-                </div>
-              </button>
-              <button onClick={() => setVistaActual('distribuidor')} className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
-                <div className="text-7xl mb-4">📦</div>
-                <h2 className="text-2xl font-bold mb-2">Distribuidores</h2>
-                <p className="text-purple-100 text-sm mb-2">Gestión de inventario</p>
-                <div className="mt-4 bg-purple-700/80 rounded-full px-6 py-2">
-                  <span className="text-2xl font-bold">{distribuidores.length}</span>
-                  <span className="text-sm ml-2">distribuidor{distribuidores.length !== 1 ? 'es' : ''}</span>
-                </div>
-              </button>
-              <button onClick={() => setVistaActual('cliente')} className="bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-2xl p-10 shadow-xl transition transform hover:scale-105 h-72 flex flex-col items-center justify-center">
-                <div className="text-7xl mb-4">👤</div>
-                <h2 className="text-2xl font-bold mb-2">Clientes</h2>
-                <p className="text-green-100 text-sm mb-2">Base de clientes</p>
-                <div className="mt-4 bg-green-700/80 rounded-full px-6 py-2">
-                  <span className="text-2xl font-bold">{clientes.length}</span>
-                  <span className="text-sm ml-2">cliente{clientes.length !== 1 ? 's' : ''}</span>
-                </div>
-              </button>
-            </div>
-          )}
+      <div className="w-full h-full animate-fadeInUp flex flex-col min-h-0">
+        <div className="mb-6 shrink-0">
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-500">Gestión de Usuarios</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">Administra usuarios y permisos del sistema</p>
         </div>
-        {modalAbierto && (
-          <ModalUsuario
-            modoEdicion={modoEdicion}
-            formData={formData}
-            setFormData={setFormData}
-            handleSubmit={handleSubmit}
-            cerrarModal={cerrarModal}
-          />
+
+        {cargando ? (
+          <div className="grow flex flex-col items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50 mb-4"></div>
+            <span className="text-blue-600 font-semibold text-xl">Cargando usuarios...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full grow">
+            <BotonMenu
+              gradient="from-red-500/80 to-red-600/80 hover:from-red-600/90 hover:to-red-700/90"
+              icon="👑"
+              titulo="Administradores"
+              count={admins.length}
+              onClick={() => setVistaActual('admin')}
+            />
+            <BotonMenu
+              gradient="from-blue-500/80 to-blue-600/80 hover:from-blue-600/90 hover:to-blue-700/90"
+              icon="🔧"
+              titulo="Técnicos"
+              count={tecnicos.length}
+              onClick={() => setVistaActual('tecnico')}
+            />
+            <BotonMenu
+              gradient="from-purple-500/80 to-purple-600/80 hover:from-purple-600/90 hover:to-purple-700/90"
+              icon="📦"
+              titulo="Distribuidores"
+              count={distribuidores.length}
+              onClick={() => setVistaActual('distribuidor')}
+            />
+            <BotonMenu
+              gradient="from-green-500/80 to-green-600/80 hover:from-green-600/90 hover:to-green-700/90"
+              icon="👤"
+              titulo="Usuarios"
+              count={usuariosFinales.length}
+              onClick={() => setVistaActual('usuario')}
+            />
+          </div>
         )}
-        <ConfirmarEliminarModal
-          visible={confirmarEliminar.visible}
-          nombre={confirmarEliminar.nombre}
-          onConfirm={confirmarEliminarUsuario}
-          onCancel={() => setConfirmarEliminar({ visible: false, id: null, nombre: '' })}
-          loading={eliminando}
-        />
-      </>
+      </div>
     );
   }
+
+  {/*####################################### 4 Tarjetas ######################################################*/ }
   if (vistaActual === 'admin') {
     return (
       <>
-        <div className="max-w-6xl mx-auto">
-          <button onClick={() => setVistaActual('menu')} className="mb-6 text-blue-600 hover:text-blue-700 font-semibold">« Volver</button>
-          <div className="mb-8 flex justify-between items-center">
-            <div><h1 className="text-3xl font-bold text-gray-800">👑 Administradores</h1><p className="text-gray-500 text-sm">{admins.length} usuarios</p></div>
-            <button onClick={() => abrirModal('admin')} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold">+ Crear Admin</button>
+        <div className="max-w-7xl mx-auto animate-fadeInUp pb-12 w-full h-screen overflow-auto">
+          <button onClick={() => setVistaActual('menu')} className="mb-6 text-gray-600 hover:text-gray-700 font-semibold flex items-center gap-2 transition-colors">← Volver al menú</button>
+          <div className="mb-0 flex justify-between items-center flex-wrap gap-4">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{admins.length} usuarios con control total</p>
+            </div>
+            <button onClick={() => abrirModal('admin')} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition-all active:scale-95">+ Crear Admin</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{admins.map(user => renderTarjetaUsuario(user, 'red'))}</div>
         </div>
@@ -426,11 +408,13 @@ function Usuarios() {
   if (vistaActual === 'tecnico') {
     return (
       <>
-        <div className="max-w-6xl mx-auto">
-          <button onClick={() => setVistaActual('menu')} className="mb-6 text-blue-600 hover:text-blue-700 font-semibold">« Volver</button>
-          <div className="mb-8 flex justify-between items-center">
-            <div><h1 className="text-3xl font-bold text-gray-800">🔧 Técnicos</h1><p className="text-gray-500 text-sm">{tecnicos.length} usuarios</p></div>
-            <button onClick={() => abrirModal('tecnico')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold">+ Crear Técnico</button>
+        <div className="max-w-7xl mx-auto animate-fadeInUp pb-12 w-full h-screen overflow-auto">
+          <button onClick={() => setVistaActual('menu')} className="mb-6 text-gray-600 hover:text-gray-700 font-semibold flex items-center gap-2 transition-colors">← Volver al menú</button>
+          <div className="mb-0 flex justify-between items-center flex-wrap gap-4">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{tecnicos.length} especialistas asignados</p>
+            </div>
+            <button onClick={() => abrirModal('tecnico')} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition-all active:scale-95">+ Crear Técnico</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{tecnicos.map(user => renderTarjetaUsuario(user, 'blue'))}</div>
         </div>
@@ -456,11 +440,13 @@ function Usuarios() {
   if (vistaActual === 'distribuidor') {
     return (
       <>
-        <div className="max-w-6xl mx-auto">
-          <button onClick={() => setVistaActual('menu')} className="mb-6 text-blue-600 hover:text-blue-700 font-semibold">« Volver</button>
-          <div className="mb-8 flex justify-between items-center">
-            <div><h1 className="text-3xl font-bold text-gray-800">📦 Distribuidores</h1><p className="text-gray-500 text-sm">{distribuidores.length} usuarios</p></div>
-            <button onClick={() => abrirModal('distribuidor')} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-bold">+ Crear Distribuidor</button>
+        <div className="max-w-7xl mx-auto animate-fadeInUp pb-12 w-full h-screen overflow-auto">
+          <button onClick={() => setVistaActual('menu')} className="mb-6 text-gray-600 hover:text-gray-700 font-semibold flex items-center gap-2 transition-colors">← Volver al menú</button>
+          <div className="mb-0 flex justify-between items-center flex-wrap gap-4">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{distribuidores.length} socios de distribución</p>
+            </div>
+            <button onClick={() => abrirModal('distribuidor')} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition-all active:scale-95">+ Crear Distribuidor</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{distribuidores.map(user => renderTarjetaUsuario(user, 'purple'))}</div>
         </div>
@@ -483,16 +469,18 @@ function Usuarios() {
       </>
     );
   }
-  if (vistaActual === 'cliente') {
+  if (vistaActual === 'usuario') {
     return (
       <>
-        <div className="max-w-6xl mx-auto">
-          <button onClick={() => setVistaActual('menu')} className="mb-6 text-blue-600 hover:text-blue-700 font-semibold">« Volver</button>
-          <div className="mb-8 flex justify-between items-center">
-            <div><h1 className="text-3xl font-bold text-gray-800">👤 Clientes</h1><p className="text-gray-500 text-sm">{clientes.length} usuarios</p></div>
-            <button onClick={() => abrirModal('cliente')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">+ Crear Cliente</button>
+        <div className="max-w-7xl mx-auto animate-fadeInUp pb-12 w-full h-screen overflow-auto">
+          <button onClick={() => setVistaActual('menu')} className="mb-6 text-gray-600 hover:text-gray-700 font-semibold flex items-center gap-2 transition-colors">← Volver al menú</button>
+          <div className="mb-0 flex justify-between items-center flex-wrap gap-4">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{usuariosFinales.length} usuarios registrados</p>
+            </div>
+            <button onClick={() => abrirModal('usuario')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition-all active:scale-95">+ Crear Usuario</button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{clientes.map(user => renderTarjetaUsuario(user, 'green'))}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{usuariosFinales.map(user => renderTarjetaUsuario(user, 'green'))}</div>
         </div>
         {modalAbierto && (
           <ModalUsuario
