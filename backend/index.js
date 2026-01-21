@@ -8,6 +8,10 @@ import pkg from 'pg';
 import dotenv from 'dotenv';
 import { migrarDocumentos } from './migrations/documentos.js';
 import crearRutasDocumentos from './routes/documentos.js';
+import crearRutasPNC from './routes/pnc.js';
+import crearRutasDAE from './routes/dae.js';
+
+
 
 dotenv.config();
 const { Pool } = pkg;
@@ -143,6 +147,86 @@ const initDB = async () => {
     // Migrar documentos
     await migrarDocumentos(pool);
 
+    // Tabla PNC (Reportes)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS pnc_reports (
+        id TEXT PRIMARY KEY,
+        folio TEXT,
+        cliente TEXT,
+        fecha DATE,
+        data JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Tabla Usuarios DAE (Independientes)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS dae_users (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        rol TEXT NOT NULL DEFAULT 'usuario'
+      )
+    `);
+
+    // Tabla Catálogos DAE (Estandarización)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS dae_catalogs (
+        id SERIAL PRIMARY KEY,
+        categoria TEXT NOT NULL, -- 'defecto', 'area', 'operador', 'supervisor'
+        valor TEXT NOT NULL,
+        UNIQUE(categoria, valor)
+      )
+    `);
+
+    // Insertar usuario administrador por defecto para DAE si no existe
+    const daeAdminCheck = await pool.query('SELECT 1 FROM dae_users WHERE email = $1', ['admin@dae.com']);
+    if (daeAdminCheck.rowCount === 0) {
+      await pool.query(
+        'INSERT INTO dae_users (nombre, email, password, rol) VALUES ($1, $2, $3, $4)',
+        ['Admin DAE', 'admin@dae.com', 'dae123', 'admin']
+      );
+    }
+
+    // Pre-poblar catálogos DAE si están vacíos
+    const catalogCheck = await pool.query('SELECT 1 FROM dae_catalogs LIMIT 1');
+    if (catalogCheck.rowCount === 0) {
+      const defaultAreas = [
+        'Limpieza y Entubado', 'Rolado', 'Expansión', 'Burst Test',
+        'Leak Test', 'Hydro Test', 'Lavado', 'Pintura'
+      ];
+      const defaultDefects = [
+        'Pieza Mal Ensamblada', 'Pieza Dañada', 'Sin Identificación', 'Laminado',
+        'Fuga de Helio', 'Fuga de Agua', 'Fuga de Aire', 'Falta de Roscas',
+        'Enterrones con Diodo', 'Roscas Dañadas', 'Grietas', 'Mal Corte',
+        'Mal Identificada', 'Planicidad', 'Tubo de Cobre Dañado', 'Mala Nivelación',
+        'Inclusiones', 'Falta de Fusión', 'Falta de Penetración', 'Porosidad',
+        'Garganta Insuficiente', 'Pierna Insuficiente', 'Corte Biselado',
+        'Pintura Mal Aplicada', 'Oxidación', 'Poros', 'Socavados', 'Falta de Limpieza',
+        'Falta de Soldadura', 'Falta de Remates', 'Medida Fuera de Especificación',
+        'Falta de Componentes', 'Solape', 'Mala Expansión', 'Dobles Invertido'
+      ];
+      const defaultAuditors = [
+        'Auditor de Calidad 1', 'Auditor de Calidad 2'
+      ];
+
+      for (const area of defaultAreas) {
+        await pool.query('INSERT INTO dae_catalogs (categoria, valor) VALUES ($1, $2)', ['area', area]);
+      }
+      for (const defect of defaultDefects) {
+        await pool.query('INSERT INTO dae_catalogs (categoria, valor) VALUES ($1, $2)', ['defecto', defect]);
+      }
+      for (const auditor of defaultAuditors) {
+        await pool.query('INSERT INTO dae_catalogs (categoria, valor) VALUES ($1, $2)', ['auditor', auditor]);
+      }
+      console.log('✅ Catálogos DAE pre-poblados correctamente');
+    }
+
+
+
+
+
   } catch (err) {
     console.error('❌ Error inicializando DB:', err.message);
   }
@@ -169,6 +253,10 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Registrar rutas de documentos
 app.use('/api', crearRutasDocumentos(pool));
+app.use('/api/pnc', crearRutasPNC(pool));
+app.use('/api/dae', crearRutasDAE(pool));
+
+
 
 // --- RUTAS ---
 

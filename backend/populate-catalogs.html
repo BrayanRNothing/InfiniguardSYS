@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poblar Catálogos DAE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e293b;
+            color: white;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #334155;
+            border-radius: 8px;
+            min-height: 50px;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Poblar Catálogos DAE</h1>
+    <p>Haz clic en el botón para insertar los catálogos por defecto (Áreas y Defectos) en la base de datos.</p>
+    
+    <button onclick="populateCatalogs()">Poblar Catálogos</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function populateCatalogs() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '⏳ Insertando catálogos...';
+            
+            try {
+                const response = await fetch('http://localhost:4000/api/dae/catalogs/populate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ <strong>¡Éxito!</strong><br>
+                            ${data.message}<br>
+                            Total de catálogos: ${data.total}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ❌ <strong>Error:</strong> ${data.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ <strong>Error de conexión:</strong><br>
+                        ${error.message}<br><br>
+                        Asegúrate de que el backend esté corriendo en http://localhost:4000
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
