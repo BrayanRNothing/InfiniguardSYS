@@ -155,9 +155,19 @@ export async function obtenerTodasLasCotizaciones() {
 }
 
 /**
+ * Obtener el próximo número de cotización
+ */
+export async function obtenerProximoNumeroCotizacion() {
+    const response = await fetch(`${API_URL}/api/standalone-cotizaciones/next-number`);
+    if (!response.ok) throw new Error('Error al obtener próximo número');
+    const data = await response.json();
+    return data.numero;
+}
+
+/**
  * Guardar o actualizar una cotización
  */
-export async function guardarCotizacionSimple(datos) {
+export async function guardarCotizacionSimple(datos, isUpdate = false) {
     const response = await fetch(`${API_URL}/api/standalone-cotizaciones`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -168,7 +178,8 @@ export async function guardarCotizacionSimple(datos) {
             titulo: datos.titulo,
             datos: datos,
             pdf_url: datos.pdfUrl,
-            total: datos.total
+            total: datos.total,
+            isUpdate: isUpdate
         })
     });
     if (!response.ok) throw new Error('Error al guardar la cotización');

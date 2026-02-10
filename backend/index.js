@@ -606,20 +606,51 @@ app.get('/api/standalone-cotizaciones', async (req, res) => {
   }
 });
 
-app.post('/api/standalone-cotizaciones', async (req, res) => {
-  const { numero, fecha, cliente_nombre, titulo, datos, pdf_url, total } = req.body;
+// Obtener el próximo número de cotización
+app.get('/api/standalone-cotizaciones/next-number', async (req, res) => {
   try {
-    await pool.query(`
-      INSERT INTO cotizaciones (numero, fecha, cliente_nombre, titulo, datos, pdf_url, total)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (numero) DO UPDATE SET
-        fecha = EXCLUDED.fecha,
-        cliente_nombre = EXCLUDED.cliente_nombre,
-        titulo = EXCLUDED.titulo,
-        datos = EXCLUDED.datos,
-        pdf_url = EXCLUDED.pdf_url,
-        total = EXCLUDED.total
-    `, [numero, fecha, cliente_nombre, titulo, JSON.stringify(datos), pdf_url, total]);
+    const { rows } = await pool.query(`
+      SELECT numero FROM cotizaciones 
+      WHERE numero LIKE 'COT-%' 
+      ORDER BY numero DESC 
+      LIMIT 1
+    `);
+    
+    let nextNumber = 13000; // número inicial
+    if (rows.length > 0) {
+      const lastNumber = parseInt(rows[0].numero.split('-')[1]);
+      nextNumber = lastNumber + 1;
+    }
+    
+    const formattedNumber = `COT-${nextNumber.toString().padStart(6, '0')}`;
+    res.json({ success: true, numero: formattedNumber });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/standalone-cotizaciones', async (req, res) => {
+  const { numero, fecha, cliente_nombre, titulo, datos, pdf_url, total, isUpdate } = req.body;
+  try {
+    if (isUpdate) {
+      // Actualizar cotización existente
+      await pool.query(`
+        UPDATE cotizaciones SET
+          fecha = $2,
+          cliente_nombre = $3,
+          titulo = $4,
+          datos = $5,
+          pdf_url = $6,
+          total = $7
+        WHERE numero = $1
+      `, [numero, fecha, cliente_nombre, titulo, JSON.stringify(datos), pdf_url, total]);
+    } else {
+      // Crear nueva cotización
+      await pool.query(`
+        INSERT INTO cotizaciones (numero, fecha, cliente_nombre, titulo, datos, pdf_url, total)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [numero, fecha, cliente_nombre, titulo, JSON.stringify(datos), pdf_url, total]);
+    }
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

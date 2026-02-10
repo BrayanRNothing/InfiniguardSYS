@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 import logoImg from '../../assets/LOGOUPDM.png';
-import { guardarCotizacionSimple, subirPDFCotizacion } from '../../utils/documentStorage';
+import { guardarCotizacionSimple, subirPDFCotizacion, obtenerProximoNumeroCotizacion } from '../../utils/documentStorage';
 import API_URL from '../../config/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -17,13 +17,19 @@ const CrearCotizaciones = () => {
     const editData = location.state?.cotizacion;
     const isEditing = !!editData;
 
-    // Get next quotation number for preview
-    const getNextQuotationNumber = () => {
-        const current = parseInt(localStorage.getItem('lastQuotationNumber') || '12999', 10);
-        return `COT-${(current + 1).toString().padStart(6, '0')}`;
-    };
+    const [previewQuotationNumber, setPreviewQuotationNumber] = useState(editData?.numero || 'COT-XXXXXX');
 
-    const [previewQuotationNumber, setPreviewQuotationNumber] = useState(getNextQuotationNumber());
+    // Obtener el próximo número de cotización al cargar (solo si no es edición)
+    useEffect(() => {
+        if (!isEditing) {
+            obtenerProximoNumeroCotizacion()
+                .then(numero => setPreviewQuotationNumber(numero))
+                .catch(err => {
+                    console.error('Error obteniendo número:', err);
+                    setPreviewQuotationNumber('COT-ERROR');
+                });
+        }
+    }, [isEditing]);
 
     // Form data
     const [formData, setFormData] = useState({
@@ -143,12 +149,12 @@ const CrearCotizaciones = () => {
             let yPos = 10;
 
             // Generate/Use quotation number
-            let quotationNumber = editData?.numero;
-            if (!isEditing) {
-                let currentQuotationNumber = parseInt(localStorage.getItem('lastQuotationNumber') || '12999', 10);
-                currentQuotationNumber += 1;
-                localStorage.setItem('lastQuotationNumber', currentQuotationNumber.toString());
-                quotationNumber = `COT-${currentQuotationNumber.toString().padStart(6, '0')}`;
+            let quotationNumber;
+            if (isEditing) {
+                quotationNumber = editData.numero;
+            } else {
+                // Obtener número fresco del servidor para evitar conflictos
+                quotationNumber = await obtenerProximoNumeroCotizacion();
             }
 
             // Logo on the left
@@ -484,7 +490,7 @@ const CrearCotizaciones = () => {
                 pdfUrl: uploadRes.url
             };
 
-            await guardarCotizacionSimple(datosDocumento);
+            await guardarCotizacionSimple(datosDocumento, isEditing);
 
             toast.success(isEditing ? 'Cotización actualizada' : 'Cotización guardada', { id: loadingToast });
             setTimeout(() => navigate('/admin/documentos'), 1500);
