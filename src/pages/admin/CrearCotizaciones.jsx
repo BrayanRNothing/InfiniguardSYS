@@ -369,11 +369,42 @@ const CrearCotizaciones = () => {
             doc.text('TOTAL:', totalsLabelX, yPos);
             doc.text(formatCurrency(calcularTotal()), totalsX, yPos, { align: 'right' });
 
-            yPos += 30; // Increased spacing to push notes and terms lower
+            yPos += 15; // Spacing after totals
 
-            // Notes section (above terms and conditions)
+            // Pre-calculate space needed for notes and terms
+            const pageHeight = doc.internal.pageSize.height;
+            const footerHeight = 20; // Space reserved for footer
+            const maxY = pageHeight - footerHeight;
+            
+            let notasHeight = 0;
+            let notasLines = [];
             if (formData.notas) {
-                if (yPos > 230) {
+                doc.setFontSize(8);
+                notasLines = doc.splitTextToSize(formData.notas, pageWidth - 28);
+                notasHeight = 10 + 6 + (notasLines.length * 4) + 12; // title + spacing + text + section spacing
+            }
+
+            let termsHeight = 0;
+            let termLines = [];
+            if (formData.terminosCondiciones) {
+                doc.setFontSize(8);
+                termLines = doc.splitTextToSize(formData.terminosCondiciones, pageWidth - 28);
+                termsHeight = 10 + 6 + (termLines.length * 4); // title + spacing + text
+            }
+
+            const totalContentHeight = notasHeight + termsHeight;
+            const spaceAvailable = maxY - yPos;
+
+            // If both sections don't fit on current page, start on new page
+            if (totalContentHeight > spaceAvailable && totalContentHeight < maxY - 20) {
+                doc.addPage();
+                yPos = 20;
+            }
+
+            // Notes section
+            if (formData.notas) {
+                // Check if notes alone need a new page (if we didn't already add one)
+                if (yPos + notasHeight > maxY) {
                     doc.addPage();
                     yPos = 20;
                 }
@@ -386,14 +417,14 @@ const CrearCotizaciones = () => {
 
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
-                const notasLines = doc.splitTextToSize(formData.notas, pageWidth - 28);
                 doc.text(notasLines, 14, yPos);
-                yPos += notasLines.length * 4 + 12; // Increased spacing between sections
+                yPos += notasLines.length * 4 + 12; // Text height + spacing between sections
             }
 
-            // Terms and Conditions (moved lower)
+            // Terms and Conditions
             if (formData.terminosCondiciones) {
-                if (yPos > 230) {
+                // Check if terms need a new page
+                if (yPos + termsHeight > maxY) {
                     doc.addPage();
                     yPos = 20;
                 }
@@ -406,7 +437,6 @@ const CrearCotizaciones = () => {
 
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
-                const termLines = doc.splitTextToSize(formData.terminosCondiciones, pageWidth - 28);
                 doc.text(termLines, 14, yPos);
             }
 
