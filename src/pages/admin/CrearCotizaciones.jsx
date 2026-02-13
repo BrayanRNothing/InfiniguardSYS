@@ -940,9 +940,9 @@ const CrearCotizaciones = () => {
                             <button
                                 onClick={generarPDF}
                                 disabled={loading}
-                                className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                                className="w-full mt-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl flex items-center justify-center gap-2"
                             >
-                                {loading ? '⏳ Generando PDF...' : '📄 Generar y Descargar PDF'}
+                                {loading ? '⏳ Procesando...' : isEditing ? '💾 Guardar Cambios y Descargar' : '📄 Generar y Descargar PDF'}
                             </button>
                         </div>
                     </div>
@@ -954,15 +954,15 @@ const CrearCotizaciones = () => {
                         <button
                             onClick={generarPDF}
                             disabled={loading}
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full shadow-2xl transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-6 rounded-full shadow-2xl transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? '⏳ Generando...' : '📄 Descargar PDF'}
+                            {loading ? '⏳ Procesando...' : isEditing ? '💾 Guardar Cambios' : '📄 Descargar PDF'}
                         </button>
                         <button
                             onClick={() => setShowPreview(true)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-2xl transition flex items-center gap-2"
+                            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-2xl transition flex items-center gap-2"
                         >
-                            Mostrar Vista Previa
+                            👁️ Vista Previa
                         </button>
                     </div>
                 )}
