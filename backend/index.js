@@ -657,10 +657,33 @@ app.get('/api/standalone-cotizaciones/next-number', async (req, res) => {
 
 app.post('/api/standalone-cotizaciones', async (req, res) => {
   const { numero, fecha, cliente_nombre, titulo, datos, pdf_url, total, isUpdate, oldNumero } = req.body;
+  
+  // Log para debug
+  console.log('📝 Guardando cotización:', { numero, cliente_nombre, titulo, isUpdate, oldNumero, hasDatos: !!datos });
+  
   try {
+    // Asegurar que datos sea un objeto válido o string JSON
+    let datosJSON;
+    if (typeof datos === 'string') {
+      datosJSON = datos;
+    } else if (datos && typeof datos === 'object') {
+      datosJSON = JSON.stringify(datos);
+    } else {
+      datosJSON = null;
+    }
+    
+    // Extraer cliente_nombre de datos si no viene directamente
+    const clienteNombreFinal = cliente_nombre || datos?.cliente?.nombre || datos?.clienteNombre || null;
+    const tituloFinal = titulo || datos?.titulo || null;
+    const fechaFinal = fecha || datos?.fecha || null;
+    const totalFinal = total || datos?.total || 0;
+    const pdfUrlFinal = pdf_url || datos?.pdfUrl || null;
+    
     if (isUpdate) {
       // Si hay oldNumero, significa que se está cambiando el número
       const numeroActualizar = oldNumero || numero;
+      
+      console.log('🔄 Actualizando cotización:', numeroActualizar, '→', numero);
       
       await pool.query(`
         UPDATE cotizaciones SET
@@ -672,16 +695,21 @@ app.post('/api/standalone-cotizaciones', async (req, res) => {
           pdf_url = $6,
           total = $7
         WHERE numero = $8
-      `, [numero, fecha, cliente_nombre, titulo, JSON.stringify(datos), pdf_url, total, numeroActualizar]);
+      `, [numero, fechaFinal, clienteNombreFinal, tituloFinal, datosJSON, pdfUrlFinal, totalFinal, numeroActualizar]);
     } else {
+      console.log('➕ Creando nueva cotización:', numero);
+      
       // Crear nueva cotización
       await pool.query(`
         INSERT INTO cotizaciones (numero, fecha, cliente_nombre, titulo, datos, pdf_url, total)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [numero, fecha, cliente_nombre, titulo, JSON.stringify(datos), pdf_url, total]);
+      `, [numero, fechaFinal, clienteNombreFinal, tituloFinal, datosJSON, pdfUrlFinal, totalFinal]);
     }
+    
+    console.log('✅ Cotización guardada exitosamente:', numero);
     res.json({ success: true });
   } catch (error) {
+    console.error('❌ Error guardando cotización:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });

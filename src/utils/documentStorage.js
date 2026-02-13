@@ -168,23 +168,43 @@ export async function obtenerProximoNumeroCotizacion() {
  * Guardar o actualizar una cotización
  */
 export async function guardarCotizacionSimple(datos, isUpdate = false) {
+    // Log para debug
+    console.log('📝 Frontend - Enviando cotización:', { 
+        numero: datos.numero, 
+        cliente: datos.cliente?.nombre,
+        isUpdate,
+        hasPdfUrl: !!datos.pdfUrl
+    });
+    
+    const payload = {
+        numero: datos.numero,
+        fecha: datos.fecha,
+        cliente_nombre: datos.cliente?.nombre || datos.clienteNombre || null,
+        titulo: datos.titulo,
+        datos: datos,  // El objeto completo con todos los datos
+        pdf_url: datos.pdfUrl || null,
+        total: datos.total || 0,
+        isUpdate: isUpdate,
+        oldNumero: datos.oldNumero || null
+    };
+    
+    console.log('📤 Payload a enviar:', JSON.stringify(payload).substring(0, 200) + '...');
+    
     const response = await fetch(`${API_URL}/api/standalone-cotizaciones`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            numero: datos.numero,
-            fecha: datos.fecha,
-            cliente_nombre: datos.cliente?.nombre || datos.clienteNombre,
-            titulo: datos.titulo,
-            datos: datos,
-            pdf_url: datos.pdfUrl,
-            total: datos.total,
-            isUpdate: isUpdate,
-            oldNumero: datos.oldNumero || null  // Para cambiar el número de cotización
-        })
+        body: JSON.stringify(payload)
     });
-    if (!response.ok) throw new Error('Error al guardar la cotización');
-    return await response.json();
+    
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Error del servidor:', errorData);
+        throw new Error(errorData.message || 'Error al guardar la cotización');
+    }
+    
+    const result = await response.json();
+    console.log('✅ Respuesta del servidor:', result);
+    return result;
 }
 
 /**
