@@ -539,7 +539,7 @@ const CrearCotizaciones = () => {
                 notas: formData.notas,
                 terminosCondiciones: formData.terminosCondiciones,
                 creadoPor: formData.creadoPor || 'Admin',
-                pdfUrl: editData?.pdfUrl || '', // Mantener el PDF existente
+                pdfUrl: editData?.pdfUrl || null, // Mantener el PDF existente o null
                 ...(isEditing && editData?.numero !== quotationNumber && { oldNumero: editData.numero })
             };
 

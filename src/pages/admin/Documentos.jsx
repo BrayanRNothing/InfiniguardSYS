@@ -72,30 +72,24 @@ function Documentos() {
         const toastId = toast.loading('Actualizando número...');
 
         try {
-            const res = await fetch(`${API_URL}/api/standalone-cotizaciones`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...doc,
-                    numero: nuevoNumero.trim(),
-                    isUpdate: true,
-                    oldNumero: doc.numero
-                })
-            });
+            // Usamos la misma estructura robusta que en CrearCotizaciones
+            const datosActualizados = {
+                ...doc,
+                numero: nuevoNumero.trim(),
+                pdfUrl: doc.pdfUrl, // Asegurar que viaja la URL del PDF
+                oldNumero: doc.numero
+            };
 
-            if (res.ok) {
-                toast.dismiss(toastId);
-                toast.success('Número actualizado');
-                setEditandoNumero(null);
-                cargarHistorial();
-            } else {
-                toast.dismiss(toastId);
-                toast.error('Error al actualizar');
-            }
+            await guardarCotizacionSimple(datosActualizados, true);
+
+            toast.dismiss(toastId);
+            toast.success('Número actualizado');
+            setEditandoNumero(null);
+            cargarHistorial();
         } catch (error) {
             console.error(error);
             toast.dismiss(toastId);
-            toast.error('Error de conexión');
+            toast.error('Error al actualizar');
         }
     };
 
