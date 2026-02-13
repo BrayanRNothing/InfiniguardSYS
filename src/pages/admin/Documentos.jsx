@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../../config/api';
 import BotonMenu from '../../components/ui/BotonMenu';
-import { obtenerTodasLasCotizaciones, eliminarCotizacionSimple } from '../../utils/documentStorage';
+import { obtenerTodasLasCotizaciones, eliminarCotizacionSimple, subirPDFCotizacion } from '../../utils/documentStorage';
 import { formatearFecha } from '../../utils/documentConverter';
+import { generarPDFCotizacion } from '../../utils/pdfGenerator';
 import toast from 'react-hot-toast';
 
 function Documentos() {
@@ -69,21 +70,60 @@ function Documentos() {
             return;
         }
 
-        const toastId = toast.loading('Actualizando número...');
+        const toastId = toast.loading('Actualizando número y regenerando PDF...');
 
         try {
+            let nuevaPdfUrl = doc.pdfUrl;
+
+            // Intentar regenerar el PDF con el nuevo número si existen datos
+            if (doc.datos && doc.productos && Array.isArray(doc.productos)) {
+                try {
+                    // Extraer los datos necesarios para el generador
+                    // doc.datos usualmente tiene todo, asegurémonos
+                    const formData = {
+                        fecha: doc.fecha,
+                        validez: doc.datos.validez || '30',
+                        titulo: doc.titulo,
+                        moneda: doc.datos.moneda || 'MXN',
+                        descuento: doc.datos.descuento || '0',
+                        impuesto: doc.datos.impuesto || '16',
+                        descripcion: doc.datos.descripcion || '',
+                        notas: doc.datos.notas || '',
+                        terminosCondiciones: doc.tos || doc.datos.terminosCondiciones || '',
+                        clienteNombre: doc.cliente?.nombre || doc.clienteNombre || '',
+                        clienteEmpresa: doc.cliente?.empresa || doc.clienteEmpresa || '',
+                        clienteEmail: doc.cliente?.email || doc.clienteEmail || '',
+                        clienteTelefono: doc.cliente?.telefono || doc.clienteTelefono || '',
+                        clienteDireccion: doc.cliente?.direccion || doc.clienteDireccion || '',
+                        creadoPor: doc.datos.creadoPor || 'Admin'
+                    };
+
+                    const items = doc.productos; // Asumiendo que products está en la raíz del objeto doc
+                    
+                    const pdfFile = await generarPDFCotizacion(formData, items, nuevoNumero.trim());
+                    const uploadRes = await subirPDFCotizacion(pdfFile);
+                    nuevaPdfUrl = uploadRes.url;
+                    
+                } catch (pdfError) {
+                    console.error('Error regenerando PDF:', pdfError);
+                    toast.error('No se pudo regenerar el PDF, se mantendrá el antiguo', { id: toastId });
+                    // Continuamos para guardar el número al menos
+                }
+            }
+
             // Usamos la misma estructura robusta que en CrearCotizaciones
             const datosActualizados = {
                 ...doc,
                 numero: nuevoNumero.trim(),
-                pdfUrl: doc.pdfUrl, // Asegurar que viaja la URL del PDF
-                oldNumero: doc.numero
+                pdfUrl: nuevaPdfUrl, // Nueva URL regenerada
+                oldNumero: doc.numero,
+                oldPdfUrl: doc.pdfUrl // Enviamos URL vieja para que backend borre
             };
 
             await guardarCotizacionSimple(datosActualizados, true);
 
             toast.dismiss(toastId);
-            toast.success('Número actualizado');
+            toast.success('Número actualizado y PDF regenerado');
             setEditandoNumero(null);
             cargarHistorial();
         } catch (error) {

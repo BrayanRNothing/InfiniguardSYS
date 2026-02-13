@@ -656,7 +656,7 @@ app.get('/api/standalone-cotizaciones/next-number', async (req, res) => {
 });
 
 app.post('/api/standalone-cotizaciones', async (req, res) => {
-  const { numero, fecha, cliente_nombre, titulo, datos, pdf_url, total, isUpdate, oldNumero } = req.body;
+  const { numero, fecha, cliente_nombre, titulo, datos, pdf_url, total, isUpdate, oldNumero, oldPdfUrl } = req.body;
   
   // Log para debug
   console.log('📝 Guardando cotización:', { numero, cliente_nombre, titulo, isUpdate, oldNumero, hasDatos: !!datos });
@@ -696,6 +696,18 @@ app.post('/api/standalone-cotizaciones', async (req, res) => {
           total = $7
         WHERE numero = $8
       `, [numero, fechaFinal, clienteNombreFinal, tituloFinal, datosJSON, pdfUrlFinal, totalFinal, numeroActualizar]);
+
+      // 🧹 Limpieza de PDF antiguo (si cambio URL y enviaron oldPdfUrl)
+      if (oldPdfUrl && pdfUrlFinal && oldPdfUrl !== pdfUrlFinal) {
+          const oldPath = path.join(__dirname, oldPdfUrl);
+          if (fs.existsSync(oldPath)) {
+              fs.unlink(oldPath, (err) => {
+                  if (err) console.error('⚠️ Error eliminando PDF viejo:', err);
+                  else console.log('🗑️ PDF antiguo eliminado:', oldPdfUrl);
+              });
+          }
+      }
+
     } else {
       console.log('➕ Creando nueva cotización:', numero);
       
