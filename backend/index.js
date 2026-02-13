@@ -634,20 +634,23 @@ app.get('/api/standalone-cotizaciones/next-number', async (req, res) => {
 });
 
 app.post('/api/standalone-cotizaciones', async (req, res) => {
-  const { numero, fecha, cliente_nombre, titulo, datos, pdf_url, total, isUpdate } = req.body;
+  const { numero, fecha, cliente_nombre, titulo, datos, pdf_url, total, isUpdate, oldNumero } = req.body;
   try {
     if (isUpdate) {
-      // Actualizar cotización existente
+      // Si hay oldNumero, significa que se está cambiando el número
+      const numeroActualizar = oldNumero || numero;
+      
       await pool.query(`
         UPDATE cotizaciones SET
+          numero = $1,
           fecha = $2,
           cliente_nombre = $3,
           titulo = $4,
           datos = $5,
           pdf_url = $6,
           total = $7
-        WHERE numero = $1
-      `, [numero, fecha, cliente_nombre, titulo, JSON.stringify(datos), pdf_url, total]);
+        WHERE numero = $8
+      `, [numero, fecha, cliente_nombre, titulo, JSON.stringify(datos), pdf_url, total, numeroActualizar]);
     } else {
       // Crear nueva cotización
       await pool.query(`

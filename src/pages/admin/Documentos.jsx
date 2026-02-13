@@ -12,6 +12,8 @@ function Documentos() {
     const [vistaActual, setVistaActual] = useState('menu'); // 'menu' o 'historial'
     const [loading, setLoading] = useState(false);
     const [busqueda, setBusqueda] = useState('');
+    const [editandoNumero, setEditandoNumero] = useState(null);
+    const [nuevoNumero, setNuevoNumero] = useState('');
 
     useEffect(() => {
         if (vistaActual === 'historial') {
@@ -54,6 +56,47 @@ function Documentos() {
 
     const handleEditar = (doc) => {
         navigate('/admin/crear-cotizaciones', { state: { cotizacion: doc } });
+    };
+
+    const handleEditarNumero = (doc) => {
+        setEditandoNumero(doc.numero);
+        setNuevoNumero(doc.numero);
+    };
+
+    const handleGuardarNumero = async (doc) => {
+        if (!nuevoNumero.trim()) {
+            toast.error('El número no puede estar vacío');
+            return;
+        }
+
+        const toastId = toast.loading('Actualizando número...');
+
+        try {
+            const res = await fetch(`${API_URL}/api/standalone-cotizaciones`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...doc,
+                    numero: nuevoNumero.trim(),
+                    isUpdate: true,
+                    oldNumero: doc.numero
+                })
+            });
+
+            if (res.ok) {
+                toast.dismiss(toastId);
+                toast.success('Número actualizado');
+                setEditandoNumero(null);
+                cargarHistorial();
+            } else {
+                toast.dismiss(toastId);
+                toast.error('Error al actualizar');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.dismiss(toastId);
+            toast.error('Error de conexión');
+        }
     };
 
     const filteredDocs = documentos.filter(doc =>
@@ -152,17 +195,65 @@ function Documentos() {
                                 </tr>
                             ) : (
                                 filteredDocs.map((doc) => (
-                                    <tr key={`${doc.servicioId}-${doc.numero}`} className="hover:bg-blue-50/20 transition-colors">
-                                        <td className="px-6 py-4 font-mono font-bold text-blue-600">{doc.numero}</td>
+                                    <tr key={`${doc.servicioId}-${doc.numero}`} className="hover:bg-blue-50/50 transition-colors group">
+                                        <td className="px-6 py-4">
+                                            {editandoNumero === doc.numero ? (
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={nuevoNumero}
+                                                        onChange={(e) => setNuevoNumero(e.target.value)}
+                                                        className="font-mono font-bold text-blue-600 bg-white px-3 py-1.5 rounded-lg border-2 border-blue-400 focus:ring-2 focus:ring-blue-500 outline-none w-36"
+                                                        autoFocus
+                                                    />
+                                                    <button onClick={() => handleGuardarNumero(doc)} className="text-green-600 hover:text-green-700 text-lg font-bold">✓</button>
+                                                    <button onClick={() => setEditandoNumero(null)} className="text-red-500 hover:text-red-600 text-lg">✕</button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2 group/numero">
+                                                    <span className="font-mono font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
+                                                        {doc.numero}
+                                                    </span>
+                                                    <button 
+                                                        onClick={() => handleEditarNumero(doc)} 
+                                                        className="opacity-0 group-hover/numero:opacity-100 text-blue-400 hover:text-blue-600 transition-all text-sm"
+                                                        title="Editar número"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 text-gray-600">{formatearFecha(doc.fecha)}</td>
                                         <td className="px-6 py-4 font-bold text-gray-900">
                                             {doc.cliente?.nombre || doc.servicioCliente}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-3">
-                                                <button onClick={() => handleDescargar(doc)} className="hover:text-blue-600 transition-colors" title="Ver PDF">📄</button>
-                                                <button onClick={() => handleEditar(doc)} className="hover:text-amber-600 transition-colors" title="Editar">✏️</button>
-                                                <button onClick={() => handleEliminar(doc)} className="hover:text-red-600 transition-colors" title="Eliminar">🗑️</button>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button 
+                                                    onClick={() => handleDescargar(doc)} 
+                                                    className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm"
+                                                    title="Ver PDF"
+                                                >
+                                                    <span>📄</span>
+                                                    <span className="hidden sm:inline">Ver PDF</span>
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleEditar(doc)} 
+                                                    className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm"
+                                                    title="Editar"
+                                                >
+                                                    <span>✏️</span>
+                                                    <span className="hidden sm:inline">Editar</span>
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleEliminar(doc)} 
+                                                    className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm"
+                                                    title="Eliminar"
+                                                >
+                                                    <span>🗑️</span>
+                                                    <span className="hidden sm:inline">Eliminar</span>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
