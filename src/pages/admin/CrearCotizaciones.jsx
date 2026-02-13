@@ -487,7 +487,9 @@ const CrearCotizaciones = () => {
                 notas: formData.notas,
                 terminosCondiciones: formData.terminosCondiciones,
                 creadoPor: formData.creadoPor || 'Admin',
-                pdfUrl: uploadRes.url
+                pdfUrl: uploadRes.url,
+                // Si estamos editando y el número cambió, incluir el número antiguo
+                ...(isEditing && editData?.numero !== quotationNumber && { oldNumero: editData.numero })
             };
 
             await guardarCotizacionSimple(datosDocumento, isEditing);
@@ -580,6 +582,30 @@ const CrearCotizaciones = () => {
                         <h2 className="text-lg font-bold text-gray-800 mb-4">Detalles de la Cotización</h2>
 
                         <div className="space-y-4">
+                            {/* Número de Cotización - Editable solo en modo edición */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">
+                                    Número de Cotización {isEditing && <span className="text-blue-500">(Editable)</span>}
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={previewQuotationNumber}
+                                        onChange={(e) => setPreviewQuotationNumber(e.target.value)}
+                                        disabled={!isEditing}
+                                        className={`flex-1 px-3 py-1.5 text-sm font-mono font-bold border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                            isEditing 
+                                                ? 'border-blue-300 bg-blue-50 text-blue-700' 
+                                                : 'border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed'
+                                        }`}
+                                        placeholder="COT-XXXXXX"
+                                    />
+                                    {!isEditing && (
+                                        <span className="text-xs text-gray-400">Auto-generado</span>
+                                    )}
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Título *</label>
                                 <input

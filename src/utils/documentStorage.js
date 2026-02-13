@@ -179,7 +179,8 @@ export async function guardarCotizacionSimple(datos, isUpdate = false) {
             datos: datos,
             pdf_url: datos.pdfUrl,
             total: datos.total,
-            isUpdate: isUpdate
+            isUpdate: isUpdate,
+            oldNumero: datos.oldNumero || null  // Para cambiar el número de cotización
         })
     });
     if (!response.ok) throw new Error('Error al guardar la cotización');

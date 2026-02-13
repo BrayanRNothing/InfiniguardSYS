@@ -317,6 +317,28 @@ const uploadDocumentos = multer({
 
 app.use(cors());
 app.use(express.json());
+
+// Middleware para manejar rutas de archivos antiguas (uploads/) y nuevas (uploads/documentos/)
+app.use('/uploads', (req, res, next) => {
+  const filePath = path.join(UPLOADS_DIR, req.path);
+  
+  // Si el archivo existe en la ruta solicitada, servirlo
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    return res.sendFile(filePath);
+  }
+  
+  // Si no existe y no es una ruta de documentos, buscar en documentos/
+  if (!req.path.startsWith('/documentos/')) {
+    const altPath = path.join(DOCUMENTOS_DIR, req.path);
+    if (fs.existsSync(altPath) && fs.statSync(altPath).isFile()) {
+      return res.sendFile(altPath);
+    }
+  }
+  
+  // Fallback al static normal
+  next();
+});
+
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Registrar rutas de documentos
