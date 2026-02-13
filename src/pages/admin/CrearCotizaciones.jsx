@@ -151,7 +151,8 @@ const CrearCotizaciones = () => {
             // Generate/Use quotation number
             let quotationNumber;
             if (isEditing) {
-                quotationNumber = editData.numero;
+                // Usar el número editado por el usuario (previewQuotationNumber)
+                quotationNumber = previewQuotationNumber;
             } else {
                 // Obtener número fresco del servidor para evitar conflictos
                 quotationNumber = await obtenerProximoNumeroCotizacion();
