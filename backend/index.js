@@ -427,14 +427,14 @@ app.post('/api/servicios', upload.fields([{ name: 'foto', maxCount: 1 }, { name:
   }
 });
 
-app.put('/api/servicios/:id', upload.single('archivo'), async (req, res) => {
+app.put('/api/servicios/:id', uploadDocumentos.single('archivo'), async (req, res) => {
   const { id } = req.params;
   const update = req.body;
   let estadoCambiado = false;
 
   try {
     if (req.file) {
-      const pdfPath = `uploads/${req.file.filename}`;
+      const pdfPath = `uploads/documentos/${req.file.filename}`;
       await pool.query('UPDATE servicios SET pdfCotizacion = $1 WHERE id = $2', [pdfPath, id]);
     }
 
@@ -508,6 +508,10 @@ app.put('/api/servicios/:id', upload.single('archivo'), async (req, res) => {
 
     if (update.porcentajeComision !== undefined) {
       await pool.query('UPDATE servicios SET porcentajeComision = $1 WHERE id = $2', [update.porcentajeComision, id]);
+    }
+
+    if (update.folio) {
+      await pool.query('UPDATE servicios SET folio = $1 WHERE id = $2', [update.folio, id]);
     }
 
     // Si cambió el estado, notificar al cliente

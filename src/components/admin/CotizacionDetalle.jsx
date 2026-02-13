@@ -8,6 +8,8 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
     const [respuesta, setRespuesta] = useState({ texto: '', precio: '' });
     const [archivo, setArchivo] = useState(null);
     const [imagenZoom, setImagenZoom] = useState(null);
+    const [folio, setFolio] = useState(cotizacion.folio || '');
+    const [editandoFolio, setEditandoFolio] = useState(false);
 
     const handleEnviarCotizacion = async () => {
         if (!respuesta.texto || !respuesta.precio) {
@@ -92,18 +94,77 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
         }
     };
 
+    const handleActualizarFolio = async () => {
+        if (!folio.trim()) {
+            toast.error('El folio no puede estar vacío');
+            return;
+        }
+
+        const toastId = toast.loading('Actualizando folio...');
+
+        try {
+            const res = await fetch(`${API_URL}/api/servicios/${cotizacion.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folio: folio.trim() })
+            });
+
+            if (res.ok) {
+                toast.dismiss(toastId);
+                toast.success('✅ Folio actualizado');
+                setEditandoFolio(false);
+                if (onUpdate) onUpdate();
+            } else {
+                toast.dismiss(toastId);
+                toast.error('Error al actualizar');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.dismiss(toastId);
+            toast.error('Error de conexión');
+        }
+    };
+
     const fotoUrl = getSafeUrl(cotizacion.foto);
 
     return (
         <div className="h-[calc(100vh-2rem)] flex flex-col animate-fadeIn bg-gray-50/50">
             {/* Barra Superior */}
-            <div className="flex items-center justify-between mb-4 shrink-0 px-1">
+            <div className="flex items-center justify-between mb-4 shrink-0 px-1 gap-4">
                 <button onClick={onClose} className="group flex items-center text-gray-500 hover:text-blue-600 transition font-medium text-sm">
                     <div className=" group-hover:border-blue-200 h-8 w-8 flex items-center justify-center mr-2 transition">←</div>
                     Volver al listado
                 </button>
-                <div className="bg-white px-3 py-1 rounded-full border border-gray-200 text-xs font-mono text-gray-400 shadow-sm">
-                    Ticket ID: <span className="text-gray-600 font-bold">#{cotizacion.id}</span>
+                
+                <div className="flex items-center gap-3">
+                    {/* Folio Editable */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-xl border border-blue-200 shadow-sm">
+                        {editandoFolio ? (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={folio}
+                                    onChange={(e) => setFolio(e.target.value)}
+                                    className="w-32 px-2 py-1 text-xs font-mono border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    placeholder="COT-XXXXX"
+                                    autoFocus
+                                />
+                                <button onClick={handleActualizarFolio} className="text-green-600 hover:text-green-700 text-sm">✓</button>
+                                <button onClick={() => { setEditandoFolio(false); setFolio(cotizacion.folio || ''); }} className="text-red-500 hover:text-red-600 text-sm">✕</button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-blue-500 font-semibold uppercase">Folio:</span>
+                                <span className="text-xs font-mono text-blue-700 font-bold">{folio || 'Sin asignar'}</span>
+                                <button onClick={() => setEditandoFolio(true)} className="text-blue-400 hover:text-blue-600 transition text-xs">✏️</button>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Ticket ID */}
+                    <div className="bg-white px-3 py-1 rounded-full border border-gray-200 text-xs font-mono text-gray-400 shadow-sm">
+                        ID: <span className="text-gray-600 font-bold">#{cotizacion.id}</span>
+                    </div>
                 </div>
             </div>
 
@@ -278,20 +339,24 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                     ></textarea>
                                 </div>
 
-                                <hr className="border-white" />
+                                <hr className="border-gray-200" />
 
                                 <div className="pt-4 flex flex-col gap-3">
                                     <button
                                         onClick={handleEnviarCotizacion}
-                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition active:scale-[0.98] flex justify-center items-center gap-2"
+                                        className="group relative w-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-xl shadow-xl shadow-blue-300/50 hover:shadow-2xl hover:shadow-blue-400/60 transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3 overflow-hidden"
                                     >
-                                        <span>🚀</span> Enviar Respuesta
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                                        <span className="text-2xl group-hover:scale-110 transition-transform duration-300">🚀</span>
+                                        <span className="text-base relative z-10">Enviar Cotización</span>
                                     </button>
                                     <button
                                         onClick={handleRechazarCotizacionTecnico}
-                                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-red-200 hover:shadow-red-300 transition active:scale-[0.98] flex justify-center items-center gap-2"
+                                        className="group relative w-full bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white font-bold py-4 px-6 rounded-xl shadow-xl shadow-red-300/50 hover:shadow-2xl hover:shadow-red-400/60 transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3 overflow-hidden"
                                     >
-                                        <span>❌</span> Rechazar Solicitud
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                                        <span className="text-2xl group-hover:rotate-12 transition-transform duration-300">❌</span>
+                                        <span className="text-base relative z-10">Rechazar Solicitud</span>
                                     </button>
                                 </div>
                             </div>

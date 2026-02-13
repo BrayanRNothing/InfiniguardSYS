@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import API_URL from '../../config/api';
 import CotizacionDetalle from '../../components/admin/CotizacionDetalle';
 import BotonMenu from '../../components/ui/BotonMenu';
@@ -10,6 +11,38 @@ function Cotizaciones() {
     const [detalleCot, setDetalleCot] = useState(null);
     // Imagen zoom para la vista de lista
     const [imagenZoom, setImagenZoom] = useState(null);
+
+    const handleDescargarArchivo = async (rutaRelativa, nombreArchivo) => {
+        if (!rutaRelativa) {
+            toast.error('No hay archivo disponible');
+            return;
+        }
+
+        const urlCompleta = getSafeUrl(rutaRelativa);
+        const toastId = toast.loading('Iniciando descarga...');
+
+        try {
+            const response = await fetch(urlCompleta);
+            if (!response.ok) throw new Error('El archivo no está disponible en el servidor');
+
+            const blob = await response.blob();
+            const urlBlob = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = urlBlob;
+            a.download = nombreArchivo || 'archivo_descarga';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(urlBlob);
+
+            toast.dismiss(toastId);
+            toast.success('Descarga completada');
+        } catch (error) {
+            console.error(error);
+            toast.dismiss(toastId);
+            toast.error('❌ Error: Archivo no encontrado');
+        }
+    };
 
     useEffect(() => {
         cargarCotizaciones();
@@ -129,30 +162,91 @@ function Cotizaciones() {
                             <div className="flex-1 overflow-y-auto pr-2 pb-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {(vistaActual === 'pendientes' ? pendientes : vistaActual === 'aprobadas' ? aprobadas : vistaActual === 'cotizadas' ? cotizadas : rechazadas).map(cot => (
-                                        <div key={cot.id} className="bg-white rounded-xl border border-gray-400 transition-all duration-300 overflow-hidden flex flex-col h-full group">
-                                            <div className="h-40 w-full bg-gray-100 relative overflow-hidden">
+                                        <div key={cot.id} className="bg-white rounded-xl border border-gray-300 hover:border-blue-400 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full group">
+                                            {/* Imagen */}
+                                            <div className="h-48 w-full bg-gray-100 relative overflow-hidden">
                                                 {cot.foto ? (
                                                     <>
                                                         <img
                                                             src={getSafeUrl(cot.foto)}
                                                             alt="Evidencia"
-                                                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                             onError={(e) => e.target.style.display = 'none'}
                                                         />
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
-                                                            <button onClick={(e) => { e.stopPropagation(); setImagenZoom(getSafeUrl(cot.foto)); }} className="bg-white text-gray-800 p-2 rounded-full border border-gray-200 transform translate-y-4 group-hover:translate-y-0 transition">🔍</button>
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-4">
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); setImagenZoom(getSafeUrl(cot.foto)); }} 
+                                                                className="bg-white/95 hover:bg-white text-gray-800 px-4 py-2 rounded-full font-semibold text-xs shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-2"
+                                                            >
+                                                                🔍 Ver imagen
+                                                            </button>
                                                         </div>
                                                     </>
-                                                ) : <div className="h-full flex flex-col items-center justify-center text-gray-400"><span className="text-4xl">📄</span></div>}
-                                            </div>
-                                            <div className="p-4 flex-1 flex flex-col">
-                                                <div className="mb-2"><span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded uppercase">{cot.usuario || cot.cliente}</span></div>
-                                                <h3 className="font-bold text-md text-gray-800 mb-1 line-clamp-1">{cot.titulo}</h3>
-                                                <p className="text-xs text-gray-500 mb-3 line-clamp-2 flex-1">{cot.descripcion}</p>
-                                                {vistaActual === 'pendientes' && (
-                                                    <button onClick={() => setDetalleCot(cot)} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition flex items-center justify-center gap-2 text-sm">Ver detalles</button>
+                                                ) : (
+                                                    <div className="h-full flex flex-col items-center justify-center text-gray-300 bg-gradient-to-br from-gray-50 to-gray-100">
+                                                        <span className="text-5xl mb-2">📄</span>
+                                                        <span className="text-xs font-medium">Sin imagen</span>
+                                                    </div>
                                                 )}
-                                                {vistaActual === 'aprobadas' && <div className="text-green-600 font-bold text-lg">${cot.precio}</div>}
+                                                {/* Badge de estado en la imagen */}
+                                                <div className="absolute top-3 right-3">
+                                                    <span className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg backdrop-blur-sm ${
+                                                        cot.estado === 'pendiente' ? 'bg-orange-500/90 text-white' :
+                                                        cot.estado === 'cotizado' ? 'bg-blue-500/90 text-white' :
+                                                        cot.estado === 'aprobado' || cot.estadoCliente === 'aprobado' ? 'bg-green-500/90 text-white' :
+                                                        'bg-red-500/90 text-white'
+                                                    }`}>
+                                                        {cot.estado}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Contenido */}
+                                            <div className="p-5 flex-1 flex flex-col">
+                                                {/* Header con usuario y fecha */}
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow">
+                                                            {(cot.usuario || cot.cliente).charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <span className="block text-xs font-bold text-gray-800">{cot.usuario || cot.cliente}</span>
+                                                            <span className="text-[10px] text-gray-400">{cot.fecha}</span>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-[10px] text-gray-400 font-mono">#{cot.id}</span>
+                                                </div>
+
+                                                {/* Título y descripción */}
+                                                <h3 className="font-bold text-base text-gray-900 mb-2 line-clamp-2 leading-tight">{cot.titulo}</h3>
+                                                <p className="text-xs text-gray-500 mb-3 line-clamp-3 flex-1">{cot.descripcion}</p>
+
+                                                {/* Info adicional */}
+                                                {cot.precio && (
+                                                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                                                        <span className="text-[10px] text-green-600 font-bold uppercase block mb-1">Precio cotizado</span>
+                                                        <span className="text-green-700 font-bold text-xl">${parseFloat(cot.precio).toLocaleString()}</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Botones de acción */}
+                                                <div className="flex gap-2 mt-auto">
+                                                    <button 
+                                                        onClick={() => setDetalleCot(cot)} 
+                                                        className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                                    >
+                                                        👁️ Ver detalles
+                                                    </button>
+                                                    {cot.pdf && (
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); handleDescargarArchivo(cot.pdf, `Cotizacion_${cot.id}.pdf`); }} 
+                                                            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold px-4 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                                            title="Descargar PDF"
+                                                        >
+                                                            📥
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
