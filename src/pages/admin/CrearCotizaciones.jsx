@@ -506,6 +506,63 @@ const CrearCotizaciones = () => {
         }
     };
 
+    // Guardar solo datos sin descargar PDF (para modo edición)
+    const guardarSinDescargar = async () => {
+        if (loading) return;
+        if (!validarFormulario()) return;
+
+        setLoading(true);
+        const loadingToast = toast.loading('Guardando cambios...');
+
+        try {
+            const quotationNumber = previewQuotationNumber;
+
+            // Crear datos del documento
+            const datosDocumento = {
+                numero: quotationNumber,
+                fecha: formData.fecha,
+                cliente: {
+                    nombre: formData.clienteNombre,
+                    empresa: formData.clienteEmpresa,
+                    email: formData.clienteEmail,
+                    telefono: formData.clienteTelefono,
+                    direccion: formData.clienteDireccion
+                },
+                titulo: formData.titulo,
+                descripcion: formData.descripcion,
+                productos: items,
+                subtotal: calcularTotalItems(),
+                iva: calcularImpuesto(),
+                total: calcularTotal(),
+                moneda: formData.moneda,
+                validez: formData.validez,
+                notas: formData.notas,
+                terminosCondiciones: formData.terminosCondiciones,
+                creadoPor: formData.creadoPor || 'Admin',
+                pdfUrl: editData?.pdfUrl || '', // Mantener el PDF existente
+                ...(isEditing && editData?.numero !== quotationNumber && { oldNumero: editData.numero })
+            };
+
+            await guardarCotizacionSimple(datosDocumento, true);
+
+            toast.success('Cambios guardados correctamente', { id: loadingToast });
+            setTimeout(() => navigate('/admin/documentos'), 1000);
+        } catch (error) {
+            console.error('Error al guardar:', error);
+            toast.dismiss(loadingToast);
+            toast.error('Error al guardar los cambios');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Cancelar y volver a la lista
+    const handleCancelar = () => {
+        if (window.confirm('¿Cancelar edición? Los cambios no guardados se perderán.')) {
+            navigate('/admin/documentos');
+        }
+    };
+
     return (
         <div className="max-w-7xl mx-auto w-full h-screen overflow-auto">
             {/* Header */}
@@ -936,31 +993,67 @@ const CrearCotizaciones = () => {
                                 )}
                             </div>
 
-                            {/* Generate Button */}
-                            <button
-                                onClick={generarPDF}
-                                disabled={loading}
-                                className="w-full mt-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl flex items-center justify-center gap-2"
-                            >
-                                {loading ? '⏳ Procesando...' : isEditing ? '💾 Guardar Cambios y Descargar' : '📄 Generar y Descargar PDF'}
-                            </button>
+                            {/* Buttons in Preview */}
+                            <div className="mt-6 space-y-3">
+                                {isEditing && (
+                                    <button
+                                        onClick={guardarSinDescargar}
+                                        disabled={loading}
+                                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                                    >
+                                        {loading ? '⏳ Guardando...' : '💾 Guardar Cambios'}
+                                    </button>
+                                )}
+                                <button
+                                    onClick={generarPDF}
+                                    disabled={loading}
+                                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                                >
+                                    {loading ? '⏳ Procesando...' : '📄 Guardar y Descargar PDF'}
+                                </button>
+                                {isEditing && (
+                                    <button
+                                        onClick={handleCancelar}
+                                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition shadow-sm hover:shadow flex items-center justify-center gap-2"
+                                    >
+                                        ❌ Cancelar
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* botones de decagar y esos cuando no se muestra la vista previa */}
+                {/* Botones flotantes cuando no se muestra la vista previa */}
                 {!showPreview && (
                     <div className="fixed bottom-6 right-6 flex gap-3 z-50">
+                        {isEditing && (
+                            <button
+                                onClick={handleCancelar}
+                                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-5 rounded-full shadow-2xl transition flex items-center gap-2"
+                            >
+                                ❌ Cancelar
+                            </button>
+                        )}
+                        {isEditing && (
+                            <button
+                                onClick={guardarSinDescargar}
+                                disabled={loading}
+                                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 px-5 rounded-full shadow-2xl transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? '⏳' : '💾'} Guardar
+                            </button>
+                        )}
                         <button
                             onClick={generarPDF}
                             disabled={loading}
-                            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-6 rounded-full shadow-2xl transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-5 rounded-full shadow-2xl transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? '⏳ Procesando...' : isEditing ? '💾 Guardar Cambios' : '📄 Descargar PDF'}
+                            {loading ? '⏳' : '📄'} {isEditing ? 'Guardar + PDF' : 'Descargar PDF'}
                         </button>
                         <button
                             onClick={() => setShowPreview(true)}
-                            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-2xl transition flex items-center gap-2"
+                            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-3 px-5 rounded-full shadow-2xl transition flex items-center gap-2"
                         >
                             👁️ Vista Previa
                         </button>
