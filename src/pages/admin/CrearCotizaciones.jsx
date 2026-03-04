@@ -382,7 +382,7 @@ const CrearCotizaciones = () => {
             const pageHeight = doc.internal.pageSize.height;
             const footerHeight = 20; // Space reserved for footer
             const maxY = pageHeight - footerHeight;
-            
+
             let notasHeight = 0;
             let notasLines = [];
             if (formData.notas) {
@@ -563,231 +563,110 @@ const CrearCotizaciones = () => {
         }
     };
 
-    return (
-        <div className="max-w-7xl mx-auto w-full h-screen overflow-auto">
-            {/* Header */}
+return (
+    <div className="w-full flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
+        {/* Header sticky */}
+        <div style={{ flexShrink: 0 }} className="bg-white border-b border-gray-100 px-4 py-2.5 flex items-center justify-between z-40 shadow-sm">
+            <div className="flex items-center gap-2">
+                <button onClick={() => navigate('/admin/documentos')} className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors group">
+                    <span className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                    </span>
+                    Documentos
+                </button>
+                <span className="text-gray-300">/</span>
+                <span className="text-sm text-gray-400">Cotizaciones</span>
+                <span className="text-gray-300">/</span>
+                <span className="text-sm font-semibold text-gray-700">{isEditing ? `Editando ${previewQuotationNumber}` : 'Nueva Cotizacion'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                {isEditing && (
+                    <button onClick={handleCancelar} className="text-sm text-gray-500 hover:text-gray-700 font-medium px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-all">
+                        Cancelar edicion
+                    </button>
+                )}
+                {isEditing && (
+                    <button onClick={guardarSinDescargar} disabled={loading} className="flex items-center gap-1.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-all disabled:opacity-50">
+                        {loading ? 'Guardando...' : 'Guardar cambios'}
+                    </button>
+                )}
+                <button onClick={generarPDF} disabled={loading} className="flex items-center gap-1.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 shadow-sm">
+                    {loading ? 'Procesando...' : 'Guardar y Descargar PDF'}
+                </button>
+            </div>
+        </div>
 
+        {/* Split Panel */}
+        <div className="flex" style={{ flex: 1, overflow: 'hidden' }}>
 
-            <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-                {/* Form Section */}
-                <div className={`${!showPreview ? 'grid grid-cols-2 gap-4' : ''} space-y-3`}>
-                    {/* Client Information */}
-                    <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
-                        <h2 className="text-base font-bold text-gray-800 mb-2">Información del Cliente</h2>
+            {/* LEFT: Compact scrollable form */}
+            <div className="border-r border-gray-100 flex flex-col" style={{ width: 370, flexShrink: 0 }}>
+                <div style={{ flex: 1, overflowY: 'auto' }} className="px-3 py-3 space-y-2">
 
+                    {/* N de cotizacion */}
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 flex items-center justify-between">
+                        <span className="text-xs font-bold text-blue-500 uppercase tracking-wide">N{'\u00BA'} Cotizacion</span>
+                        <span className="font-mono font-bold text-blue-700 text-sm">{previewQuotationNumber}</span>
+                    </div>
+
+                    {/* Cliente */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Cliente</p>
+                        <input type="text" value={formData.clienteNombre} onChange={(e) => setFormData({ ...formData, clienteNombre: e.target.value })} placeholder="Nombre del cliente *" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none" />
+                        <input type="text" value={formData.clienteEmpresa} onChange={(e) => setFormData({ ...formData, clienteEmpresa: e.target.value })} placeholder="Empresa" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                        <div className="grid grid-cols-2 gap-2">
+                            <input type="email" value={formData.clienteEmail} onChange={(e) => setFormData({ ...formData, clienteEmail: e.target.value })} placeholder="Email" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                            <input type="tel" value={formData.clienteTelefono} onChange={(e) => setFormData({ ...formData, clienteTelefono: e.target.value })} placeholder="Telefono" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                        </div>
+                        <input type="text" value={formData.clienteDireccion} onChange={(e) => setFormData({ ...formData, clienteDireccion: e.target.value })} placeholder="Direccion" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                    </div>
+
+                    {/* Detalles de cotizacion */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalles</p>
+                        <input type="text" value={formData.titulo} onChange={(e) => setFormData({ ...formData, titulo: e.target.value })} placeholder="Titulo *" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                        <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} placeholder="Descripcion (opcional)" rows={2} className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none resize-none" />
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">Fecha</label>
+                                <input type="date" value={formData.fecha} onChange={(e) => setFormData({ ...formData, fecha: e.target.value })} className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">Validez (dias)</label>
+                                <input type="number" value={formData.validez} onChange={(e) => setFormData({ ...formData, validez: e.target.value })} className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" min="1" />
+                            </div>
+                        </div>
+                        <input type="text" value={formData.creadoPor} onChange={(e) => setFormData({ ...formData, creadoPor: e.target.value })} placeholder="Creada por" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                    </div>
+
+                    {/* Items */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Items / Servicios</p>
+                            <button onClick={agregarItem} className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-lg transition-all">+ Agregar</button>
+                        </div>
                         <div className="space-y-2">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Nombre del Cliente *</label>
-                                <input
-                                    type="text"
-                                    value={formData.clienteNombre}
-                                    onChange={(e) => setFormData({ ...formData, clienteNombre: e.target.value })}
-                                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Nombre completo o empresa"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Empresa</label>
-                                <input
-                                    type="text"
-                                    value={formData.clienteEmpresa}
-                                    onChange={(e) => setFormData({ ...formData, clienteEmpresa: e.target.value })}
-                                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Nombre de la empresa"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Email</label>
-                                    <input
-                                        type="email"
-                                        value={formData.clienteEmail}
-                                        onChange={(e) => setFormData({ ...formData, clienteEmail: e.target.value })}
-                                        className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="correo@ejemplo.com"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Teléfono</label>
-                                    <input
-                                        type="tel"
-                                        value={formData.clienteTelefono}
-                                        onChange={(e) => setFormData({ ...formData, clienteTelefono: e.target.value })}
-                                        className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="(123) 456-7890"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Dirección</label>
-                                <input
-                                    type="text"
-                                    value={formData.clienteDireccion}
-                                    onChange={(e) => setFormData({ ...formData, clienteDireccion: e.target.value })}
-                                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Calle, número, colonia, ciudad"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quotation Details */}
-                    <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
-                        <h2 className="text-lg font-bold text-gray-800 mb-4">Detalles de la Cotización</h2>
-
-                        <div className="space-y-4">
-                            {/* Número de Cotización - Editable solo en modo edición */}
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">
-                                    Número de Cotización {isEditing && <span className="text-blue-500">(Editable)</span>}
-                                </label>
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="text"
-                                        value={previewQuotationNumber}
-                                        onChange={(e) => setPreviewQuotationNumber(e.target.value)}
-                                        disabled={!isEditing}
-                                        className={`flex-1 px-3 py-1.5 text-sm font-mono font-bold border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                            isEditing 
-                                                ? 'border-blue-300 bg-blue-50 text-blue-700' 
-                                                : 'border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed'
-                                        }`}
-                                        placeholder="COT-XXXXXX"
-                                    />
-                                    {!isEditing && (
-                                        <span className="text-xs text-gray-400">Auto-generado</span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Título *</label>
-                                <input
-                                    type="text"
-                                    value={formData.titulo}
-                                    onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Ej: Instalación de Sistema de Seguridad"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Descripción</label>
-                                <textarea
-                                    value={formData.descripcion}
-                                    onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                                    rows="3"
-                                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                    placeholder="Descripción general del proyecto..."
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Fecha</label>
-                                    <input
-                                        type="date"
-                                        value={formData.fecha}
-                                        onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                                        className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Validez (días)</label>
-                                    <input
-                                        type="number"
-                                        value={formData.validez}
-                                        onChange={(e) => setFormData({ ...formData, validez: e.target.value })}
-                                        className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        min="1"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Creada por</label>
-                                <input
-                                    type="text"
-                                    value={formData.creadoPor}
-                                    onChange={(e) => setFormData({ ...formData, creadoPor: e.target.value })}
-                                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Nombre de quien crea la cotización"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Line Items */}
-                    <div className="bg-white rounded-xl border-2 border-gray-200 p-4 row-span-2">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-bold text-gray-800">📦 Items / Servicios</h2>
-                            <button
-                                onClick={agregarItem}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
-                            >
-                                + Agregar Item
-                            </button>
-                        </div>
-
-                        <div className="space-y-3">
                             {items.map((item, index) => (
-                                <div key={item.id} className="rounded-lg p-3">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs font-bold text-gray-500">ITEM #{index + 1}</span>
+                                <div key={item.id} className="bg-gray-50 rounded-lg p-2 border border-gray-100">
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <span className="text-xs font-bold text-gray-400">ITEM #{index + 1}</span>
                                         {items.length > 1 && (
-                                            <button
-                                                onClick={() => eliminarItem(item.id)}
-                                                className="text-red-600 hover:text-red-700 text-sm font-semibold"
-                                            >
-                                                ✕ Eliminar
-                                            </button>
+                                            <button onClick={() => eliminarItem(item.id)} className="text-red-400 hover:text-red-600 text-xs font-bold">x</button>
                                         )}
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <input
-                                            type="text"
-                                            value={item.descripcion}
-                                            onChange={(e) => actualizarItem(item.id, 'descripcion', e.target.value)}
-                                            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            placeholder="Descripción del producto/servicio"
-                                        />
-
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-gray-600 mb-1">CANT.</label>
-                                                <input
-                                                    type="number"
-                                                    value={item.cantidad}
-                                                    onChange={(e) => actualizarItem(item.id, 'cantidad', e.target.value)}
-                                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                    min="1"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-gray-600 mb-1">PRECIO UNIT.</label>
-                                                <input
-                                                    type="number"
-                                                    value={item.precioUnitario}
-                                                    onChange={(e) => actualizarItem(item.id, 'precioUnitario', e.target.value)}
-                                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                    min="0"
-                                                    step="0.01"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-gray-600 mb-1">SUBTOTAL</label>
-                                                <div className="px-2 py-1.5 text-sm bg-gray-100 rounded-lg font-semibold text-gray-700">
-                                                    {formatCurrency(calcularSubtotal(item))}
-                                                </div>
-                                            </div>
+                                    <input type="text" value={item.descripcion} onChange={(e) => actualizarItem(item.id, 'descripcion', e.target.value)} placeholder="Descripcion" className="w-full text-xs px-2 py-1.5 bg-white border border-gray-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none mb-1.5" />
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        <div>
+                                            <label className="text-xs text-gray-400 font-bold block">CANT.</label>
+                                            <input type="number" value={item.cantidad} onChange={(e) => actualizarItem(item.id, 'cantidad', e.target.value)} min="1" className="w-full text-xs px-2 py-1.5 bg-white border border-gray-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-400 font-bold block">PRECIO</label>
+                                            <input type="number" value={item.precioUnitario} onChange={(e) => actualizarItem(item.id, 'precioUnitario', e.target.value)} min="0" step="0.01" className="w-full text-xs px-2 py-1.5 bg-white border border-gray-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-400 font-bold block">SUBTOTAL</label>
+                                            <div className="text-xs px-2 py-1.5 bg-blue-50 border border-blue-100 rounded-md font-semibold text-blue-700">{formatCurrency(calcularSubtotal(item))}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -795,273 +674,160 @@ const CrearCotizaciones = () => {
                         </div>
                     </div>
 
-                    {/* Financial Settings */}
-                    <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
-                        <h2 className="text-lg font-bold text-gray-800 mb-4">💰 Configuración Financiera</h2>
-
-                        <div className="space-y-4">
+                    {/* Financiero */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Configuracion Financiera</p>
+                        <div className="grid grid-cols-3 gap-2">
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Moneda</label>
-                                <select
-                                    value={formData.moneda}
-                                    onChange={(e) => setFormData({ ...formData, moneda: e.target.value })}
-                                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    <option value="MXN">Peso Mexicano (MXN)</option>
-                                    <option value="USD">Dólar Estadounidense (USD)</option>
+                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">Moneda</label>
+                                <select value={formData.moneda} onChange={(e) => setFormData({ ...formData, moneda: e.target.value })} className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none">
+                                    <option value="MXN">MXN</option>
+                                    <option value="USD">USD</option>
                                 </select>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">IVA (%)</label>
-                                    <input
-                                        type="number"
-                                        value={formData.impuesto}
-                                        onChange={(e) => setFormData({ ...formData, impuesto: e.target.value })}
-                                        className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        min="0"
-                                        max="100"
-                                        step="0.1"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Descuento (%)</label>
-                                    <input
-                                        type="number"
-                                        value={formData.descuento}
-                                        onChange={(e) => setFormData({ ...formData, descuento: e.target.value })}
-                                        className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        min="0"
-                                        max="100"
-                                        step="0.1"
-                                    />
-                                </div>
+                            <div>
+                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">IVA (%)</label>
+                                <input type="number" value={formData.impuesto} onChange={(e) => setFormData({ ...formData, impuesto: e.target.value })} min="0" max="100" className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">Descuento (%)</label>
+                                <input type="number" value={formData.descuento} onChange={(e) => setFormData({ ...formData, descuento: e.target.value })} min="0" max="100" className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
                             </div>
                         </div>
                     </div>
 
-                    {/* Notes and Terms Combined */}
-                    <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
-                        <h2 className="text-base font-bold text-gray-800 mb-2">📝 Notas y Términos</h2>
+                    {/* Notas */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Notas y Terminos</p>
+                        <textarea value={formData.notas} onChange={(e) => setFormData({ ...formData, notas: e.target.value })} placeholder="Notas adicionales..." rows={2} className="w-full text-xs px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none resize-none" />
+                        <textarea value={formData.terminosCondiciones} onChange={(e) => setFormData({ ...formData, terminosCondiciones: e.target.value })} placeholder="Terminos y condiciones..." rows={3} className="w-full text-xs px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none resize-none" />
+                    </div>
 
-                        <div className="space-y-2">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Notas</label>
-                                <textarea
-                                    value={formData.notas}
-                                    onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                                    rows="2"
-                                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                    placeholder="Notas adicionales sobre la cotización..."
-                                />
-                            </div>
+                    <div className="h-6" />
+                </div>
+            </div>
 
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Términos y Condiciones</label>
-                                <textarea
-                                    value={formData.terminosCondiciones}
-                                    onChange={(e) => setFormData({ ...formData, terminosCondiciones: e.target.value })}
-                                    rows="3"
-                                    className="w-full px-3 py-1.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                    placeholder="Términos y condiciones de la cotización..."
-                                />
+            {/* RIGHT: Live preview of the document */}
+            <div style={{ flex: 1, overflowY: 'auto' }} className="bg-gray-100 p-6 flex justify-center">
+                <div className="w-full max-w-2xl bg-white shadow-2xl rounded-xl overflow-hidden">
+
+                    {/* Doc Header */}
+                    <div className="px-10 pt-8 pb-5 border-b-2 border-gray-200">
+                        <div className="flex items-start justify-between">
+                            <img src={logoImg} alt="Logo" className="h-12 object-contain" />
+                            <div className="text-right">
+                                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Cotizacion</div>
+                                <div className="text-2xl font-bold text-blue-700 mt-0.5">{previewQuotationNumber}</div>
                             </div>
+                        </div>
+                        <div className="mt-4 text-xs text-gray-400 space-y-0.5">
+                            <div>UPDM - Blvd. Rogelio Cantu Gomez 333-9, Col. Santa Maria, Monterrey N.L.</div>
+                            <div>RFC: UPD141011MC3 | TEL: 813-557-3724 y 811-418-5412</div>
+                        </div>
+                    </div>
+
+                    <div className="px-10 py-6 space-y-5">
+                        {/* Titulo y fecha */}
+                        <div>
+                            <h2 className="text-base font-bold text-gray-700 uppercase tracking-widest text-center">Cotizacion</h2>
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>Fecha: {formData.fecha || '-'}</span>
+                                <span>Valida por: {formData.validez || 30} dias</span>
+                            </div>
+                            {formData.creadoPor && <div className="text-xs text-gray-400 mt-0.5 text-center">Elaboro: {formData.creadoPor}</div>}
+                            {formData.titulo && <div className="font-bold text-gray-800 text-sm mt-2">{formData.titulo}</div>}
+                            {formData.descripcion && <div className="text-xs text-gray-500 mt-1">{formData.descripcion}</div>}
+                        </div>
+
+                        {/* Cliente box */}
+                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Datos del Cliente</div>
+                            <div className="text-xs space-y-0.5 text-gray-700">
+                                {formData.clienteNombre
+                                    ? <div><span className="font-bold">Cliente:</span> {formData.clienteNombre}</div>
+                                    : <div className="text-gray-300 italic">Sin cliente...</div>}
+                                {formData.clienteEmpresa && <div><span className="font-bold">Empresa:</span> {formData.clienteEmpresa}</div>}
+                                {formData.clienteEmail && <div><span className="font-bold">Email:</span> {formData.clienteEmail}</div>}
+                                {formData.clienteTelefono && <div><span className="font-bold">Tel:</span> {formData.clienteTelefono}</div>}
+                                {formData.clienteDireccion && <div><span className="font-bold">Dir:</span> {formData.clienteDireccion}</div>}
+                            </div>
+                        </div>
+
+                        {/* Tabla de items */}
+                        <div className="overflow-hidden rounded-xl border border-gray-200">
+                            <table className="w-full text-xs">
+                                <thead className="bg-gray-700 text-white">
+                                    <tr>
+                                        <th className="px-4 py-2.5 text-left font-semibold">Descripcion</th>
+                                        <th className="px-3 py-2.5 text-center font-semibold w-14">Cant.</th>
+                                        <th className="px-3 py-2.5 text-right font-semibold w-24">Precio</th>
+                                        <th className="px-3 py-2.5 text-right font-semibold w-24">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {items.map((item, i) => (
+                                        <tr key={item.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                            <td className="px-4 py-2 border-t border-gray-100">{item.descripcion || <span className="text-gray-300 italic">sin descripcion</span>}</td>
+                                            <td className="px-3 py-2 border-t border-gray-100 text-center">{item.cantidad}</td>
+                                            <td className="px-3 py-2 border-t border-gray-100 text-right">{formatCurrency(item.precioUnitario)}</td>
+                                            <td className="px-3 py-2 border-t border-gray-100 text-right font-semibold">{formatCurrency(calcularSubtotal(item))}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Totales */}
+                        <div className="flex justify-end">
+                            <div className="w-56 space-y-1 text-xs">
+                                <div className="flex justify-between text-gray-600">
+                                    <span>Subtotal:</span>
+                                    <span className="font-semibold">{formatCurrency(calcularTotalItems())}</span>
+                                </div>
+                                {parseFloat(formData.descuento) > 0 && (
+                                    <div className="flex justify-between text-red-500">
+                                        <span>Descuento ({formData.descuento}%):</span>
+                                        <span className="font-semibold">-{formatCurrency(calcularDescuento())}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-gray-600">
+                                    <span>IVA ({formData.impuesto}%):</span>
+                                    <span className="font-semibold">{formatCurrency(calcularImpuesto())}</span>
+                                </div>
+                                <div className="flex justify-between text-sm font-bold text-gray-800 pt-2 border-t-2 border-gray-700">
+                                    <span>TOTAL:</span>
+                                    <span>{formatCurrency(calcularTotal())}</span>
+                                </div>
+                                <div className="text-right text-gray-500">{formData.moneda}</div>
+                            </div>
+                        </div>
+
+                        {/* Notas */}
+                        {formData.notas && (
+                            <div className="text-xs border-t pt-4">
+                                <div className="font-bold text-gray-700 mb-1">Notas:</div>
+                                <div className="text-gray-600">{formData.notas}</div>
+                            </div>
+                        )}
+
+                        {/* T&C */}
+                        {formData.terminosCondiciones && (
+                            <div className="text-xs border-t pt-4">
+                                <div className="font-bold text-gray-700 mb-1">Terminos y Condiciones:</div>
+                                <div className="text-gray-500 leading-relaxed">{formData.terminosCondiciones}</div>
+                            </div>
+                        )}
+
+                        {/* Footer del doc */}
+                        <div className="border-t border-dashed pt-4 text-center text-xs text-gray-300">
+                            UPDM - Documento generado por InfiniguardSYS
                         </div>
                     </div>
                 </div>
-
-                {/* Preview Section - Only show when showPreview is true */}
-                {showPreview && (
-                    <div className="lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
-                        <div className="bg-white rounded-xl border-2 border-gray-400 p-6 shadow-lg">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-bold text-gray-800">Vista Previa</h2>
-                                <button
-                                    onClick={() => setShowPreview(!showPreview)}
-                                    className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition flex items-center gap-2"
-                                >
-                                    Ocultar
-                                </button>
-                            </div>
-
-                            {/* Preview Header */}
-                            <div className="border-b-2 border-gray-200 pb-4 mb-4">
-                                <div className="flex items-start justify-between">
-                                    <img src={logoImg} alt="INFINIGUARD Logo" className="h-12 object-contain" />
-                                    <div className="text-right">
-                                        <div className="text-xs font-bold text-gray-500 uppercase">Cotización</div>
-                                        <div className="text-lg font-bold text-gray-700">{previewQuotationNumber}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Preview Content */}
-                            <div className="space-y-4 text-sm">
-                                <div>
-                                    <h4 className="font-bold text-lg text-center mb-2 text-gray-700">COTIZACIÓN</h4>
-                                    <div className="flex justify-between text-xs text-gray-600">
-                                        <span>Fecha: {formData.fecha}</span>
-                                        <span>Válida: {formData.validez} días</span>
-                                    </div>
-                                </div>
-
-                                {formData.titulo && (
-                                    <div className="font-bold text-gray-800">{formData.titulo}</div>
-                                )}
-
-                                {/* Client Info */}
-                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                    <div className="text-xs space-y-1.5">
-                                        <div className="break-words"><span className="font-bold">Cliente:</span> {formData.clienteNombre || 'Sin especificar'}</div>
-                                        {formData.clienteEmpresa && <div className="break-words"><span className="font-bold">Empresa:</span> {formData.clienteEmpresa}</div>}
-                                        {formData.clienteEmail && <div className="break-words"><span className="font-bold">Email:</span> {formData.clienteEmail}</div>}
-                                        {formData.clienteTelefono && <div className="break-words"><span className="font-bold">Tel:</span> {formData.clienteTelefono}</div>}
-                                        {formData.clienteDireccion && <div className="break-words"><span className="font-bold">Dir:</span> {formData.clienteDireccion}</div>}
-                                    </div>
-                                </div>
-
-                                {formData.descripcion && (
-                                    <div className="text-xs text-gray-700">
-                                        <div className="font-bold mb-1">Descripción:</div>
-                                        <div className="whitespace-pre-line">{formData.descripcion}</div>
-                                    </div>
-                                )}
-
-                                {/* Items Table */}
-                                <div className="border border-gray-300 rounded-lg overflow-hidden">
-                                    <table className="w-full text-xs">
-                                        <thead className="bg-gray-600 text-white">
-                                            <tr>
-                                                <th className="p-2 text-left">Descripción</th>
-                                                <th className="p-2 text-center w-16">Cant.</th>
-                                                <th className="p-2 text-right w-20">Precio</th>
-                                                <th className="p-2 text-right w-24">Subtotal</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {items.map((item, index) => (
-                                                <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                                    <td className="p-2 border-t">{item.descripcion || 'Sin descripción'}</td>
-                                                    <td className="p-2 border-t text-center">{item.cantidad}</td>
-                                                    <td className="p-2 border-t text-right">{formatCurrency(item.precioUnitario)}</td>
-                                                    <td className="p-2 border-t text-right font-semibold">{formatCurrency(calcularSubtotal(item))}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {/* Totals */}
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span>Subtotal:</span>
-                                        <span className="font-semibold">{formatCurrency(calcularTotalItems())}</span>
-                                    </div>
-
-                                    {parseFloat(formData.descuento) > 0 && (
-                                        <div className="flex justify-between text-red-600">
-                                            <span>Descuento ({formData.descuento}%):</span>
-                                            <span className="font-semibold">-{formatCurrency(calcularDescuento())}</span>
-                                        </div>
-                                    )}
-
-                                    <div className="flex justify-between">
-                                        <span>IVA ({formData.impuesto}%):</span>
-                                        <span className="font-semibold">{formatCurrency(calcularImpuesto())}</span>
-                                    </div>
-
-                                    <div className="flex justify-between text-lg font-bold text-gray-700 pt-2 border-t-2 border-gray-600">
-                                        <span>TOTAL:</span>
-                                        <span>{formatCurrency(calcularTotal())}</span>
-                                    </div>
-                                </div>
-
-                                {formData.notas && (
-                                    <div className="text-xs text-gray-700 border-t pt-3">
-                                        <div className="font-bold mb-1">Notas:</div>
-                                        <div className="whitespace-pre-line">{formData.notas}</div>
-                                    </div>
-                                )}
-
-                                {formData.terminosCondiciones && (
-                                    <div className="text-xs text-gray-700 border-t pt-3">
-                                        <div className="font-bold mb-1">Términos y Condiciones:</div>
-                                        <div className="whitespace-pre-line">{formData.terminosCondiciones}</div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Buttons in Preview */}
-                            <div className="mt-6 space-y-3">
-                                {isEditing && (
-                                    <button
-                                        onClick={guardarSinDescargar}
-                                        disabled={loading}
-                                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                                    >
-                                        {loading ? '⏳ Guardando...' : '💾 Guardar Cambios'}
-                                    </button>
-                                )}
-                                <button
-                                    onClick={generarPDF}
-                                    disabled={loading}
-                                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                                >
-                                    {loading ? '⏳ Procesando...' : '📄 Guardar y Descargar PDF'}
-                                </button>
-                                {isEditing && (
-                                    <button
-                                        onClick={handleCancelar}
-                                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition shadow-sm hover:shadow flex items-center justify-center gap-2"
-                                    >
-                                        ❌ Cancelar
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Botones flotantes cuando no se muestra la vista previa */}
-                {!showPreview && (
-                    <div className="fixed bottom-6 right-6 flex gap-3 z-50">
-                        {isEditing && (
-                            <button
-                                onClick={handleCancelar}
-                                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-5 rounded-full shadow-2xl transition flex items-center gap-2"
-                            >
-                                ❌ Cancelar
-                            </button>
-                        )}
-                        {isEditing && (
-                            <button
-                                onClick={guardarSinDescargar}
-                                disabled={loading}
-                                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 px-5 rounded-full shadow-2xl transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading ? '⏳' : '💾'} Guardar
-                            </button>
-                        )}
-                        <button
-                            onClick={generarPDF}
-                            disabled={loading}
-                            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-5 rounded-full shadow-2xl transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? '⏳' : '📄'} {isEditing ? 'Guardar + PDF' : 'Descargar PDF'}
-                        </button>
-                        <button
-                            onClick={() => setShowPreview(true)}
-                            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-3 px-5 rounded-full shadow-2xl transition flex items-center gap-2"
-                        >
-                            👁️ Vista Previa
-                        </button>
-                    </div>
-                )}
             </div>
         </div>
-    );
+    </div>
+);
 };
 
 export default CrearCotizaciones;

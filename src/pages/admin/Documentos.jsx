@@ -207,7 +207,7 @@ function Documentos() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-auto bg-white rounded-2xl shadow-xl border border-gray-100">
+            <div className="flex-1 overflow-auto bg-white rounded-2xl shadow-xl border border-gray-100" style={{ backgroundColor: '#ffffff' }}>
                 {loading ? (
                     <div className="p-20 text-center text-gray-400">Cargando...</div>
                 ) : (
@@ -264,14 +264,6 @@ function Documentos() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button 
-                                                    onClick={() => handleDescargar(doc)} 
-                                                    className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm"
-                                                    title="Ver PDF"
-                                                >
-                                                    <span>📄</span>
-                                                    <span className="hidden sm:inline">Ver PDF</span>
-                                                </button>
                                                 <button 
                                                     onClick={() => handleEditar(doc)} 
                                                     className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm"

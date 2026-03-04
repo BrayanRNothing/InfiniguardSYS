@@ -430,18 +430,21 @@ function CrearReporteTrabajo() {
 
     return (
         <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Reporte de Trabajo</h1>
-                    <p className="text-gray-600">Generar reporte de trabajo con checklist</p>
+            {/* Header con Volver */}
+            <div className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 px-2 py-3 mb-6 -mx-2 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate('/admin/documentos')}
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 transition-colors group"
+                    >
+                        <span className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                        </span>
+                        Documentos
+                    </button>
+                    <span className="text-gray-300 dark:text-gray-600">/</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Reporte de Trabajo</span>
                 </div>
-                <button
-                    onClick={() => navigate('/admin/documentos')}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 font-semibold"
-                >
-                    ← Volver
-                </button>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6 space-y-8">

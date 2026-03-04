@@ -88,8 +88,8 @@ function Cotizaciones() {
 
                             {/* Encabezado */}
                             <div className="mb-6 shrink-0"> {/* shrink-0 evita que el título se aplaste */}
-                                <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-500">Gestión de Cotizaciones</h1>
-                                <p className="text-gray-500 dark:text-gray-400 text-lg">Administra presupuestos y solicitudes de usuarios</p>
+                                <h1 className="text-4xl font-bold text-gray-800">Gestión de Cotizaciones</h1>
+                                <p className="text-gray-500 text-lg">Administra presupuestos y solicitudes de usuarios</p>
                             </div>
 
                             {/* CAMBIO 2: El Grid ahora ocupa el espacio restante (flex-grow) y quitamos 'max-w-5xl' */}
