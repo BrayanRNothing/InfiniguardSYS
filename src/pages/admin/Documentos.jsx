@@ -94,16 +94,17 @@ function Documentos() {
             return;
         }
 
-        const toastId = toast.loading('Actualizando número y regenerando PDF...');
+        const toastId = toast.loading('Actualizando número...');
 
         try {
-            let nuevaPdfUrl = doc.pdfUrl;
+            // IMPORTANTE: Mantener el PDF original siempre
+            // Solo cambiar la URL si generamos exitosamente un nuevo PDF
+            let pdfUrlFinal = doc.pdfUrl; // Mantener el original por defecto
+            let pdfRegenerado = false;
 
-            // Intentar regenerar el PDF con el nuevo número si existen datos
+            // Intentar regenerar el PDF solo si tenemos todos los datos
             if (doc.datos && doc.productos && Array.isArray(doc.productos)) {
                 try {
-                    // Extraer los datos necesarios para el generador
-                    // doc.datos usualmente tiene todo, asegurémonos
                     const formData = {
                         fecha: doc.fecha,
                         validez: doc.datos.validez || '30',
@@ -122,32 +123,36 @@ function Documentos() {
                         creadoPor: doc.datos.creadoPor || 'Admin'
                     };
 
-                    const items = doc.productos; // Asumiendo que products está en la raíz del objeto doc
-                    
-                    const pdfFile = await generarPDFCotizacion(formData, items, nuevoNumero.trim());
+                    const pdfFile = await generarPDFCotizacion(formData, doc.productos, nuevoNumero.trim());
                     const uploadRes = await subirPDFCotizacion(pdfFile);
-                    nuevaPdfUrl = uploadRes.url;
                     
+                    if (uploadRes && uploadRes.url) {
+                        pdfUrlFinal = uploadRes.url;
+                        pdfRegenerado = true;
+                        console.log('✅ PDF regenerado exitosamente:', pdfUrlFinal);
+                    }
                 } catch (pdfError) {
-                    console.error('Error regenerando PDF:', pdfError);
-                    toast.error('No se pudo regenerar el PDF, se mantendrá el antiguo', { id: toastId });
-                    // Continuamos para guardar el número al menos
+                    console.error('⚠️ Error regenerando PDF, mantendré el original:', pdfError);
+                    // Mantener el PDF original - no es crítico
                 }
+            } else {
+                console.log('ℹ️ No hay datos de productos para regenerar PDF, mantendré el original');
             }
 
-            // Usamos la misma estructura robusta que en CrearCotizaciones
+            // Guardar la actualización con el PDF (original o nuevo)
             const datosActualizados = {
                 ...doc,
                 numero: nuevoNumero.trim(),
-                pdfUrl: nuevaPdfUrl, // Nueva URL regenerada
-                oldNumero: doc.numero,
-                oldPdfUrl: doc.pdfUrl // Enviamos URL vieja para que backend borre
+                pdfUrl: pdfUrlFinal, // Mantiene original si no se regeneró
+                oldNumero: doc.numero
+                // NO enviamos oldPdfUrl para que no se intente eliminar nada
             };
 
             await guardarCotizacionSimple(datosActualizados, true);
 
             toast.dismiss(toastId);
-            toast.success('Número actualizado y PDF regenerado');
+            const msg = pdfRegenerado ? 'Número actualizado y PDF regenerado' : 'Número actualizado';
+            toast.success(msg);
             setEditandoNumero(null);
             cargarHistorial();
         } catch (error) {

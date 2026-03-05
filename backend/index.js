@@ -746,15 +746,10 @@ app.post('/api/standalone-cotizaciones', async (req, res) => {
         return res.status(404).json({ success: false, message: 'Cotización no encontrada para actualizar' });
       }
 
-      // 🧹 Limpieza de PDF antiguo (si cambio URL y enviaron oldPdfUrl)
+      // 📌 NO eliminar PDFs antiguos - mantener histórico de cambios
+      // Los PDFs son inmutables, cambios de estética no afectan acceso histórico
       if (oldPdfUrl && pdfUrlFinal && oldPdfUrl !== pdfUrlFinal) {
-          const oldPath = path.join(__dirname, oldPdfUrl);
-          if (fs.existsSync(oldPath)) {
-              fs.unlink(oldPath, (err) => {
-                  if (err) console.error('⚠️ Error eliminando PDF viejo:', err);
-                  else console.log('🗑️ PDF antiguo eliminado:', oldPdfUrl);
-              });
-          }
+        console.log('ℹ️ PDF actualizado de:', oldPdfUrl, 'a:', pdfUrlFinal, '(PDFs antiguos se mantienen para referencia histórica)');
       }
 
     } else {
