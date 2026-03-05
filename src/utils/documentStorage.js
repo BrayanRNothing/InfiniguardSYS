@@ -134,20 +134,64 @@ export function agruparPorTipo(documentos) {
  */
 export async function obtenerTodasLasCotizaciones() {
     try {
-        const response = await fetch(`${API_URL}/api/standalone-cotizaciones`);
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Error obteniendo cotizaciones');
+        // Obtener datos de las tres tablas en paralelo
+        const [cotRes, otRes, rtRes] = await Promise.all([
+            fetch(`${API_URL}/api/standalone-cotizaciones`),
+            fetch(`${API_URL}/api/ordenes-trabajo`),
+            fetch(`${API_URL}/api/reportes-trabajo`)
+        ]);
+
+        let documentos = [];
+
+        // Procesar cotizaciones
+        if (cotRes.ok) {
+            const cotData = await cotRes.json();
+            const cotizaciones = (cotData.cotizaciones || []).map(c => ({
+                ...c.datos,
+                id: c.id,
+                numero: c.numero,
+                fecha: c.fecha,
+                pdfUrl: c.pdf_url,
+                total: c.total,
+                tipo: 'COT'
+            }));
+            documentos = [...documentos, ...cotizaciones];
         }
-        const data = await response.json();
-        return (data.cotizaciones || []).map(c => ({
-            ...c.datos,
-            id: c.id,
-            numero: c.numero,
-            fecha: c.fecha,
-            pdfUrl: c.pdf_url,
-            total: c.total
-        }));
+
+        // Procesar órdenes de trabajo
+        if (otRes.ok) {
+            const otData = await otRes.json();
+            const ordenesTrabajo = (otData.data || []).map(ot => ({
+                ...ot.datos,
+                id: ot.id,
+                numero: ot.numero,
+                fecha: ot.fecha,
+                cliente: { nombre: ot.cliente_nombre },
+                servicioCliente: ot.cliente_nombre,
+                pdfUrl: ot.pdf_url,
+                tipo: 'OT'
+            }));
+            documentos = [...documentos, ...ordenesTrabajo];
+        }
+
+        // Procesar reportes de trabajo
+        if (rtRes.ok) {
+            const rtData = await rtRes.json();
+            const reportesTrabajo = (rtData.data || []).map(rt => ({
+                ...rt.datos,
+                id: rt.id,
+                numero: rt.numero,
+                fecha: rt.fecha,
+                cliente: { nombre: rt.cliente_nombre },
+                servicioCliente: rt.cliente_nombre,
+                pdfUrl: rt.pdf_url,
+                tipo: 'RT'
+            }));
+            documentos = [...documentos, ...reportesTrabajo];
+        }
+
+        // Ordenar por fecha descendente
+        return documentos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -160,6 +204,26 @@ export async function obtenerTodasLasCotizaciones() {
 export async function obtenerProximoNumeroCotizacion() {
     const response = await fetch(`${API_URL}/api/standalone-cotizaciones/next-number`);
     if (!response.ok) throw new Error('Error al obtener próximo número');
+    const data = await response.json();
+    return data.numero;
+}
+
+/**
+ * Obtener el próximo número de Orden de Trabajo
+ */
+export async function obtenerProximoNumeroOT() {
+    const response = await fetch(`${API_URL}/api/standalone-cotizaciones/next-number?tipo=OT`);
+    if (!response.ok) throw new Error('Error al obtener próximo número de OT');
+    const data = await response.json();
+    return data.numero;
+}
+
+/**
+ * Obtener el próximo número de Reporte de Trabajo
+ */
+export async function obtenerProximoNumeroRT() {
+    const response = await fetch(`${API_URL}/api/standalone-cotizaciones/next-number?tipo=RT`);
+    if (!response.ok) throw new Error('Error al obtener próximo número de RT');
     const data = await response.json();
     return data.numero;
 }
@@ -219,16 +283,127 @@ export async function eliminarCotizacionSimple(numero) {
 }
 
 /**
+ * Guardar o actualizar una Orden de Trabajo
+ */
+export async function guardarOrdenTrabajo(datos, isUpdate = false) {
+    console.log('📝 Frontend - Guardando OT:', { 
+        numero: datos.numero, 
+        cliente: datos.cliente?.nombre,
+        isUpdate,
+        hasPdfUrl: !!datos.pdfUrl
+    });
+    
+    const payload = {
+        numero: datos.numero,
+        fecha: datos.fecha,
+        cliente_nombre: datos.cliente?.nombre || null,
+        titulo: datos.titulo,
+        datos: datos,
+        pdf_url: datos.pdfUrl || null,
+        isUpdate: isUpdate,
+        oldNumero: datos.oldNumero || null
+    };
+    
+    const response = await fetch(`${API_URL}/api/ordenes-trabajo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Error guardando OT:', errorData);
+        throw new Error(errorData.message || 'Error al guardar la OT');
+    }
+    
+    const result = await response.json();
+    console.log('✅ OT guardada:', result);
+    return result;
+}
+
+/**
+ * Eliminar una Orden de Trabajo por número
+ */
+export async function eliminarOrdenTrabajo(numero) {
+    const response = await fetch(`${API_URL}/api/ordenes-trabajo/${numero}`, {
+        method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Error al eliminar OT');
+    return await response.json();
+}
+
+/**
+ * Guardar o actualizar un Reporte de Trabajo
+ */
+export async function guardarReporteTrabajo(datos, isUpdate = false) {
+    console.log('📝 Frontend - Guardando RT:', { 
+        numero: datos.numero, 
+        cliente: datos.cliente?.nombre,
+        isUpdate,
+        hasPdfUrl: !!datos.pdfUrl
+    });
+    
+    const payload = {
+        numero: datos.numero,
+        fecha: datos.fecha,
+        cliente_nombre: datos.cliente?.nombre || null,
+        datos: datos,
+        pdf_url: datos.pdfUrl || null,
+        isUpdate: isUpdate,
+        oldNumero: datos.oldNumero || null
+    };
+    
+    const response = await fetch(`${API_URL}/api/reportes-trabajo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Error guardando RT:', errorData);
+        throw new Error(errorData.message || 'Error al guardar el RT');
+    }
+    
+    const result = await response.json();
+    console.log('✅ RT guardado:', result);
+    return result;
+}
+
+/**
+ * Eliminar un Reporte de Trabajo por número
+ */
+export async function eliminarReporteTrabajo(numero) {
+    const response = await fetch(`${API_URL}/api/reportes-trabajo/${numero}`, {
+        method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Error al eliminar RT');
+    return await response.json();
+}
+
+/**
  * Subir el PDF de una cotización independiente
  */
 export async function subirPDFCotizacion(pdfFile) {
     const formData = new FormData();
     formData.append('pdf', pdfFile);
 
-    const response = await fetch(`${API_URL}/api/standalone-cotizaciones/upload`, {
-        method: 'POST',
-        body: formData
-    });
-    if (!response.ok) throw new Error('Error al subir el PDF');
-    return await response.json();
+    try {
+        const response = await fetch(`${API_URL}/api/standalone-cotizaciones/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Error al subir el PDF');
+        }
+        
+        const result = await response.json();
+        console.log('✅ PDF subido exitosamente:', result);
+        return result;
+    } catch (error) {
+        console.error('❌ Error al subir PDF:', error);
+        throw error;
+    }
 }

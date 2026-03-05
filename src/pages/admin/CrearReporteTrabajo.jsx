@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import logoImg from '../../assets/LOGOUPDM.png';
+import { subirPDFCotizacion, guardarReporteTrabajo, obtenerProximoNumeroRT } from '../../utils/documentStorage';
 
 function CrearReporteTrabajo() {
     const navigate = useNavigate();
@@ -10,7 +11,7 @@ function CrearReporteTrabajo() {
     // Estado del formulario
     const [formData, setFormData] = useState({
         fecha: new Date().toISOString().split('T')[0],
-        ordenNumero: '',
+        ordenNumero: 'RT-XXXXXX',
         cliente: '',
         direccion: '',
         contacto: '',
@@ -18,6 +19,16 @@ function CrearReporteTrabajo() {
         estado: 'Por Surtir',
         observaciones: ''
     });
+
+    // Obtener el próximo número de RT al cargar
+    useEffect(() => {
+        obtenerProximoNumeroRT()
+            .then(numero => setFormData(prev => ({ ...prev, ordenNumero: numero })))
+            .catch(err => {
+                console.error('Error obteniendo número de RT:', err);
+                toast.error('Error al obtener número de RT');
+            });
+    }, []);
 
     // Items de productos/servicios
     const [items, setItems] = useState([
@@ -83,7 +94,7 @@ function CrearReporteTrabajo() {
         ));
     };
 
-    const generarPDF = () => {
+    const generarPDF = async () => {
         if (!formData.cliente.trim()) {
             toast.error('El nombre del cliente es requerido');
             return;
@@ -418,13 +429,47 @@ function CrearReporteTrabajo() {
             doc.text('UPDM - Blvd. Rogelio Cantú Gómez 333-9, Monterrey, N.L | Tel: 813-557-3724 & 811-418-5412', pageWidth / 2, yPos, { align: 'center' });
 
             // Save PDF
-            const fileName = `Reporte_Trabajo_${formData.ordenNumero || 'SN'}_${formData.cliente.replace(/\s+/g, '_')}.pdf`;
+            const fileName = `${formData.ordenNumero || 'RT-SN'}_${formData.cliente.replace(/\s+/g, '_')}.pdf`;
             doc.save(fileName);
 
-            toast.success('Reporte de Trabajo generado exitosamente', { id: loadingToast });
+            // Subir PDF y guardar en BD
+            const pdfBlob = doc.output('blob');
+            const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+            
+            console.log('📤 Subiendo RT:', { fileName, size: pdfFile.size });
+            const uploadRes = await subirPDFCotizacion(pdfFile);
+            
+            if (!uploadRes.url) {
+                throw new Error('No se recibió URL del PDF');
+            }
+            
+            console.log('✅ RT subido en:', uploadRes.url);
+
+            // Guardar datos en BD
+            const datosDocumento = {
+                numero: formData.ordenNumero,
+                fecha: formData.fecha,
+                cliente: {
+                    nombre: formData.cliente,
+                    direccion: formData.direccion,
+                    contacto: formData.contacto
+                },
+                vendedor: formData.vendedor,
+                estado: formData.estado,
+                items: items,
+                observaciones: formData.observaciones,
+                pdfUrl: uploadRes.url,
+                creadoPor: 'Admin'
+            };
+
+            console.log('💾 Guardando RT en BD:', { numero: formData.ordenNumero });
+            await guardarReporteTrabajo(datosDocumento, false);
+
+            toast.success('Reporte de Trabajo guardado exitosamente', { id: loadingToast });
+            setTimeout(() => navigate('/admin/documentos'), 1500);
         } catch (error) {
-            console.error('Error generando PDF:', error);
-            toast.error('Error al generar el reporte', { id: loadingToast });
+            console.error('Error al procesar RT:', error);
+            toast.error('Error al guardar el Reporte de Trabajo', { id: loadingToast });
         }
     };
 

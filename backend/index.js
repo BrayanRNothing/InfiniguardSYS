@@ -57,6 +57,31 @@ const initDB = async () => {
       )
     `);
 
+    // Tabla Órdenes de Trabajo
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ordenes_trabajo (
+        id SERIAL PRIMARY KEY,
+        numero TEXT UNIQUE,
+        fecha DATE,
+        cliente_nombre TEXT,
+        titulo TEXT,
+        datos JSONB,
+        pdf_url TEXT
+      )
+    `);
+
+    // Tabla Reportes de Trabajo
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reportes_trabajo (
+        id SERIAL PRIMARY KEY,
+        numero TEXT UNIQUE,
+        fecha DATE,
+        cliente_nombre TEXT,
+        datos JSONB,
+        pdf_url TEXT
+      )
+    `);
+
     // Tabla Servicios
     await pool.query(`
       CREATE TABLE IF NOT EXISTS servicios (
@@ -635,20 +660,31 @@ app.get('/api/standalone-cotizaciones', async (req, res) => {
 // Obtener el próximo número de cotización
 app.get('/api/standalone-cotizaciones/next-number', async (req, res) => {
   try {
+    const tipo = req.query.tipo || 'COT'; // Default a COT si no se especifica
+    
+    // Definir tabla, patrón y número inicial según el tipo
+    const config = {
+      'COT': { table: 'cotizaciones', pattern: 'COT-%', inicial: 13000 },
+      'OT': { table: 'ordenes_trabajo', pattern: 'OT-%', inicial: 14000 },
+      'RT': { table: 'reportes_trabajo', pattern: 'RT-%', inicial: 15000 }
+    };
+    
+    const { table, pattern, inicial } = config[tipo] || config['COT'];
+    
     const { rows } = await pool.query(`
-      SELECT numero FROM cotizaciones 
-      WHERE numero LIKE 'COT-%' 
+      SELECT numero FROM ${table}
+      WHERE numero LIKE $1
       ORDER BY numero DESC 
       LIMIT 1
-    `);
+    `, [pattern]);
     
-    let nextNumber = 13000; // número inicial
+    let nextNumber = inicial;
     if (rows.length > 0) {
       const lastNumber = parseInt(rows[0].numero.split('-')[1]);
       nextNumber = lastNumber + 1;
     }
     
-    const formattedNumber = `COT-${nextNumber.toString().padStart(6, '0')}`;
+    const formattedNumber = `${tipo}-${nextNumber.toString().padStart(6, '0')}`;
     res.json({ success: true, numero: formattedNumber });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -659,7 +695,7 @@ app.post('/api/standalone-cotizaciones', async (req, res) => {
   const { numero, fecha, cliente_nombre, titulo, datos, pdf_url, total, isUpdate, oldNumero, oldPdfUrl } = req.body;
   
   // Log para debug
-  console.log('📝 Guardando cotización:', { numero, cliente_nombre, titulo, isUpdate, oldNumero, hasDatos: !!datos });
+  console.log('📝 Guardando cotización:', { numero, cliente_nombre, titulo, isUpdate, oldNumero, hasPdfUrl: !!pdf_url, pdfUrl: pdf_url });
   
   try {
     // Asegurar que datos sea un objeto válido o string JSON
@@ -679,13 +715,21 @@ app.post('/api/standalone-cotizaciones', async (req, res) => {
     const totalFinal = total || datos?.total || 0;
     const pdfUrlFinal = pdf_url || datos?.pdfUrl || null;
     
+    if (!numero) {
+      return res.status(400).json({ success: false, message: 'El número de cotización es requerido' });
+    }
+    
+    if (!clienteNombreFinal) {
+      return res.status(400).json({ success: false, message: 'El nombre del cliente es requerido' });
+    }
+    
     if (isUpdate) {
       // Si hay oldNumero, significa que se está cambiando el número
       const numeroActualizar = oldNumero || numero;
       
-      console.log('🔄 Actualizando cotización:', numeroActualizar, '→', numero);
+      console.log('🔄 Actualizando cotización:', numeroActualizar, '→', numero, 'con PDF:', pdfUrlFinal);
       
-      await pool.query(`
+      const updateResult = await pool.query(`
         UPDATE cotizaciones SET
           numero = $1,
           fecha = $2,
@@ -695,7 +739,12 @@ app.post('/api/standalone-cotizaciones', async (req, res) => {
           pdf_url = $6,
           total = $7
         WHERE numero = $8
+        RETURNING numero
       `, [numero, fechaFinal, clienteNombreFinal, tituloFinal, datosJSON, pdfUrlFinal, totalFinal, numeroActualizar]);
+
+      if (updateResult.rowCount === 0) {
+        return res.status(404).json({ success: false, message: 'Cotización no encontrada para actualizar' });
+      }
 
       // 🧹 Limpieza de PDF antiguo (si cambio URL y enviaron oldPdfUrl)
       if (oldPdfUrl && pdfUrlFinal && oldPdfUrl !== pdfUrlFinal) {
@@ -709,28 +758,210 @@ app.post('/api/standalone-cotizaciones', async (req, res) => {
       }
 
     } else {
-      console.log('➕ Creando nueva cotización:', numero);
+      console.log('➕ Creando nueva cotización:', numero, 'con PDF:', pdfUrlFinal);
+      
+      // Verificar si ya existe
+      const exists = await pool.query('SELECT numero FROM cotizaciones WHERE numero = $1', [numero]);
+      if (exists.rowCount > 0) {
+        return res.status(409).json({ success: false, message: 'La cotización ya existe. Número duplicado.' });
+      }
       
       // Crear nueva cotización
-      await pool.query(`
+      const insertResult = await pool.query(`
         INSERT INTO cotizaciones (numero, fecha, cliente_nombre, titulo, datos, pdf_url, total)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING numero
       `, [numero, fechaFinal, clienteNombreFinal, tituloFinal, datosJSON, pdfUrlFinal, totalFinal]);
+
+      if (insertResult.rowCount === 0) {
+        return res.status(500).json({ success: false, message: 'Error al insertar la cotización' });
+      }
     }
     
-    console.log('✅ Cotización guardada exitosamente:', numero);
-    res.json({ success: true });
+    console.log('✅ Cotización guardada exitosamente:', numero, 'PDF URL:', pdfUrlFinal);
+    res.json({ success: true, message: 'Cotización guardada correctamente', numero, pdfUrl: pdfUrlFinal });
   } catch (error) {
-    console.error('❌ Error guardando cotización:', error.message);
+    console.error('❌ Error guardando cotización:', error.message, error.detail);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
 app.post('/api/standalone-cotizaciones/upload', uploadDocumentos.single('pdf'), (req, res) => {
   if (req.file) {
-    res.json({ success: true, url: `uploads/documentos/${req.file.filename}` });
+    const pdfUrl = `uploads/documentos/${req.file.filename}`;
+    console.log('✅ PDF subido exitosamente:', { filename: req.file.filename, size: req.file.size, url: pdfUrl });
+    res.json({ success: true, url: pdfUrl, filename: req.file.filename });
   } else {
-    res.status(400).json({ success: false, message: 'No se subió ningún archivo' });
+    console.error('❌ Error: No se recibió archivo PDF');
+    res.status(400).json({ success: false, message: 'No se subió ningún archivo PDF' });
+  }
+});
+
+// ============ ÓRDENES DE TRABAJO (OT) ============
+app.get('/api/ordenes-trabajo', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM ordenes_trabajo ORDER BY numero DESC');
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/ordenes-trabajo', async (req, res) => {
+  const { numero, fecha, cliente_nombre, titulo, datos, pdf_url, isUpdate, oldNumero } = req.body;
+  
+  console.log('📝 Guardando OT:', { numero, cliente_nombre, isUpdate, hasPdfUrl: !!pdf_url });
+  
+  try {
+    let datosJSON = typeof datos === 'string' ? datos : (datos && typeof datos === 'object' ? JSON.stringify(datos) : null);
+    const clienteNombreFinal = cliente_nombre || datos?.cliente?.nombre || null;
+    const tituloFinal = titulo || datos?.titulo || null;
+    const fechaFinal = fecha || datos?.fecha || null;
+    const pdfUrlFinal = pdf_url || datos?.pdfUrl || null;
+    
+    if (!numero) {
+      return res.status(400).json({ success: false, message: 'El número de OT es requerido' });
+    }
+    
+    if (!clienteNombreFinal) {
+      return res.status(400).json({ success: false, message: 'El nombre del cliente es requerido' });
+    }
+    
+    if (isUpdate) {
+      const numeroActualizar = oldNumero || numero;
+      const updateResult = await pool.query(`
+        UPDATE ordenes_trabajo SET
+          numero = $1,
+          fecha = $2,
+          cliente_nombre = $3,
+          titulo = $4,
+          datos = $5,
+          pdf_url = $6
+        WHERE numero = $7
+        RETURNING numero
+      `, [numero, fechaFinal, clienteNombreFinal, tituloFinal, datosJSON, pdfUrlFinal, numeroActualizar]);
+
+      if (updateResult.rowCount === 0) {
+        return res.status(404).json({ success: false, message: 'OT no encontrada para actualizar' });
+      }
+    } else {
+      const exists = await pool.query('SELECT numero FROM ordenes_trabajo WHERE numero = $1', [numero]);
+      if (exists.rowCount > 0) {
+        return res.status(409).json({ success: false, message: 'La OT ya existe. Número duplicado.' });
+      }
+      
+      const insertResult = await pool.query(`
+        INSERT INTO ordenes_trabajo (numero, fecha, cliente_nombre, titulo, datos, pdf_url)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING numero
+      `, [numero, fechaFinal, clienteNombreFinal, tituloFinal, datosJSON, pdfUrlFinal]);
+
+      if (insertResult.rowCount === 0) {
+        return res.status(500).json({ success: false, message: 'Error al insertar la OT' });
+      }
+    }
+    
+    console.log('✅ OT guardada exitosamente:', numero);
+    res.json({ success: true, message: 'OT guardada correctamente', numero, pdfUrl: pdfUrlFinal });
+  } catch (error) {
+    console.error('❌ Error guardando OT:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.delete('/api/ordenes-trabajo/:numero', async (req, res) => {
+  const { numero } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM ordenes_trabajo WHERE numero = $1', [numero]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'OT no encontrada' });
+    }
+    res.json({ success: true, message: 'OT eliminada correctamente' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ============ REPORTES DE TRABAJO (RT) ============
+app.get('/api/reportes-trabajo', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM reportes_trabajo ORDER BY numero DESC');
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/reportes-trabajo', async (req, res) => {
+  const { numero, fecha, cliente_nombre, datos, pdf_url, isUpdate, oldNumero } = req.body;
+  
+  console.log('📝 Guardando RT:', { numero, cliente_nombre, isUpdate, hasPdfUrl: !!pdf_url });
+  
+  try {
+    let datosJSON = typeof datos === 'string' ? datos : (datos && typeof datos === 'object' ? JSON.stringify(datos) : null);
+    const clienteNombreFinal = cliente_nombre || datos?.cliente?.nombre || null;
+    const fechaFinal = fecha || datos?.fecha || null;
+    const pdfUrlFinal = pdf_url || datos?.pdfUrl || null;
+    
+    if (!numero) {
+      return res.status(400).json({ success: false, message: 'El número de RT es requerido' });
+    }
+    
+    if (!clienteNombreFinal) {
+      return res.status(400).json({ success: false, message: 'El nombre del cliente es requerido' });
+    }
+    
+    if (isUpdate) {
+      const numeroActualizar = oldNumero || numero;
+      const updateResult = await pool.query(`
+        UPDATE reportes_trabajo SET
+          numero = $1,
+          fecha = $2,
+          cliente_nombre = $3,
+          datos = $4,
+          pdf_url = $5
+        WHERE numero = $6
+        RETURNING numero
+      `, [numero, fechaFinal, clienteNombreFinal, datosJSON, pdfUrlFinal, numeroActualizar]);
+
+      if (updateResult.rowCount === 0) {
+        return res.status(404).json({ success: false, message: 'RT no encontrada para actualizar' });
+      }
+    } else {
+      const exists = await pool.query('SELECT numero FROM reportes_trabajo WHERE numero = $1', [numero]);
+      if (exists.rowCount > 0) {
+        return res.status(409).json({ success: false, message: 'El RT ya existe. Número duplicado.' });
+      }
+      
+      const insertResult = await pool.query(`
+        INSERT INTO reportes_trabajo (numero, fecha, cliente_nombre, datos, pdf_url)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING numero
+      `, [numero, fechaFinal, clienteNombreFinal, datosJSON, pdfUrlFinal]);
+
+      if (insertResult.rowCount === 0) {
+        return res.status(500).json({ success: false, message: 'Error al insertar el RT' });
+      }
+    }
+    
+    console.log('✅ RT guardado exitosamente:', numero);
+    res.json({ success: true, message: 'RT guardado correctamente', numero, pdfUrl: pdfUrlFinal });
+  } catch (error) {
+    console.error('❌ Error guardando RT:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.delete('/api/reportes-trabajo/:numero', async (req, res) => {
+  const { numero } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM reportes_trabajo WHERE numero = $1', [numero]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'RT no encontrado' });
+    }
+    res.json({ success: true, message: 'RT eliminado correctamente' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

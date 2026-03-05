@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoImg from '../../assets/LOGOUPDM.png';
+import { subirPDFCotizacion, guardarOrdenTrabajo, obtenerProximoNumeroOT } from '../../utils/documentStorage';
 
 function CrearOrdenTrabajo() {
     const navigate = useNavigate();
@@ -17,9 +18,19 @@ function CrearOrdenTrabajo() {
         tecnico: '',
         ayudante: '',
         fecha: new Date().toISOString().split('T')[0],
-        ot: `${13001 + Math.floor(Math.random() * 100)}`,
+        ot: 'OT-XXXXXX',
         notas: '',
     });
+
+    // Obtener el próximo número de OT al cargar
+    useEffect(() => {
+        obtenerProximoNumeroOT()
+            .then(numero => setFormData(prev => ({ ...prev, ot: numero })))
+            .catch(err => {
+                console.error('Error obteniendo número de OT:', err);
+                toast.error('Error al obtener número de OT');
+            });
+    }, []);
 
     const [equipos, setEquipos] = useState([
         { id: 1, marca: '', modelo: '', qr: '', descripcion: '' },
@@ -271,12 +282,49 @@ function CrearOrdenTrabajo() {
             // Better alignment in image: "Firma supervisor: ____________"
             // But standard signature line is better. Sticking to lines.
 
-            const fileName = `OT_${formData.ot || 'SN'}_${(formData.nombre || 'cliente').replace(/\s+/g, '_')}.pdf`;
+            const fileName = `${formData.ot || 'OT-SN'}_${(formData.nombre || 'cliente').replace(/\s+/g, '_')}.pdf`;
             doc.save(fileName);
-            toast.success('PDF generado exitosamente', { id: t });
+
+            // Subir PDF y guardar en BD
+            const pdfBlob = doc.output('blob');
+            const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+            
+            console.log('📤 Subiendo OT:', { fileName, size: pdfFile.size });
+            const uploadRes = await subirPDFCotizacion(pdfFile);
+            
+            if (!uploadRes.url) {
+                throw new Error('No se recibió URL del PDF');
+            }
+            
+            console.log('✅ OT subida en:', uploadRes.url);
+
+            // Guardar datos en BD
+            const datosDocumento = {
+                numero: formData.ot,
+                fecha: formData.fecha,
+                cliente: {
+                    nombre: formData.nombre,
+                    telefono: formData.telefono,
+                    correo: formData.correo,
+                    ubicacion: formData.ubicacion
+                },
+                titulo: formData.titulo,
+                tecnico: formData.tecnico,
+                ayudante: formData.ayudante,
+                equipos: equipos,
+                notas: formData.notas,
+                pdfUrl: uploadRes.url,
+                creadoPor: 'Admin'
+            };
+
+            console.log('💾 Guardando OT en BD:', { numero: formData.ot });
+            await guardarOrdenTrabajo(datosDocumento, false);
+
+            toast.success('Orden de Trabajo guardada exitosamente', { id: t });
+            setTimeout(() => navigate('/admin/documentos'), 1500);
         } catch (err) {
-            console.error(err);
-            toast.error('Error al generar el PDF', { id: t });
+            console.error('Error al procesar OT:', err);
+            toast.error('Error al guardar la Orden de Trabajo', { id: t });
         }
     };
 
@@ -369,29 +417,28 @@ function CrearOrdenTrabajo() {
                             </div>
                             <div className="space-y-2">
                                 {equipos.map((eq, idx) => (
-                                    <div key={eq.id} className="grid grid-cols-1 lg:grid-cols-12 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
-                                        <div className="lg:col-span-1 flex items-center justify-between lg:justify-center">
-                                            <span className="text-xs font-bold text-slate-600">#{idx + 1}</span>
+                                    <div key={eq.id} className="grid grid-cols-1 lg:grid-cols-12 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <div className="lg:col-span-12 flex items-center justify-between mb-2">
+                                            <span className="text-xs font-bold text-slate-600">Equipo #{idx + 1}</span>
                                             {equipos.length > 1 && (
-                                                <button onClick={() => eliminarEquipo(eq.id)} className="lg:hidden text-rose-600 text-xs font-semibold">Quitar</button>
+                                                <button onClick={() => eliminarEquipo(eq.id)} className="text-rose-600 text-xs font-semibold">Quitar</button>
                                             )}
                                         </div>
                                         <div className="lg:col-span-2">
-                                            <input value={eq.marca} onChange={e => actualizarEquipo(eq.id, 'marca', e.target.value)} placeholder="Marca" className={inputBase} />
+                                            <label className="text-xs text-slate-500 font-semibold block mb-1">Marca</label>
+                                            <input value={eq.marca} onChange={e => actualizarEquipo(eq.id, 'marca', e.target.value)} placeholder="Ej: Samsung, LG, etc" className={inputBase} />
                                         </div>
                                         <div className="lg:col-span-2">
-                                            <input value={eq.modelo} onChange={e => actualizarEquipo(eq.id, 'modelo', e.target.value)} placeholder="Modelo" className={inputBase} />
+                                            <label className="text-xs text-slate-500 font-semibold block mb-1">Modelo</label>
+                                            <input value={eq.modelo} onChange={e => actualizarEquipo(eq.id, 'modelo', e.target.value)} placeholder="Ej: Model XYZ-123" className={inputBase} />
                                         </div>
                                         <div className="lg:col-span-3">
-                                            <input value={eq.qr} onChange={e => actualizarEquipo(eq.id, 'qr', e.target.value)} placeholder="Codigo QR / Serie" className={inputBase} />
+                                            <label className="text-xs text-slate-500 font-semibold block mb-1">Código QR / Serie</label>
+                                            <input value={eq.qr} onChange={e => actualizarEquipo(eq.id, 'qr', e.target.value)} placeholder="Escanea o escribe la serie" className={inputBase} />
                                         </div>
-                                        <div className="lg:col-span-3">
-                                            <input value={eq.descripcion} onChange={e => actualizarEquipo(eq.id, 'descripcion', e.target.value)} placeholder="Descripcion del trabajo" className={inputBase} />
-                                        </div>
-                                        <div className="hidden lg:flex lg:col-span-1 items-center justify-center">
-                                            {equipos.length > 1 && (
-                                                <button onClick={() => eliminarEquipo(eq.id)} className="text-rose-600 hover:text-rose-700 text-xs font-semibold">Quitar</button>
-                                            )}
+                                        <div className="lg:col-span-5">
+                                            <label className="text-xs text-slate-500 font-semibold block mb-1">Descripción del Trabajo *</label>
+                                            <input value={eq.descripcion} onChange={e => actualizarEquipo(eq.id, 'descripcion', e.target.value)} placeholder="Ej: Mantenimiento, Reparación, Limpieza..." className={inputBase} />
                                         </div>
                                     </div>
                                 ))}

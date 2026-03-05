@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../../config/api';
 import BotonMenu from '../../components/ui/BotonMenu';
-import { obtenerTodasLasCotizaciones, eliminarCotizacionSimple, subirPDFCotizacion } from '../../utils/documentStorage';
+import { obtenerTodasLasCotizaciones, eliminarCotizacionSimple, eliminarOrdenTrabajo, eliminarReporteTrabajo, subirPDFCotizacion } from '../../utils/documentStorage';
 import { formatearFecha } from '../../utils/documentConverter';
 import { generarPDFCotizacion } from '../../utils/pdfGenerator';
 import toast from 'react-hot-toast';
@@ -15,6 +15,23 @@ function Documentos() {
     const [busqueda, setBusqueda] = useState('');
     const [editandoNumero, setEditandoNumero] = useState(null);
     const [nuevoNumero, setNuevoNumero] = useState('');
+
+    // Detectar tipo de documento basado en el número
+    const detectarTipoDocumento = (numero) => {
+        if (!numero) return { tipo: 'Desconocido', icono: '📄', color: 'gray' };
+        
+        const numeroUpper = numero.toUpperCase();
+        
+        if (numeroUpper.startsWith('COT-')) {
+            return { tipo: 'Cotización', icono: '📄', color: 'blue' };
+        } else if (numeroUpper.startsWith('OT-')) {
+            return { tipo: 'Orden de Trabajo', icono: '🔧', color: 'green' };
+        } else if (numeroUpper.startsWith('RT-')) {
+            return { tipo: 'Reporte de Trabajo', icono: '📋', color: 'purple' };
+        } else {
+            return { tipo: 'Documento', icono: '📄', color: 'gray' };
+        }
+    };
 
     useEffect(() => {
         if (vistaActual === 'historial') {
@@ -44,9 +61,16 @@ function Documentos() {
     };
 
     const handleEliminar = async (doc) => {
-        if (window.confirm(`¿Seguro que deseas eliminar la cotización ${doc.numero}?`)) {
+        const tipoDocumento = detectarTipoDocumento(doc.numero).tipo;
+        if (window.confirm(`¿Seguro que deseas eliminar el ${tipoDocumento} ${doc.numero}?`)) {
             try {
-                await eliminarCotizacionSimple(doc.numero);
+                if (doc.numero.startsWith('COT-')) {
+                    await eliminarCotizacionSimple(doc.numero);
+                } else if (doc.numero.startsWith('OT-')) {
+                    await eliminarOrdenTrabajo(doc.numero);
+                } else if (doc.numero.startsWith('RT-')) {
+                    await eliminarReporteTrabajo(doc.numero);
+                }
                 toast.success('Eliminado correctamente');
                 cargarHistorial();
             } catch (error) {
@@ -173,7 +197,7 @@ function Documentos() {
                     <BotonMenu
                         gradient="from-orange-500/80 to-orange-600/80 hover:from-orange-600/90 hover:to-orange-700/90"
                         icon="📁"
-                        titulo="Archivo de Cotizaciones"
+                        titulo="Archivo de Documentos"
                         badgeText="Consultar"
                         onClick={() => setVistaActual('historial')}
                     />
@@ -192,7 +216,7 @@ function Documentos() {
                 >
                     ← Volver
                 </button>
-                <h1 className="text-3xl font-bold text-gray-800">Archivo de Cotizaciones</h1>
+                <h1 className="text-3xl font-bold text-gray-800">Archivo de Documentos</h1>
 
                 {/* Buscador */}
                 <div className="mt-4 relative max-w-md">
@@ -214,43 +238,44 @@ function Documentos() {
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
                             <tr>
-                                <th className="px-6 py-4">Número</th>
-                                <th className="px-6 py-4">Fecha</th>
-                                <th className="px-6 py-4">Cliente</th>
-                                <th className="px-6 py-4 text-right">Acciones</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Número</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Tipo</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Fecha</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Cliente</th>
+                                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {filteredDocs.length === 0 ? (
                                 <tr>
-                                    <td colSpan="4" className="px-6 py-12 text-center text-gray-400 italic">
-                                        No se encontraron cotizaciones
+                                    <td colSpan="5" className="px-6 py-12 text-center text-gray-400 italic">
+                                        No se encontraron documentos
                                     </td>
                                 </tr>
                             ) : (
                                 filteredDocs.map((doc) => (
-                                    <tr key={`${doc.servicioId}-${doc.numero}`} className="hover:bg-blue-50/50 transition-colors group">
-                                        <td className="px-6 py-4">
+                                    <tr key={`${doc.servicioId}-${doc.numero}`} className="hover:bg-blue-50/30 transition-colors">
+                                        <td className="px-6 py-4 align-middle">
                                             {editandoNumero === doc.numero ? (
                                                 <div className="flex items-center gap-2">
                                                     <input
                                                         type="text"
                                                         value={nuevoNumero}
                                                         onChange={(e) => setNuevoNumero(e.target.value)}
-                                                        className="font-mono font-bold text-blue-600 bg-white px-3 py-1.5 rounded-lg border-2 border-blue-400 focus:ring-2 focus:ring-blue-500 outline-none w-36"
+                                                        className="font-mono text-sm font-semibold text-blue-600 bg-white px-3 py-2 rounded-lg border-2 border-blue-400 focus:ring-2 focus:ring-blue-500 outline-none w-36"
                                                         autoFocus
                                                     />
-                                                    <button onClick={() => handleGuardarNumero(doc)} className="text-green-600 hover:text-green-700 text-lg font-bold">✓</button>
-                                                    <button onClick={() => setEditandoNumero(null)} className="text-red-500 hover:text-red-600 text-lg">✕</button>
+                                                    <button onClick={() => handleGuardarNumero(doc)} className="text-green-600 hover:text-green-700 text-xl font-bold p-1">✓</button>
+                                                    <button onClick={() => setEditandoNumero(null)} className="text-red-500 hover:text-red-600 text-xl p-1">✕</button>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2 group/numero">
-                                                    <span className="font-mono font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
+                                                    <span className="font-mono text-sm font-semibold text-blue-700 bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200">
                                                         {doc.numero}
                                                     </span>
                                                     <button 
                                                         onClick={() => handleEditarNumero(doc)} 
-                                                        className="opacity-0 group-hover/numero:opacity-100 text-blue-400 hover:text-blue-600 transition-all text-sm"
+                                                        className="opacity-0 group-hover/numero:opacity-100 text-blue-500 hover:text-blue-700 transition-all text-xs p-1"
                                                         title="Editar número"
                                                     >
                                                         ✏️
@@ -258,27 +283,61 @@ function Documentos() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-600">{formatearFecha(doc.fecha)}</td>
-                                        <td className="px-6 py-4 font-bold text-gray-900">
-                                            {doc.cliente?.nombre || doc.servicioCliente}
+                                        <td className="px-6 py-4 align-middle">
+                                            {(() => {
+                                                const tipoInfo = detectarTipoDocumento(doc.numero);
+                                                const colorClasses = {
+                                                    blue: 'bg-blue-100 text-blue-700 border-blue-200',
+                                                    green: 'bg-green-100 text-green-700 border-green-200',
+                                                    purple: 'bg-purple-100 text-purple-700 border-purple-200',
+                                                    gray: 'bg-gray-100 text-gray-700 border-gray-200'
+                                                };
+                                                return (
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${colorClasses[tipoInfo.color]}`}>
+                                                        <span>{tipoInfo.icono}</span>
+                                                        <span>{tipoInfo.tipo}</span>
+                                                    </span>
+                                                );
+                                            })()}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 align-middle">
+                                            <span className="text-sm text-gray-600 font-medium">{formatearFecha(doc.fecha)}</span>
+                                        </td>
+                                        <td className="px-6 py-4 align-middle">
+                                            <span className="text-sm font-semibold text-gray-800">
+                                                {doc.cliente?.nombre || doc.servicioCliente}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 align-middle">
                                             <div className="flex items-center justify-end gap-2">
                                                 <button 
+                                                    onClick={() => handleDescargar(doc)} 
+                                                    className={`flex items-center justify-center gap-1.5 font-semibold px-3 py-2 rounded-lg transition-all duration-150 text-xs min-w-[90px] ${
+                                                        doc.pdfUrl 
+                                                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md cursor-pointer'
+                                                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                    }`}
+                                                    title={doc.pdfUrl ? "Ver PDF" : "PDF no disponible"}
+                                                    disabled={!doc.pdfUrl}
+                                                >
+                                                    <span>📄</span>
+                                                    <span>Ver PDF</span>
+                                                </button>
+                                                <button 
                                                     onClick={() => handleEditar(doc)} 
-                                                    className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm"
+                                                    className="flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-150 text-xs min-w-[80px]"
                                                     title="Editar"
                                                 >
                                                     <span>✏️</span>
-                                                    <span className="hidden sm:inline">Editar</span>
+                                                    <span>Editar</span>
                                                 </button>
                                                 <button 
                                                     onClick={() => handleEliminar(doc)} 
-                                                    className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm"
+                                                    className="flex items-center justify-center gap-1.5 bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-150 text-xs min-w-[80px]"
                                                     title="Eliminar"
                                                 >
                                                     <span>🗑️</span>
-                                                    <span className="hidden sm:inline">Eliminar</span>
+                                                    <span>Eliminar</span>
                                                 </button>
                                             </div>
                                         </td>

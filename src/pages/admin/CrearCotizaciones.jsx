@@ -11,7 +11,6 @@ const CrearCotizaciones = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
 
     // Determinar si estamos en modo edición
     const editData = location.state?.cotizacion;
@@ -464,7 +463,15 @@ const CrearCotizaciones = () => {
             // 1. Subir el PDF al servidor
             const pdfBlob = doc.output('blob');
             const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+            
+            console.log('📤 Iniciando carga de PDF:', { fileName, size: pdfFile.size });
             const uploadRes = await subirPDFCotizacion(pdfFile);
+            
+            if (!uploadRes.url) {
+                throw new Error('No se recibió URL del PDF después de subir');
+            }
+            
+            console.log('✅ PDF cargado en:', uploadRes.url);
 
             // 2. Guardar datos en la tabla de cotizaciones
             const datosDocumento = {
@@ -493,6 +500,7 @@ const CrearCotizaciones = () => {
                 ...(isEditing && editData?.numero !== quotationNumber && { oldNumero: editData.numero })
             };
 
+            console.log('💾 Guardando datos de cotización en BD:', { numero: quotationNumber, hasPdfUrl: !!uploadRes.url });
             await guardarCotizacionSimple(datosDocumento, isEditing);
 
             toast.success(isEditing ? 'Cotización actualizada' : 'Cotización guardada', { id: loadingToast });
@@ -596,78 +604,73 @@ return (
             </div>
         </div>
 
-        {/* Split Panel */}
-        <div className="flex" style={{ flex: 1, overflow: 'hidden' }}>
-
-            {/* LEFT: Compact scrollable form */}
-            <div className="border-r border-gray-100 flex flex-col" style={{ width: 370, flexShrink: 0 }}>
-                <div style={{ flex: 1, overflowY: 'auto' }} className="px-3 py-3 space-y-2">
+        {/* Main Form Area */}
+        <div className="flex-1 overflow-auto bg-linear-to-br from-gray-100 via-blue-50 to-cyan-100 p-3 md:p-4">
+            <div className="w-full max-w-7xl mx-auto rounded-3xl border border-gray-200 bg-white/95 backdrop-blur shadow-lg p-4 md:p-5">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
                     {/* N de cotizacion */}
-                    <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 flex items-center justify-between">
+                    <div className="lg:col-span-12 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex items-center justify-between">
                         <span className="text-xs font-bold text-blue-500 uppercase tracking-wide">N{'\u00BA'} Cotizacion</span>
-                        <span className="font-mono font-bold text-blue-700 text-sm">{previewQuotationNumber}</span>
+                        <span className="font-mono font-bold text-blue-700 text-lg">{previewQuotationNumber}</span>
                     </div>
 
                     {/* Cliente */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Cliente</p>
-                        <input type="text" value={formData.clienteNombre} onChange={(e) => setFormData({ ...formData, clienteNombre: e.target.value })} placeholder="Nombre del cliente *" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none" />
-                        <input type="text" value={formData.clienteEmpresa} onChange={(e) => setFormData({ ...formData, clienteEmpresa: e.target.value })} placeholder="Empresa" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
-                        <div className="grid grid-cols-2 gap-2">
-                            <input type="email" value={formData.clienteEmail} onChange={(e) => setFormData({ ...formData, clienteEmail: e.target.value })} placeholder="Email" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
-                            <input type="tel" value={formData.clienteTelefono} onChange={(e) => setFormData({ ...formData, clienteTelefono: e.target.value })} placeholder="Telefono" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                    <div className="lg:col-span-12 border border-gray-200 rounded-2xl p-3">
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Datos del Cliente</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <input type="text" value={formData.clienteNombre} onChange={(e) => setFormData({ ...formData, clienteNombre: e.target.value })} placeholder="Nombre del cliente *" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                            <input type="text" value={formData.clienteEmpresa} onChange={(e) => setFormData({ ...formData, clienteEmpresa: e.target.value })} placeholder="Empresa" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                            <input type="email" value={formData.clienteEmail} onChange={(e) => setFormData({ ...formData, clienteEmail: e.target.value })} placeholder="Email" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                            <input type="tel" value={formData.clienteTelefono} onChange={(e) => setFormData({ ...formData, clienteTelefono: e.target.value })} placeholder="Telefono" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
                         </div>
-                        <input type="text" value={formData.clienteDireccion} onChange={(e) => setFormData({ ...formData, clienteDireccion: e.target.value })} placeholder="Direccion" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                        <div className="mt-3">
+                            <input type="text" value={formData.clienteDireccion} onChange={(e) => setFormData({ ...formData, clienteDireccion: e.target.value })} placeholder="Direccion" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                        </div>
                     </div>
 
-                    {/* Detalles de cotizacion */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalles</p>
-                        <input type="text" value={formData.titulo} onChange={(e) => setFormData({ ...formData, titulo: e.target.value })} placeholder="Titulo *" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
-                        <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} placeholder="Descripcion (opcional)" rows={2} className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none resize-none" />
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">Fecha</label>
-                                <input type="date" value={formData.fecha} onChange={(e) => setFormData({ ...formData, fecha: e.target.value })} className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                    {/* Detalles de Cotizacion */}
+                    <div className="lg:col-span-12 border border-gray-200 rounded-2xl p-3">
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Detalles de la Cotización</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                            <input type="text" value={formData.titulo} onChange={(e) => setFormData({ ...formData, titulo: e.target.value })} placeholder="Titulo *" className="lg:col-span-6 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                            <input type="text" value={formData.creadoPor} onChange={(e) => setFormData({ ...formData, creadoPor: e.target.value })} placeholder="Creada por" className="lg:col-span-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                            <div className="lg:col-span-3">
+                                <input type="date" value={formData.fecha} onChange={(e) => setFormData({ ...formData, fecha: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
                             </div>
-                            <div>
-                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">Validez (dias)</label>
-                                <input type="number" value={formData.validez} onChange={(e) => setFormData({ ...formData, validez: e.target.value })} className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" min="1" />
-                            </div>
+                            <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} placeholder="Descripcion (opcional)" rows={2} className="lg:col-span-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none" />
                         </div>
-                        <input type="text" value={formData.creadoPor} onChange={(e) => setFormData({ ...formData, creadoPor: e.target.value })} placeholder="Creada por" className="w-full text-sm px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
                     </div>
 
                     {/* Items */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-3">
+                    <div className="lg:col-span-12 border border-gray-200 rounded-2xl p-3">
                         <div className="flex items-center justify-between mb-2">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Items / Servicios</p>
-                            <button onClick={agregarItem} className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-lg transition-all">+ Agregar</button>
+                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Items / Servicios</p>
+                            <button onClick={agregarItem} className="text-xs font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition border border-blue-100">+ Agregar</button>
                         </div>
                         <div className="space-y-2">
                             {items.map((item, index) => (
-                                <div key={item.id} className="bg-gray-50 rounded-lg p-2 border border-gray-100">
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <span className="text-xs font-bold text-gray-400">ITEM #{index + 1}</span>
-                                        {items.length > 1 && (
-                                            <button onClick={() => eliminarItem(item.id)} className="text-red-400 hover:text-red-600 text-xs font-bold">x</button>
-                                        )}
+                                <div key={item.id} className="grid grid-cols-1 lg:grid-cols-12 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                                    <div className="lg:col-span-6">
+                                        <label className="text-xs text-gray-500 font-semibold block mb-1">Descripción del Servicio/Producto *</label>
+                                        <input type="text" value={item.descripcion} onChange={(e) => actualizarItem(item.id, 'descripcion', e.target.value)} placeholder={`Ej: Instalación, Mantenimiento, Producto...`} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
                                     </div>
-                                    <input type="text" value={item.descripcion} onChange={(e) => actualizarItem(item.id, 'descripcion', e.target.value)} placeholder="Descripcion" className="w-full text-xs px-2 py-1.5 bg-white border border-gray-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none mb-1.5" />
-                                    <div className="grid grid-cols-3 gap-1.5">
-                                        <div>
-                                            <label className="text-xs text-gray-400 font-bold block">CANT.</label>
-                                            <input type="number" value={item.cantidad} onChange={(e) => actualizarItem(item.id, 'cantidad', e.target.value)} min="1" className="w-full text-xs px-2 py-1.5 bg-white border border-gray-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-400 font-bold block">PRECIO</label>
-                                            <input type="number" value={item.precioUnitario} onChange={(e) => actualizarItem(item.id, 'precioUnitario', e.target.value)} min="0" step="0.01" className="w-full text-xs px-2 py-1.5 bg-white border border-gray-200 rounded-md focus:ring-1 focus:ring-blue-400 outline-none" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-400 font-bold block">SUBTOTAL</label>
-                                            <div className="text-xs px-2 py-1.5 bg-blue-50 border border-blue-100 rounded-md font-semibold text-blue-700">{formatCurrency(calcularSubtotal(item))}</div>
-                                        </div>
+                                    <div className="lg:col-span-2">
+                                        <label className="text-xs text-gray-500 font-semibold block mb-1">Cantidad</label>
+                                        <input type="number" value={item.cantidad} onChange={(e) => actualizarItem(item.id, 'cantidad', e.target.value)} min="1" placeholder="1" className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                                    </div>
+                                    <div className="lg:col-span-2">
+                                        <label className="text-xs text-gray-500 font-semibold block mb-1">Precio Unitario *</label>
+                                        <input type="number" value={item.precioUnitario} onChange={(e) => actualizarItem(item.id, 'precioUnitario', e.target.value)} min="0" step="0.01" placeholder="0.00" className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                                    </div>
+                                    <div className="lg:col-span-1 flex flex-col items-center justify-center">
+                                        <span className="text-xs text-gray-500 font-semibold mb-1">Subtotal</span>
+                                        <span className="text-sm font-bold text-blue-700">{formatCurrency(calcularSubtotal(item))}</span>
+                                    </div>
+                                    <div className="lg:col-span-1 flex items-center justify-center">
+                                        {items.length > 1 && (
+                                            <button onClick={() => eliminarItem(item.id)} className="text-rose-600 hover:text-rose-700 text-xs font-semibold px-2 py-1 hover:bg-rose-50 rounded">Quitar</button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -675,159 +678,50 @@ return (
                     </div>
 
                     {/* Financiero */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Configuracion Financiera</p>
-                        <div className="grid grid-cols-3 gap-2">
+                    <div className="lg:col-span-12 border border-gray-200 rounded-2xl p-3">
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Configuración Financiera</p>
+                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                             <div>
-                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">Moneda</label>
-                                <select value={formData.moneda} onChange={(e) => setFormData({ ...formData, moneda: e.target.value })} className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none">
+                                <label className="text-xs text-gray-500 font-semibold block mb-1">Moneda</label>
+                                <select value={formData.moneda} onChange={(e) => setFormData({ ...formData, moneda: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
                                     <option value="MXN">MXN</option>
                                     <option value="USD">USD</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">IVA (%)</label>
-                                <input type="number" value={formData.impuesto} onChange={(e) => setFormData({ ...formData, impuesto: e.target.value })} min="0" max="100" className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                                <label className="text-xs text-gray-500 font-semibold block mb-1">Validez (días)</label>
+                                <input type="number" value={formData.validez} onChange={(e) => setFormData({ ...formData, validez: e.target.value })} min="1" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 font-semibold block mb-0.5">Descuento (%)</label>
-                                <input type="number" value={formData.descuento} onChange={(e) => setFormData({ ...formData, descuento: e.target.value })} min="0" max="100" className="w-full text-xs px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none" />
+                                <label className="text-xs text-gray-500 font-semibold block mb-1">IVA (%)</label>
+                                <input type="number" value={formData.impuesto} onChange={(e) => setFormData({ ...formData, impuesto: e.target.value })} min="0" max="100" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500 font-semibold block mb-1">Descuento (%)</label>
+                                <input type="number" value={formData.descuento} onChange={(e) => setFormData({ ...formData, descuento: e.target.value })} min="0" max="100" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                            </div>
+                            <div className="col-span-2 lg:col-span-1 bg-blue-50 border border-blue-100 rounded-xl p-2.5 flex flex-col justify-center">
+                                <span className="text-xs text-blue-500 font-bold uppercase">Total</span>
+                                <span className="text-lg font-bold text-blue-700">{formatCurrency(calcularTotal())}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Notas */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Notas y Terminos</p>
-                        <textarea value={formData.notas} onChange={(e) => setFormData({ ...formData, notas: e.target.value })} placeholder="Notas adicionales..." rows={2} className="w-full text-xs px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none resize-none" />
-                        <textarea value={formData.terminosCondiciones} onChange={(e) => setFormData({ ...formData, terminosCondiciones: e.target.value })} placeholder="Terminos y condiciones..." rows={3} className="w-full text-xs px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-400 outline-none resize-none" />
+                    {/* Notas y Términos */}
+                    <div className="lg:col-span-12 border border-gray-200 rounded-2xl p-3">
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Notas y Términos</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            <textarea value={formData.notas} onChange={(e) => setFormData({ ...formData, notas: e.target.value })} placeholder="Notas adicionales..." rows={3} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none" />
+                            <textarea value={formData.terminosCondiciones} onChange={(e) => setFormData({ ...formData, terminosCondiciones: e.target.value })} placeholder="Términos y condiciones..." rows={3} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none" />
+                        </div>
                     </div>
 
                     <div className="h-6" />
                 </div>
             </div>
-
-            {/* RIGHT: Live preview of the document */}
-            <div style={{ flex: 1, overflowY: 'auto' }} className="bg-gray-100 p-6 flex justify-center">
-                <div className="w-full max-w-2xl bg-white shadow-2xl rounded-xl overflow-hidden">
-
-                    {/* Doc Header */}
-                    <div className="px-10 pt-8 pb-5 border-b-2 border-gray-200">
-                        <div className="flex items-start justify-between">
-                            <img src={logoImg} alt="Logo" className="h-12 object-contain" />
-                            <div className="text-right">
-                                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Cotizacion</div>
-                                <div className="text-2xl font-bold text-blue-700 mt-0.5">{previewQuotationNumber}</div>
-                            </div>
-                        </div>
-                        <div className="mt-4 text-xs text-gray-400 space-y-0.5">
-                            <div>UPDM - Blvd. Rogelio Cantu Gomez 333-9, Col. Santa Maria, Monterrey N.L.</div>
-                            <div>RFC: UPD141011MC3 | TEL: 813-557-3724 y 811-418-5412</div>
-                        </div>
-                    </div>
-
-                    <div className="px-10 py-6 space-y-5">
-                        {/* Titulo y fecha */}
-                        <div>
-                            <h2 className="text-base font-bold text-gray-700 uppercase tracking-widest text-center">Cotizacion</h2>
-                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                <span>Fecha: {formData.fecha || '-'}</span>
-                                <span>Valida por: {formData.validez || 30} dias</span>
-                            </div>
-                            {formData.creadoPor && <div className="text-xs text-gray-400 mt-0.5 text-center">Elaboro: {formData.creadoPor}</div>}
-                            {formData.titulo && <div className="font-bold text-gray-800 text-sm mt-2">{formData.titulo}</div>}
-                            {formData.descripcion && <div className="text-xs text-gray-500 mt-1">{formData.descripcion}</div>}
-                        </div>
-
-                        {/* Cliente box */}
-                        <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
-                            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Datos del Cliente</div>
-                            <div className="text-xs space-y-0.5 text-gray-700">
-                                {formData.clienteNombre
-                                    ? <div><span className="font-bold">Cliente:</span> {formData.clienteNombre}</div>
-                                    : <div className="text-gray-300 italic">Sin cliente...</div>}
-                                {formData.clienteEmpresa && <div><span className="font-bold">Empresa:</span> {formData.clienteEmpresa}</div>}
-                                {formData.clienteEmail && <div><span className="font-bold">Email:</span> {formData.clienteEmail}</div>}
-                                {formData.clienteTelefono && <div><span className="font-bold">Tel:</span> {formData.clienteTelefono}</div>}
-                                {formData.clienteDireccion && <div><span className="font-bold">Dir:</span> {formData.clienteDireccion}</div>}
-                            </div>
-                        </div>
-
-                        {/* Tabla de items */}
-                        <div className="overflow-hidden rounded-xl border border-gray-200">
-                            <table className="w-full text-xs">
-                                <thead className="bg-gray-700 text-white">
-                                    <tr>
-                                        <th className="px-4 py-2.5 text-left font-semibold">Descripcion</th>
-                                        <th className="px-3 py-2.5 text-center font-semibold w-14">Cant.</th>
-                                        <th className="px-3 py-2.5 text-right font-semibold w-24">Precio</th>
-                                        <th className="px-3 py-2.5 text-right font-semibold w-24">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {items.map((item, i) => (
-                                        <tr key={item.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                            <td className="px-4 py-2 border-t border-gray-100">{item.descripcion || <span className="text-gray-300 italic">sin descripcion</span>}</td>
-                                            <td className="px-3 py-2 border-t border-gray-100 text-center">{item.cantidad}</td>
-                                            <td className="px-3 py-2 border-t border-gray-100 text-right">{formatCurrency(item.precioUnitario)}</td>
-                                            <td className="px-3 py-2 border-t border-gray-100 text-right font-semibold">{formatCurrency(calcularSubtotal(item))}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Totales */}
-                        <div className="flex justify-end">
-                            <div className="w-56 space-y-1 text-xs">
-                                <div className="flex justify-between text-gray-600">
-                                    <span>Subtotal:</span>
-                                    <span className="font-semibold">{formatCurrency(calcularTotalItems())}</span>
-                                </div>
-                                {parseFloat(formData.descuento) > 0 && (
-                                    <div className="flex justify-between text-red-500">
-                                        <span>Descuento ({formData.descuento}%):</span>
-                                        <span className="font-semibold">-{formatCurrency(calcularDescuento())}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between text-gray-600">
-                                    <span>IVA ({formData.impuesto}%):</span>
-                                    <span className="font-semibold">{formatCurrency(calcularImpuesto())}</span>
-                                </div>
-                                <div className="flex justify-between text-sm font-bold text-gray-800 pt-2 border-t-2 border-gray-700">
-                                    <span>TOTAL:</span>
-                                    <span>{formatCurrency(calcularTotal())}</span>
-                                </div>
-                                <div className="text-right text-gray-500">{formData.moneda}</div>
-                            </div>
-                        </div>
-
-                        {/* Notas */}
-                        {formData.notas && (
-                            <div className="text-xs border-t pt-4">
-                                <div className="font-bold text-gray-700 mb-1">Notas:</div>
-                                <div className="text-gray-600">{formData.notas}</div>
-                            </div>
-                        )}
-
-                        {/* T&C */}
-                        {formData.terminosCondiciones && (
-                            <div className="text-xs border-t pt-4">
-                                <div className="font-bold text-gray-700 mb-1">Terminos y Condiciones:</div>
-                                <div className="text-gray-500 leading-relaxed">{formData.terminosCondiciones}</div>
-                            </div>
-                        )}
-
-                        {/* Footer del doc */}
-                        <div className="border-t border-dashed pt-4 text-center text-xs text-gray-300">
-                            UPDM - Documento generado por InfiniguardSYS
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
-);
+    );
 };
 
 export default CrearCotizaciones;
