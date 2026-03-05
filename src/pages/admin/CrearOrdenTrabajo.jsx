@@ -25,15 +25,42 @@ function CrearOrdenTrabajo() {
         { id: 1, marca: '', modelo: '', qr: '', descripcion: '' },
     ]);
 
+    const [cantidadEquipos, setCantidadEquipos] = useState(1);
+
     const handleInput = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const agregarEquipo = () => {
-        setEquipos([...equipos, {
-            id: Date.now(),
-            marca: '', modelo: '', qr: '', descripcion: ''
-        }]);
+    const aplicarCantidadEquipos = () => {
+        const cantidad = parseInt(cantidadEquipos) || 1;
+        if (cantidad < 1 || cantidad > 100) {
+            toast.error('La cantidad debe estar entre 1 y 100');
+            return;
+        }
+        
+        const equiposActuales = equipos.length;
+        
+        if (cantidad === equiposActuales) {
+            toast.info('Ya tienes esa cantidad de equipos');
+            return;
+        }
+        
+        if (cantidad > equiposActuales) {
+            // Agregar equipos faltantes
+            const nuevosEquipos = [...equipos];
+            for (let i = equiposActuales; i < cantidad; i++) {
+                nuevosEquipos.push({
+                    id: Date.now() + i,
+                    marca: '', modelo: '', qr: '', descripcion: ''
+                });
+            }
+            setEquipos(nuevosEquipos);
+            toast.success(`Total de equipos: ${cantidad}`);
+        } else {
+            // Remover equipos sobrantes
+            setEquipos(equipos.slice(0, cantidad));
+            toast.success(`Total de equipos: ${cantidad}`);
+        }
     };
 
     const eliminarEquipo = (id) => {
@@ -41,7 +68,9 @@ function CrearOrdenTrabajo() {
             toast.error('Debe haber al menos un equipo');
             return;
         }
-        setEquipos(equipos.filter(e => e.id !== id));
+        const nuevosEquipos = equipos.filter(e => e.id !== id);
+        setEquipos(nuevosEquipos);
+        setCantidadEquipos(nuevosEquipos.length);
     };
 
     const actualizarEquipo = (id, campo, valor) => {
@@ -273,9 +302,9 @@ function CrearOrdenTrabajo() {
             </div>
 
             {/* Main Form Area */}
-            <div className="flex-1 overflow-hidden bg-linear-to-br from-slate-100 via-emerald-50 to-cyan-100 p-3 md:p-4">
-                <div className="w-full h-full max-w-7xl mx-auto rounded-3xl border border-slate-200 bg-white/95 backdrop-blur shadow-lg p-4 md:p-5">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
+            <div className="flex-1 overflow-auto bg-linear-to-br from-slate-100 via-emerald-50 to-cyan-100 p-3 md:p-4">
+                <div className="w-full max-w-7xl mx-auto rounded-3xl border border-slate-200 bg-white/95 backdrop-blur shadow-lg p-4 md:p-5">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
                         {/* Titulo */}
                         <div className="lg:col-span-5">
@@ -323,9 +352,20 @@ function CrearOrdenTrabajo() {
                         <div className="lg:col-span-12 border border-slate-200 rounded-2xl p-3">
                             <div className="flex items-center justify-between mb-2">
                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Equipos</p>
-                                <button onClick={agregarEquipo} className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition border border-emerald-100">
-                                    + Agregar
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <input 
+                                        type="number" 
+                                        min="1" 
+                                        max="100" 
+                                        value={cantidadEquipos} 
+                                        onChange={(e) => setCantidadEquipos(e.target.value)}
+                                        placeholder="Cant."
+                                        className="w-16 text-xs px-2 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                    />
+                                    <button onClick={aplicarCantidadEquipos} className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition border border-emerald-100">
+                                        Aplicar
+                                    </button>
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 {equipos.map((eq, idx) => (
