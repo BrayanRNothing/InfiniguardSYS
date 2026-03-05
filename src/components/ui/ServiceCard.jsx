@@ -11,7 +11,7 @@ const ServiceCard = ({
   onFinalizar // <--- Nueva función para terminar la tarea
 }) => {
   
-  const statusColors = 
+  const statusColors = {
     pendiente: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     'en-proceso': 'bg-blue-100 text-blue-800 border-blue-200',
     finalizado: 'bg-gray-100 text-gray-500 border-gray-200' // Color gris para completadas
