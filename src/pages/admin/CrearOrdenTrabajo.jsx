@@ -44,18 +44,18 @@ function CrearOrdenTrabajo() {
 
     const aplicarCantidadEquipos = () => {
         const cantidad = parseInt(cantidadEquipos) || 1;
-        if (cantidad < 1 || cantidad > 100) {
-            toast.error('La cantidad debe estar entre 1 y 100');
+        if (cantidad < 1 || cantidad > 500) {
+            toast.error('La cantidad debe estar entre 1 y 500');
             return;
         }
-        
+
         const equiposActuales = equipos.length;
-        
+
         if (cantidad === equiposActuales) {
             toast.info('Ya tienes esa cantidad de equipos');
             return;
         }
-        
+
         if (cantidad > equiposActuales) {
             // Agregar equipos faltantes
             const nuevosEquipos = [...equipos];
@@ -109,7 +109,7 @@ function CrearOrdenTrabajo() {
                 theme: 'plain',
                 body: [
                     [
-                        { content: '', styles: { minCellHeight: 25, valign: 'middle', halign: 'center' } }, 
+                        { content: '', styles: { minCellHeight: 25, valign: 'middle', halign: 'center' } },
                         { content: 'MANTENIMIENTO\nPREVENTIVO', styles: { fontSize: 24, fontStyle: 'bold', halign: 'center', valign: 'middle', textColor: 20 } }
                     ]
                 ],
@@ -139,7 +139,7 @@ function CrearOrdenTrabajo() {
             // Fecha formateada
             const [year, month, day] = (formData.fecha || '').split('-');
             const fechaFmt = formData.fecha ? `${day} / ${month} / ${year}` : '—';
-            
+
             // === DATOS CLIENTE / EQUIPO ===
             // Una sola tabla pegada abajo del header
             // Estructura:
@@ -152,7 +152,7 @@ function CrearOrdenTrabajo() {
 
             // Para que quede pegada, usamos startY de la tabla anterior.
             // Para "unir" bordes, el borde superior de esta tabla se superpone con el inferior de la anterior.
-            
+
             autoTable(doc, {
                 startY: doc.lastAutoTable.finalY, // Pegado
                 theme: 'grid',
@@ -198,15 +198,15 @@ function CrearOrdenTrabajo() {
                 theme: 'grid',
                 margin: { left: M, right: M },
                 tableWidth: W - 2 * M,
-                styles: { 
-                    fontSize: 8, 
-                    cellPadding: 3, 
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 3,
                     lineColor: [40, 40, 40], // Bordes negros finos
                     lineWidth: 0.2,
                     textColor: [0, 0, 0]
                 },
                 headStyles: {
-                    fillColor: GREEN, 
+                    fillColor: GREEN,
                     textColor: [255, 255, 255],
                     fontStyle: 'bold',
                     halign: 'center',
@@ -228,13 +228,13 @@ function CrearOrdenTrabajo() {
 
             // === NOTAS Y OBSERVACIONES ===
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10); 
+            doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
             doc.text('NOTAS y OBSERVACIONES:', M, y);
             y += 5;
 
             // Espacio par notas
-            if(formData.notas){
+            if (formData.notas) {
                 doc.setFontSize(9);
                 const notaLines = doc.splitTextToSize(formData.notas, W - 2 * M);
                 doc.text(notaLines, M, y);
@@ -245,13 +245,13 @@ function CrearOrdenTrabajo() {
 
             // === FIRMAS ===
             // Posicionar al fondo
-             if (y > H - 35) {
+            if (y > H - 35) {
                 doc.addPage();
                 y = 40;
             } else {
-                 // Push to bottom if plenty of space
-                 if (H - y > 60) y = H - 40;
-                 else y += 10;
+                // Push to bottom if plenty of space
+                if (H - y > 60) y = H - 40;
+                else y += 10;
             }
 
             const sigW = 50;
@@ -260,7 +260,7 @@ function CrearOrdenTrabajo() {
             const x2 = M + sigW + sigGap;
             const x3 = M + 2 * sigW + 2 * sigGap;
 
-            doc.setDrawColor(0); 
+            doc.setDrawColor(0);
             doc.setLineWidth(0.5);
             doc.line(x1, y, x1 + sigW, y);
             doc.line(x2, y, x2 + sigW, y);
@@ -269,14 +269,14 @@ function CrearOrdenTrabajo() {
             doc.setFontSize(9);
             doc.setTextColor(0, 0, 0);
             const firmaLink = '___________________'; // Linea visual pre-rendering (opcional)
-            
+
             // Labels
             doc.text('Firma del técnico', x1 + sigW / 2, y + 5, { align: 'center' });
             // doc.text('___________________', x1 + sigW / 2, y - 1, { align: 'center' });
 
             doc.text('Firma cliente', x2 + sigW / 2, y + 5, { align: 'center' });
-            
-            
+
+
             doc.text('Firma supervisor', x3 + sigW / 2, y + 5, { align: 'center' });
             // doc.text('Firma', x3 + 28, y + 5); 
             // Better alignment in image: "Firma supervisor: ____________"
@@ -288,14 +288,14 @@ function CrearOrdenTrabajo() {
             // Subir PDF y guardar en BD
             const pdfBlob = doc.output('blob');
             const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
-            
+
             console.log('📤 Subiendo OT:', { fileName, size: pdfFile.size });
             const uploadRes = await subirPDFCotizacion(pdfFile);
-            
+
             if (!uploadRes.url) {
                 throw new Error('No se recibió URL del PDF');
             }
-            
+
             console.log('✅ OT subida en:', uploadRes.url);
 
             // Guardar datos en BD
@@ -401,11 +401,11 @@ function CrearOrdenTrabajo() {
                             <div className="flex items-center justify-between mb-2">
                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Equipos</p>
                                 <div className="flex items-center gap-2">
-                                    <input 
-                                        type="number" 
-                                        min="1" 
-                                        max="100" 
-                                        value={cantidadEquipos} 
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="500"
+                                        value={cantidadEquipos}
                                         onChange={(e) => setCantidadEquipos(e.target.value)}
                                         placeholder="Cant."
                                         className="w-16 text-xs px-2 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
