@@ -112,6 +112,7 @@ const initDB = async () => {
         telefonoTecnico TEXT,
         fechaProgramada TEXT,
         porcentajeComision REAL DEFAULT 0,
+        adminVendedor TEXT,
         documentos JSONB DEFAULT '[]',
         historial JSONB DEFAULT '[]'
       )
@@ -138,6 +139,7 @@ const initDB = async () => {
     await addColumn('servicios', 'telefonoTecnico', 'TEXT');
     await addColumn('servicios', 'fechaProgramada', 'TEXT');
     await addColumn('servicios', 'porcentajeComision', 'REAL', '0');
+    await addColumn('servicios', 'adminVendedor', 'TEXT');
 
     // Migración: Agregar teléfono a usuarios
     await addColumn('usuarios', 'telefono', 'TEXT');
@@ -555,6 +557,10 @@ app.put('/api/servicios/:id', uploadDocumentos.single('archivo'), async (req, re
 
     if (update.porcentajeComision !== undefined) {
       await pool.query('UPDATE servicios SET porcentajeComision = $1 WHERE id = $2', [update.porcentajeComision, id]);
+    }
+
+    if (update.adminVendedor) {
+      await pool.query('UPDATE servicios SET adminVendedor = $1 WHERE id = $2', [update.adminVendedor, id]);
     }
 
     if (update.folio) {

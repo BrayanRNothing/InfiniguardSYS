@@ -16,10 +16,24 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
             toast.error('Ingresa precio y respuesta');
             return;
         }
+
+        // Obtener el nombre del admin logueado para asignar la comisión
+        let adminNombre = 'Admin';
+        try {
+            const userSession = localStorage.getItem('user') || sessionStorage.getItem('user');
+            if (userSession) {
+                const parsed = JSON.parse(userSession);
+                adminNombre = parsed.nombre || parsed.name || parsed.username || 'Admin';
+            }
+        } catch (e) {
+            console.warn('No se pudo leer el usuario del localStorage');
+        }
+
         const formData = new FormData();
         formData.append('estado', 'cotizado');
         formData.append('respuestaAdmin', respuesta.texto);
         formData.append('precio', respuesta.precio);
+        formData.append('adminVendedor', adminNombre);
         if (archivo) formData.append('archivo', archivo);
 
         const loadingToast = toast.loading('Enviando...');

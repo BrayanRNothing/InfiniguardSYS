@@ -80,7 +80,21 @@ function Documentos() {
     };
 
     const handleEditar = (doc) => {
-        navigate('/admin/crear-cotizaciones', { state: { cotizacion: doc } });
+        if (!doc.numero) {
+            navigate('/admin/crear-cotizaciones', { state: { cotizacion: doc } });
+            return;
+        }
+        
+        const numeroUpper = doc.numero.toUpperCase();
+        if (numeroUpper.startsWith('COT-')) {
+            navigate('/admin/crear-cotizaciones', { state: { cotizacion: doc } });
+        } else if (numeroUpper.startsWith('OT-')) {
+            navigate('/admin/crear-orden-trabajo', { state: { ordenTrabajo: doc } });
+        } else if (numeroUpper.startsWith('RT-')) {
+            navigate('/admin/crear-reporte-trabajo', { state: { reporteTrabajo: doc } });
+        } else {
+            navigate('/admin/crear-cotizaciones', { state: { cotizacion: doc } });
+        }
     };
 
     const handleEditarNumero = (doc) => {

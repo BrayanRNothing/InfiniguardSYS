@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -8,35 +8,42 @@ import { subirPDFCotizacion, guardarOrdenTrabajo, obtenerProximoNumeroOT } from 
 
 function CrearOrdenTrabajo() {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Determinar si estamos en modo edición
+    const editData = location.state?.ordenTrabajo;
+    const isEditing = !!editData;
 
     const [formData, setFormData] = useState({
-        titulo: 'MANTENIMIENTO PREVENTIVO',
-        nombre: '',
-        ubicacion: '',
-        telefono: '',
-        correo: '',
-        tecnico: '',
-        ayudante: '',
-        fecha: new Date().toISOString().split('T')[0],
-        ot: 'OT-XXXXXX',
-        notas: '',
+        titulo: editData?.titulo || 'MANTENIMIENTO PREVENTIVO',
+        nombre: editData?.cliente?.nombre || '',
+        ubicacion: editData?.cliente?.ubicacion || '',
+        telefono: editData?.cliente?.telefono || '',
+        correo: editData?.cliente?.correo || '',
+        tecnico: editData?.tecnico || '',
+        ayudante: editData?.ayudante || '',
+        fecha: editData?.fecha ? new Date(editData.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        ot: editData?.numero || 'OT-XXXXXX',
+        notas: editData?.notas || '',
     });
 
     // Obtener el próximo número de OT al cargar
     useEffect(() => {
-        obtenerProximoNumeroOT()
-            .then(numero => setFormData(prev => ({ ...prev, ot: numero })))
-            .catch(err => {
-                console.error('Error obteniendo número de OT:', err);
-                toast.error('Error al obtener número de OT');
-            });
-    }, []);
+        if (!isEditing) {
+            obtenerProximoNumeroOT()
+                .then(numero => setFormData(prev => ({ ...prev, ot: numero })))
+                .catch(err => {
+                    console.error('Error obteniendo número de OT:', err);
+                    toast.error('Error al obtener número de OT');
+                });
+        }
+    }, [isEditing]);
 
-    const [equipos, setEquipos] = useState([
+    const [equipos, setEquipos] = useState(editData?.equipos || [
         { id: 1, marca: '', modelo: '', qr: '', descripcion: '' },
     ]);
 
-    const [cantidadEquipos, setCantidadEquipos] = useState(1);
+    const [cantidadEquipos, setCantidadEquipos] = useState(editData?.equipos?.length || 1);
 
     const handleInput = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -88,7 +95,43 @@ function CrearOrdenTrabajo() {
         setEquipos(equipos.map(e => e.id === id ? { ...e, [campo]: valor } : e));
     };
 
+    // Guardar solo datos sin descargar PDF (para modo edición)
+    const guardarSinDescargar = async () => {
+        if (!formData.nombre.trim()) {
+            toast.error('El nombre del cliente es requerido');
+            return;
+        }
 
+        const t = toast.loading('Guardando cambios...');
+        try {
+            const datosDocumento = {
+                numero: formData.ot,
+                fecha: formData.fecha,
+                cliente: {
+                    nombre: formData.nombre,
+                    telefono: formData.telefono,
+                    correo: formData.correo,
+                    ubicacion: formData.ubicacion
+                },
+                titulo: formData.titulo,
+                tecnico: formData.tecnico,
+                ayudante: formData.ayudante,
+                equipos: equipos,
+                notas: formData.notas,
+                pdfUrl: editData?.pdfUrl || null,
+                creadoPor: 'Admin',
+                ...(isEditing && editData?.numero !== formData.ot && { oldNumero: editData.numero })
+            };
+
+            await guardarOrdenTrabajo(datosDocumento, true);
+
+            toast.success('Cambios guardados correctamente', { id: t });
+            setTimeout(() => navigate('/admin/documentos'), 1000);
+        } catch (error) {
+            console.error('Error al guardar:', error);
+            toast.error('Error al guardar los cambios', { id: t });
+        }
+    };
 
     const generarPDF = async () => {
         if (!formData.nombre.trim()) {
@@ -314,11 +357,12 @@ function CrearOrdenTrabajo() {
                 equipos: equipos,
                 notas: formData.notas,
                 pdfUrl: uploadRes.url,
-                creadoPor: 'Admin'
+                creadoPor: 'Admin',
+                ...(isEditing && editData?.numero !== formData.ot && { oldNumero: editData.numero })
             };
 
             console.log('💾 Guardando OT en BD:', { numero: formData.ot });
-            await guardarOrdenTrabajo(datosDocumento, false);
+            await guardarOrdenTrabajo(datosDocumento, isEditing);
 
             toast.success('Orden de Trabajo guardada exitosamente', { id: t });
             setTimeout(() => navigate('/admin/documentos'), 1500);
@@ -342,11 +386,23 @@ function CrearOrdenTrabajo() {
                         Documentos
                     </button>
                     <span className="text-slate-300">/</span>
-                    <span className="text-sm font-semibold text-slate-700">Orden de Trabajo</span>
+                    <span className="text-sm font-semibold text-slate-700">{isEditing ? `Editando ${formData.ot}` : 'Orden de Trabajo'}</span>
                 </div>
-                <button onClick={generarPDF} className="flex items-center gap-1.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition-all shadow-sm hover:shadow-md">
-                    📄 Generar PDF
-                </button>
+                <div className="flex items-center gap-2">
+                    {isEditing && (
+                        <button onClick={() => { if(window.confirm('¿Cancelar edición?')) navigate('/admin/documentos'); }} className="text-sm text-slate-500 hover:text-slate-700 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-all">
+                            Cancelar
+                        </button>
+                    )}
+                    {isEditing && (
+                        <button onClick={guardarSinDescargar} className="flex items-center gap-1.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-all shadow-sm">
+                            Guardar cambios
+                        </button>
+                    )}
+                    <button onClick={generarPDF} className="flex items-center gap-1.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition-all shadow-sm hover:shadow-md">
+                        {isEditing ? 'Guardar y Generar PDF' : '📄 Generar PDF'}
+                    </button>
+                </div>
             </div>
 
             {/* Main Form Area */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import logoImg from '../../assets/LOGOUPDM.png';
@@ -7,31 +7,38 @@ import { subirPDFCotizacion, guardarReporteTrabajo, obtenerProximoNumeroRT } fro
 
 function CrearReporteTrabajo() {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Determinar si estamos en modo edición
+    const editData = location.state?.reporteTrabajo;
+    const isEditing = !!editData;
 
     // Estado del formulario
     const [formData, setFormData] = useState({
-        fecha: new Date().toISOString().split('T')[0],
-        ordenNumero: 'RT-XXXXXX',
-        cliente: '',
-        direccion: '',
-        contacto: '',
-        vendedor: '',
-        estado: 'Por Surtir',
-        observaciones: ''
+        fecha: editData?.fecha ? new Date(editData.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        ordenNumero: editData?.numero || 'RT-XXXXXX',
+        cliente: editData?.cliente?.nombre || '',
+        direccion: editData?.cliente?.direccion || '',
+        contacto: editData?.cliente?.contacto || '',
+        vendedor: editData?.vendedor || '',
+        estado: editData?.estado || 'Por Surtir',
+        observaciones: editData?.observaciones || ''
     });
 
     // Obtener el próximo número de RT al cargar
     useEffect(() => {
-        obtenerProximoNumeroRT()
-            .then(numero => setFormData(prev => ({ ...prev, ordenNumero: numero })))
-            .catch(err => {
-                console.error('Error obteniendo número de RT:', err);
-                toast.error('Error al obtener número de RT');
-            });
-    }, []);
+        if (!isEditing) {
+            obtenerProximoNumeroRT()
+                .then(numero => setFormData(prev => ({ ...prev, ordenNumero: numero })))
+                .catch(err => {
+                    console.error('Error obteniendo número de RT:', err);
+                    toast.error('Error al obtener número de RT');
+                });
+        }
+    }, [isEditing]);
 
     // Items de productos/servicios
-    const [items, setItems] = useState([
+    const [items, setItems] = useState(editData?.items || [
         { id: 1, partida: 1, cantidad: 1, clave: '', descripcion: '', unidad: '' }
     ]);
 
@@ -92,6 +99,41 @@ function CrearReporteTrabajo() {
         setItems(items.map(item =>
             item.id === id ? { ...item, [campo]: valor } : item
         ));
+    };
+
+    const guardarSinDescargar = async () => {
+        if (!formData.cliente.trim()) {
+            toast.error('El nombre del cliente es requerido');
+            return;
+        }
+
+        const t = toast.loading('Guardando cambios...');
+        try {
+            const datosDocumento = {
+                numero: formData.ordenNumero,
+                fecha: formData.fecha,
+                cliente: {
+                    nombre: formData.cliente,
+                    direccion: formData.direccion,
+                    contacto: formData.contacto
+                },
+                vendedor: formData.vendedor,
+                estado: formData.estado,
+                items: items,
+                observaciones: formData.observaciones,
+                pdfUrl: editData?.pdfUrl || null,
+                creadoPor: 'Admin',
+                ...(isEditing && editData?.numero !== formData.ordenNumero && { oldNumero: editData.numero })
+            };
+
+            await guardarReporteTrabajo(datosDocumento, true);
+
+            toast.success('Cambios guardados correctamente', { id: t });
+            setTimeout(() => navigate('/admin/documentos'), 1000);
+        } catch (error) {
+            console.error('Error al guardar:', error);
+            toast.error('Error al guardar los cambios', { id: t });
+        }
     };
 
     const generarPDF = async () => {
@@ -459,11 +501,12 @@ function CrearReporteTrabajo() {
                 items: items,
                 observaciones: formData.observaciones,
                 pdfUrl: uploadRes.url,
-                creadoPor: 'Admin'
+                creadoPor: 'Admin',
+                ...(isEditing && editData?.numero !== formData.ordenNumero && { oldNumero: editData.numero })
             };
 
             console.log('💾 Guardando RT en BD:', { numero: formData.ordenNumero });
-            await guardarReporteTrabajo(datosDocumento, false);
+            await guardarReporteTrabajo(datosDocumento, isEditing);
 
             toast.success('Reporte de Trabajo guardado exitosamente', { id: loadingToast });
             setTimeout(() => navigate('/admin/documentos'), 1500);
@@ -488,7 +531,7 @@ function CrearReporteTrabajo() {
                         Documentos
                     </button>
                     <span className="text-gray-300 dark:text-gray-600">/</span>
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Reporte de Trabajo</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{isEditing ? `Editando ${formData.ordenNumero}` : 'Reporte de Trabajo'}</span>
                 </div>
             </div>
 
@@ -674,8 +717,16 @@ function CrearReporteTrabajo() {
                         onClick={generarPDF}
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition shadow-lg hover:shadow-xl"
                     >
-                        📄 Generar Reporte de Trabajo
+                        {isEditing ? '📄 Guardar y Actualizar PDF' : '📄 Generar Reporte de Trabajo'}
                     </button>
+                    {isEditing && (
+                        <button
+                            onClick={guardarSinDescargar}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg hover:shadow-xl"
+                        >
+                            💾 Guardar Cambios (Sin PDF)
+                        </button>
+                    )}
                     <button
                         onClick={() => navigate('/admin/documentos')}
                         className="px-6 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition"

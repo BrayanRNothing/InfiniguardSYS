@@ -4,15 +4,15 @@ import toast from 'react-hot-toast';
 
 const Comisiones = () => {
     const [servicios, setServicios] = useState([]);
-    const [tecnicos, setTecnicos] = useState([]);
-    const [filtroTecnico, setFiltroTecnico] = useState('todos');
+    const [admins, setAdmins] = useState([]);
+    const [filtroVendedor, setFiltroVendedor] = useState('todos');
     const [filtroPeriodo, setFiltroPeriodo] = useState('mes');
     const [loading, setLoading] = useState(true);
     const [editandoComision, setEditandoComision] = useState(null);
 
     useEffect(() => {
         cargarDatos();
-        const interval = setInterval(cargarDatos, 30000); // Refresh cada 30 segundos
+        const interval = setInterval(cargarDatos, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -26,18 +26,9 @@ const Comisiones = () => {
             const serviciosData = await resServicios.json();
             const usuariosData = await resUsuarios.json();
 
-            console.log('Servicios cargados:', serviciosData.length);
-            console.log('Servicios finalizados:', serviciosData.filter(s => s.estado === 'finalizado').length);
-            console.log('Técnicos encontrados:', usuariosData.filter(u => u.rol === 'tecnico').length);
-
-            // Mostrar estructura de un servicio finalizado para debug
-            const servicioFinalizado = serviciosData.find(s => s.estado === 'finalizado');
-            if (servicioFinalizado) {
-                console.log('Ejemplo de servicio finalizado:', servicioFinalizado);
-            }
-
             setServicios(serviciosData);
-            setTecnicos(usuariosData.filter(u => u.rol === 'tecnico'));
+            // Filtrar admins (rol === 'admin')
+            setAdmins(usuariosData.filter(u => u.rol === 'admin'));
             setLoading(false);
         } catch (error) {
             console.error('Error cargando datos:', error);
@@ -46,10 +37,10 @@ const Comisiones = () => {
         }
     };
 
-    // Filtrar servicios finalizados
+    // Solo servicios finalizados con adminVendedor asignado
     const serviciosFinalizados = servicios.filter(s => s.estado === 'finalizado');
 
-    // Aplicar filtros de periodo
+    // Filtrar por periodo
     const getFechaInicio = () => {
         const hoy = new Date();
         switch (filtroPeriodo) {
@@ -60,76 +51,78 @@ const Comisiones = () => {
             case 'trimestre':
                 return new Date(hoy.setMonth(hoy.getMonth() - 3));
             default:
-                return new Date(2000, 0, 1); // Todos
+                return new Date(2000, 0, 1);
         }
     };
 
     const serviciosFiltrados = serviciosFinalizados.filter(s => {
-        const cumpleTecnico = filtroTecnico === 'todos' || s.tecnicoAsignado === filtroTecnico;
+        const cumpleVendedor = filtroVendedor === 'todos' || s.adminvendedor === filtroVendedor;
         const fechaServicio = new Date(s.fecha);
         const cumpleFecha = fechaServicio >= getFechaInicio();
-        return cumpleTecnico && cumpleFecha;
+        return cumpleVendedor && cumpleFecha;
     });
 
-    // Calcular estadísticas por técnico
-    const calcularEstadisticasTecnico = (nombreTecnico) => {
-        const serviciosTecnico = serviciosFiltrados.filter(s => s.tecnicoAsignado === nombreTecnico);
+    // Calcular estadísticas por admin/vendedor
+    const calcularEstadisticasVendedor = (nombreVendedor) => {
+        const serviciosVendedor = serviciosFiltrados.filter(s => s.adminvendedor === nombreVendedor);
 
-        const totalServicios = serviciosTecnico.length;
-        const totalGanado = serviciosTecnico.reduce((sum, s) => {
+        const totalServicios = serviciosVendedor.length;
+        const totalGanado = serviciosVendedor.reduce((sum, s) => {
             const precio = parseFloat(s.precio || s.precioestimado) || 0;
-            const porcentaje = parseFloat(s.porcentajeComision) || 0;
+            const porcentaje = parseFloat(s.porcentajecomision) || 0;
             return sum + (precio * porcentaje / 100);
         }, 0);
 
         const promedioServicio = totalServicios > 0 ? totalGanado / totalServicios : 0;
 
         return {
-            nombre: nombreTecnico,
+            nombre: nombreVendedor,
             servicios: totalServicios,
             ganado: totalGanado,
             promedio: promedioServicio,
-            detalles: serviciosTecnico
+            detalles: serviciosVendedor
         };
     };
 
-    // Obtener estadísticas de todos los técnicos
-    const estadisticasTecnicos = tecnicos
-        .map(t => calcularEstadisticasTecnico(t.nombre))
+    // Obtener todos los vendedores únicos de los servicios filtrados (por si hay admins sin cuenta)
+    const vendedoresUnicos = [...new Set(
+        serviciosFiltrados
+            .map(s => s.adminvendedor)
+            .filter(Boolean)
+    )];
+
+    // También incluir admins registrados que coincidan con vendedores
+    const todosLosVendedores = [...new Set([
+        ...admins.map(a => a.nombre),
+        ...vendedoresUnicos
+    ])];
+
+    const estadisticasVendedores = todosLosVendedores
+        .map(nombre => calcularEstadisticasVendedor(nombre))
         .filter(e => e.servicios > 0)
         .sort((a, b) => b.ganado - a.ganado);
 
-    // Calcular totales generales
     const totales = {
-        servicios: serviciosFiltrados.length,
-        ganado: estadisticasTecnicos.reduce((sum, e) => sum + e.ganado, 0),
-        promedio: estadisticasTecnicos.length > 0
-            ? estadisticasTecnicos.reduce((sum, e) => sum + e.ganado, 0) / estadisticasTecnicos.length
+        servicios: serviciosFiltrados.filter(s => s.adminvendedor).length,
+        ganado: estadisticasVendedores.reduce((sum, e) => sum + e.ganado, 0),
+        promedio: estadisticasVendedores.length > 0
+            ? estadisticasVendedores.reduce((sum, e) => sum + e.ganado, 0) / estadisticasVendedores.length
             : 0
     };
 
-    // Actualizar porcentaje de comisión
     const actualizarComision = async (servicioId, nuevoPorcentaje) => {
         const porcentajeNumero = parseFloat(nuevoPorcentaje);
-
-        console.log('Actualizando comisión:', { servicioId, nuevoPorcentaje, porcentajeNumero });
-
         try {
             const res = await fetch(`${API_URL}/api/servicios/${servicioId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ porcentajeComision: porcentajeNumero })
             });
-
-            const data = await res.json();
-            console.log('Respuesta del servidor:', data);
-
             if (res.ok) {
                 toast.success('Comisión actualizada');
                 setEditandoComision(null);
                 cargarDatos();
             } else {
-                console.error('Error en respuesta:', data);
                 toast.error('Error al actualizar');
             }
         } catch (error) {
@@ -155,23 +148,23 @@ const Comisiones = () => {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-800">💰 Comisiones de Técnicos</h1>
-                <p className="text-gray-500">Sistema de recompensas y seguimiento de desempeño</p>
+                <h1 className="text-3xl font-bold text-gray-800">💰 Comisiones por Ventas</h1>
+                <p className="text-gray-500">Comisiones generadas por cotizaciones cerradas — asignadas al admin que vendió</p>
             </div>
 
             {/* Filtros */}
             <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Técnico</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Vendedor / Admin</label>
                         <select
-                            value={filtroTecnico}
-                            onChange={(e) => setFiltroTecnico(e.target.value)}
+                            value={filtroVendedor}
+                            onChange={(e) => setFiltroVendedor(e.target.value)}
                             className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                            <option value="todos">Todos los técnicos</option>
-                            {tecnicos.map(t => (
-                                <option key={t.id} value={t.nombre}>{t.nombre}</option>
+                            <option value="todos">Todos los vendedores</option>
+                            {todosLosVendedores.map(nombre => (
+                                <option key={nombre} value={nombre}>{nombre}</option>
                             ))}
                         </select>
                     </div>
@@ -203,7 +196,7 @@ const Comisiones = () => {
 
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-blue-100 text-sm font-medium">Servicios Completados</span>
+                        <span className="text-blue-100 text-sm font-medium">Ventas Cerradas</span>
                         <span className="text-3xl">✅</span>
                     </div>
                     <p className="text-3xl font-bold">{totales.servicios}</p>
@@ -211,22 +204,25 @@ const Comisiones = () => {
 
                 <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-purple-100 text-sm font-medium">Promedio por Técnico</span>
+                        <span className="text-purple-100 text-sm font-medium">Promedio por Vendedor</span>
                         <span className="text-3xl">📊</span>
                     </div>
                     <p className="text-3xl font-bold">{formatCurrency(totales.promedio)}</p>
                 </div>
             </div>
 
-            {/* Technician Performance Table */}
+            {/* Tabla por Vendedor */}
             <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-bold text-gray-800">Desempeño por Técnico</h2>
+                    <h2 className="text-xl font-bold text-gray-800">🏆 Ranking de Vendedores</h2>
+                    <p className="text-sm text-gray-400 mt-1">Admins que cotizaron y cerraron ventas</p>
                 </div>
 
-                {estadisticasTecnicos.length === 0 ? (
+                {estadisticasVendedores.length === 0 ? (
                     <div className="p-8 text-center text-gray-400">
-                        No hay servicios completados en el periodo seleccionado
+                        <div className="text-5xl mb-3">💼</div>
+                        <p>No hay comisiones registradas en el periodo seleccionado</p>
+                        <p className="text-xs mt-2 text-gray-300">Las comisiones se generan cuando un servicio es finalizado y fue cotizado por un admin</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -234,41 +230,46 @@ const Comisiones = () => {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                        Técnico
+                                        Vendedor / Admin
                                     </th>
                                     <th className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                        Servicios
+                                        Ventas Cerradas
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                        Total Ganado
+                                        Total Comisión
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                        Promedio/Servicio
+                                        Promedio/Venta
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {estadisticasTecnicos.map((tecnico, index) => (
-                                    <tr key={tecnico.nombre} className="hover:bg-gray-50 transition">
+                                {estadisticasVendedores.map((vendedor, index) => (
+                                    <tr key={vendedor.nombre} className="hover:bg-gray-50 transition">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 {index === 0 && <span className="text-2xl">🏆</span>}
-                                                <span className="font-semibold text-gray-800">{tecnico.nombre}</span>
+                                                {index === 1 && <span className="text-2xl">🥈</span>}
+                                                {index === 2 && <span className="text-2xl">🥉</span>}
+                                                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow">
+                                                    {vendedor.nombre.charAt(0).toUpperCase()}
+                                                </div>
+                                                <span className="font-semibold text-gray-800">{vendedor.nombre}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-bold">
-                                                {tecnico.servicios}
+                                                {vendedor.servicios}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <span className="text-green-600 font-bold text-lg">
-                                                {formatCurrency(tecnico.ganado)}
+                                                {formatCurrency(vendedor.ganado)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <span className="text-gray-700 font-semibold">
-                                                {formatCurrency(tecnico.promedio)}
+                                                {formatCurrency(vendedor.promedio)}
                                             </span>
                                         </td>
                                     </tr>
@@ -279,15 +280,15 @@ const Comisiones = () => {
                 )}
             </div>
 
-            {/* Detailed Service History */}
+            {/* Historial Detallado */}
             <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-bold text-gray-800">Historial Detallado de Servicios</h2>
+                    <h2 className="text-xl font-bold text-gray-800">📋 Historial Detallado de Ventas</h2>
                 </div>
 
-                {serviciosFiltrados.length === 0 ? (
+                {serviciosFiltrados.filter(s => s.adminvendedor).length === 0 ? (
                     <div className="p-8 text-center text-gray-400">
-                        No hay servicios para mostrar
+                        No hay servicios con vendedor asignado para mostrar
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -296,7 +297,7 @@ const Comisiones = () => {
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Servicio</th>
                                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Cliente</th>
-                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Técnico</th>
+                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Vendedor</th>
                                     <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Fecha</th>
                                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">Precio</th>
                                     <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Comisión %</th>
@@ -304,9 +305,9 @@ const Comisiones = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {serviciosFiltrados.map(servicio => {
+                                {serviciosFiltrados.filter(s => s.adminvendedor).map(servicio => {
                                     const precio = parseFloat(servicio.precio || servicio.precioestimado) || 0;
-                                    const porcentaje = parseFloat(servicio.porcentajeComision) || 0;
+                                    const porcentaje = parseFloat(servicio.porcentajecomision) || 0;
                                     const comision = precio * porcentaje / 100;
 
                                     return (
@@ -317,8 +318,10 @@ const Comisiones = () => {
                                             <td className="px-4 py-3 text-sm text-gray-600">
                                                 {servicio.cliente || servicio.usuario || 'N/A'}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600">
-                                                {servicio.tecnicoAsignado || 'Sin asignar'}
+                                            <td className="px-4 py-3 text-sm">
+                                                <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">
+                                                    👤 {servicio.adminvendedor}
+                                                </span>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600 text-center">
                                                 {servicio.fecha}
