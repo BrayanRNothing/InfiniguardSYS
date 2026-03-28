@@ -10,6 +10,7 @@ import { migrarDocumentos } from './migrations/documentos.js';
 import crearRutasDocumentos from './routes/documentos.js';
 import crearRutasPNC from './routes/pnc.js';
 import crearRutasDAE from './routes/dae.js';
+import { createLorangRouter } from './lorang/index.js';
 import { enviarEmailBienvenida, notificarNuevaCotizacion, notificarCambioEstado, notificarTecnicoNuevaTarea, notificarAdminServicioCompletado } from './services/emailService.js';
 
 
@@ -19,6 +20,7 @@ const { Pool } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const LORANG_MAX_PAYLOAD_MB = Number(process.env.LORANG_MAX_PAYLOAD_MB || 50);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -295,6 +297,32 @@ const initDB = async () => {
       console.log('✅ Catálogos DAE pre-poblados correctamente');
     }
 
+    // Tablas Lorang (e-commerce)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS lorang_products (
+        id SERIAL PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        descripcion TEXT NOT NULL,
+        detalles TEXT,
+        precio TEXT NOT NULL,
+        imagen TEXT NOT NULL,
+        images JSONB NOT NULL DEFAULT '[]',
+        category TEXT NOT NULL DEFAULT 'all',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS lorang_product_changes (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER,
+        action TEXT NOT NULL,
+        payload JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
 
 
 
@@ -343,7 +371,8 @@ const uploadDocumentos = multer({
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: `${LORANG_MAX_PAYLOAD_MB}mb` }));
+app.use(express.urlencoded({ limit: `${LORANG_MAX_PAYLOAD_MB}mb`, extended: true }));
 
 // Middleware para manejar rutas de archivos antiguas (uploads/) y nuevas (uploads/documentos/)
 app.use('/uploads', (req, res, next) => {
@@ -372,6 +401,7 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 app.use('/api', crearRutasDocumentos(pool));
 app.use('/api/pnc', crearRutasPNC(pool));
 app.use('/api/dae', crearRutasDAE(pool));
+app.use('/api/lorang', createLorangRouter(pool));
 
 
 
