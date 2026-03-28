@@ -88,17 +88,16 @@ npm run build
 
 ## 🚂 Deploy en Railway (Backend)
 
-El backend está configurado para Railway con `railway.json`:
+El backend está configurado para Railway con `railway.json` y Dockerfile (sin Nixpacks):
 
 ```json
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "cd backend && npm install"
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "cd backend && node index.js",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
