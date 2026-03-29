@@ -323,6 +323,23 @@ const initDB = async () => {
       )
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS lorang_news (
+        id SERIAL PRIMARY KEY,
+        tipo TEXT NOT NULL DEFAULT 'anuncio',
+        titulo TEXT NOT NULL,
+        resumen TEXT NOT NULL,
+        contenido TEXT NOT NULL,
+        imagen TEXT,
+        fecha_evento DATE,
+        hora_evento TEXT,
+        ubicacion TEXT,
+        enlace TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
 
 
 

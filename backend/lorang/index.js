@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import productsRouter from './routes/products.js';
+import newsRouter from './routes/news.js';
 
 export function createLorangRouter(pool) {
   const router = Router();
@@ -9,6 +10,7 @@ export function createLorangRouter(pool) {
   });
 
   router.use('/products', productsRouter(pool));
+  router.use('/news', newsRouter(pool));
 
   return router;
 }
