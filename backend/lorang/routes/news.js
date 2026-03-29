@@ -13,6 +13,13 @@ function normalizeType(value) {
   return 'anuncio';
 }
 
+function buildSummaryFromContent(content, maxLength = 180) {
+  const clean = normalizeText(content);
+  if (!clean) return '';
+  if (clean.length <= maxLength) return clean;
+  return `${clean.slice(0, maxLength).trim()}...`;
+}
+
 function mapNews(row) {
   return {
     id: String(row.id),
@@ -33,16 +40,16 @@ function mapNews(row) {
 function validatePayload(payload) {
   const tipo = normalizeType(payload?.tipo);
   const titulo = normalizeText(payload?.titulo);
-  const resumen = normalizeText(payload?.resumen);
   const contenido = normalizeText(payload?.contenido);
+  const resumen = normalizeText(payload?.resumen) || buildSummaryFromContent(contenido);
   const imagen = normalizeText(payload?.imagen);
   const fechaEvento = normalizeText(payload?.fechaEvento || payload?.fecha_evento);
   const horaEvento = normalizeText(payload?.horaEvento || payload?.hora_evento);
   const ubicacion = normalizeText(payload?.ubicacion || payload?.lugar);
   const enlace = normalizeText(payload?.enlace);
 
-  if (!titulo || !resumen || !contenido) {
-    return { error: 'Completa titulo, resumen y contenido del post.' };
+  if (!titulo || !contenido) {
+    return { error: 'Completa titulo y contenido del post.' };
   }
 
   if (tipo === 'evento') {
