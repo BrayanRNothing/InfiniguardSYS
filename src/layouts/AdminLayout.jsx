@@ -205,10 +205,19 @@ const AdminLayout = () => {
           ></div>
         )}
 
-        <div className="flex-1 p-4 lg:p-8 overflow-auto flex flex-col min-h-0">
-          {/* <Outlet /> es el hueco donde se renderiza la página hija (ej. DashboardAdmin) */}
-          <Outlet />
-        </div>
+        {/* Detectar si la ruta necesita layout full (sin padding ni scroll del padre) */}
+        {(() => {
+          const isFullLayout = [
+            '/admin/crear-cotizaciones',
+            '/admin/crear-orden-trabajo',
+            '/admin/crear-reporte-trabajo',
+          ].some(p => location.pathname.startsWith(p));
+          return (
+            <div className={isFullLayout ? 'flex-1 overflow-hidden flex flex-col min-h-0' : 'flex-1 p-4 lg:p-8 overflow-auto flex flex-col min-h-0'}>
+              <Outlet />
+            </div>
+          );
+        })()}
       </main>
 
     </div>

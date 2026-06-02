@@ -659,12 +659,23 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/usuarios', async (req, res) => {
   const { username, nombre, email, password, rol, telefono } = req.body;
   try {
+    // Validar si el usuario ya existe
+    const existsUser = await pool.query('SELECT 1 FROM usuarios WHERE username = $1', [username]);
+    if (existsUser.rowCount > 0) return res.status(409).json({ success: false, message: 'El nombre de usuario ya está en uso' });
+
+    // Validar si el email ya existe
+    if (email) {
+      const existsEmail = await pool.query('SELECT 1 FROM usuarios WHERE email = $1', [email]);
+      if (existsEmail.rowCount > 0) return res.status(409).json({ success: false, message: 'El correo electrónico ya está en uso' });
+    }
+
     const result = await pool.query(
       'INSERT INTO usuarios (username, nombre, email, password, rol, telefono) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
       [username, nombre, email || null, password, rol, telefono || null]
     );
     res.json({ success: true, id: result.rows[0].id });
   } catch (error) {
+    console.error('Error POST /api/usuarios:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -673,6 +684,12 @@ app.put('/api/usuarios/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, email, password, rol, telefono, notificaciones_activas } = req.body;
   try {
+    // Validar si el email ya existe en otro usuario
+    if (email) {
+      const existsEmail = await pool.query('SELECT 1 FROM usuarios WHERE email = $1 AND id != $2', [email, id]);
+      if (existsEmail.rowCount > 0) return res.status(409).json({ success: false, message: 'El correo electrónico ya está en uso por otro usuario' });
+    }
+
     if (password) {
       await pool.query(
         'UPDATE usuarios SET nombre = $1, email = $2, password = $3, rol = $4, telefono = $5, notificaciones_activas = $6 WHERE id = $7',

@@ -250,12 +250,14 @@ function Usuarios() {
           body: JSON.stringify(formData)
         });
 
+        const data = await res.json();
+        
         if (res.ok) {
           toast.success('✅ Usuario actualizado');
           cargarUsuarios();
           cerrarModal();
         } else {
-          toast.error('Error al actualizar');
+          toast.error(data.message || 'Error al actualizar');
         }
       } else {
         const res = await fetch(`${API_BASE}/api/usuarios`, {
@@ -264,12 +266,14 @@ function Usuarios() {
           body: JSON.stringify(formData)
         });
 
+        const data = await res.json();
+
         if (res.ok) {
           toast.success('✅ Usuario creado');
           cargarUsuarios();
           cerrarModal();
         } else {
-          toast.error('Error al crear');
+          toast.error(data.message || 'Error al crear');
         }
       }
     } catch (error) {
