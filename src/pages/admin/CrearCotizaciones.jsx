@@ -7,11 +7,13 @@ import logoInfiniguard from '../../assets/logoInfiniguard.png';
 import { guardarCotizacionSimple, subirPDFCotizacion, obtenerProximoNumeroCotizacion } from '../../utils/documentStorage';
 import API_URL from '../../config/api';
 import { useLocation, useNavigate } from 'react-router-dom';
+import PDFPreviewer from '../../components/ui/PDFPreviewer';
 
 const CrearCotizaciones = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
 
     // Determinar si estamos en modo edición
     const editData = location.state?.cotizacion || location.state?.Cotización;
@@ -137,6 +139,298 @@ const CrearCotizaciones = () => {
         return true;
     };
 
+    const generarDocumentoPDF = (quotationNum) => {
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.width;
+        let yPos = 10;
+
+        let logoWidth = 40;
+        let logoHeight = 20;
+        const img = new Image();
+
+        if (logoSeleccionado === 'INFINIGUARD') {
+            img.src = logoInfiniguard;
+            logoWidth = 60;
+            logoHeight = 18;
+        } else {
+            img.src = logoUPDM;
+        }
+
+        try {
+            doc.addImage(img, 'PNG', 14, yPos, logoWidth, logoHeight);
+        } catch (error) {
+            console.warn('Error loading logo, using text fallback:', error);
+            doc.setTextColor(60, 60, 60);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(logoSeleccionado, 14, yPos + 10);
+        }
+
+        doc.setTextColor(80, 80, 80);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Cotización', pageWidth - 14, yPos + 5, { align: 'right' });
+        doc.setFontSize(16);
+        doc.setTextColor(60, 60, 60);
+        doc.text(quotationNum, pageWidth - 14, yPos + 12, { align: 'right' });
+
+        yPos = 35;
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+        doc.line(14, yPos, pageWidth - 14, yPos);
+
+        yPos = 45;
+
+        doc.setTextColor(60, 60, 60);
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Cotización', pageWidth / 2, yPos, { align: 'center' });
+
+        yPos += 10;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Fecha: ${formData.fecha}`, 14, yPos);
+        doc.text(`Válida por: ${formData.validez} días`, pageWidth - 14, yPos, { align: 'right' });
+
+        yPos += 7;
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(60, 60, 60);
+        doc.text(`Emisor: ${logoSeleccionado === 'INFINIGUARD' ? 'INFINIGUARD' : 'UPDM'}`, 14, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text('RFC: UPD141011MC3', pageWidth - 14, yPos, { align: 'right' });
+
+        yPos += 5;
+        doc.text('Blvd. Rogelio Cantú Gómez 333-9, col Santa María, Monterrey, N.L, 64650', 14, yPos);
+
+        yPos += 5;
+        doc.text('TEL: 813-557-3724 & 811-418-5412', 14, yPos);
+
+        yPos += 7;
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${formData.titulo}`, 14, yPos);
+
+        yPos += 10;
+
+        const boxStartY = yPos;
+        let boxContentHeight = 5;
+        boxContentHeight += 4;
+
+        if (formData.clienteEmpresa) boxContentHeight += 5;
+        if (formData.clienteEmail) boxContentHeight += 5;
+        if (formData.clienteTelefono) boxContentHeight += 5;
+        if (formData.clienteDireccion) {
+            const direccionLines = doc.splitTextToSize(formData.clienteDireccion, pageWidth - 60);
+            boxContentHeight += 5 + (direccionLines.length - 1) * 4;
+        }
+        boxContentHeight += 4;
+
+        doc.setDrawColor(200, 200, 200);
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(14, boxStartY, pageWidth - 28, boxContentHeight, 2, 2, 'FD');
+
+        yPos += 6;
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CLIENTE:', 18, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(formData.clienteNombre, 35, yPos);
+
+        if (formData.clienteEmpresa) {
+            yPos += 5;
+            doc.text('Empresa:', 18, yPos);
+            doc.text(formData.clienteEmpresa, 35, yPos);
+        }
+        if (formData.clienteEmail) {
+            yPos += 5;
+            doc.text('Email:', 18, yPos);
+            doc.text(formData.clienteEmail, 35, yPos);
+        }
+        if (formData.clienteTelefono) {
+            yPos += 5;
+            doc.text('Teléfono:', 18, yPos);
+            doc.text(formData.clienteTelefono, 35, yPos);
+        }
+        if (formData.clienteDireccion) {
+            yPos += 5;
+            doc.text('Dirección:', 18, yPos);
+            const direccionLines = doc.splitTextToSize(formData.clienteDireccion, pageWidth - 60);
+            doc.text(direccionLines, 35, yPos);
+            yPos += (direccionLines.length - 1) * 4;
+        }
+
+        yPos += boxContentHeight - (yPos - boxStartY) + 12;
+
+        if (formData.descripcion) {
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(60, 60, 60);
+            doc.text('Descripción:', 18, yPos);
+            yPos += 5;
+            doc.setFont('helvetica', 'normal');
+            const descLines = doc.splitTextToSize(formData.descripcion, pageWidth - 35);
+            doc.text(descLines, 18, yPos);
+            yPos += descLines.length * 5 + 5;
+        }
+
+        const tableData = items.map(item => [
+            item.descripcion,
+            item.cantidad.toString(),
+            formatCurrency(item.precioUnitario),
+            formatCurrency(calcularSubtotal(item))
+        ]);
+
+        autoTable(doc, {
+            startY: yPos,
+            head: [['Descripción', 'Cantidad', 'Precio Unit.', 'Subtotal']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [100, 100, 100],
+                textColor: 255,
+                fontStyle: 'bold',
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 9,
+                textColor: [60, 60, 60]
+            },
+            columnStyles: {
+                0: { cellWidth: 'auto' },
+                1: { cellWidth: 25, halign: 'center' },
+                2: { cellWidth: 35, halign: 'right' },
+                3: { cellWidth: 35, halign: 'right' }
+            },
+            margin: { left: 14, right: 14 }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 8;
+
+        const totalsX = pageWidth - 14;
+        const totalsLabelX = totalsX - 70;
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+
+        doc.text('Subtotal:', totalsLabelX, yPos);
+        doc.text(formatCurrency(calcularTotalItems()), totalsX, yPos, { align: 'right' });
+        yPos += 5;
+
+        if (parseFloat(formData.descuento) > 0) {
+            doc.text(`Descuento (${formData.descuento}%):`, totalsLabelX, yPos);
+            doc.text(`-${formatCurrency(calcularDescuento())}`, totalsX, yPos, { align: 'right' });
+            yPos += 5;
+        }
+
+        doc.text(`IVA (${formData.impuesto}%):`, totalsLabelX, yPos);
+        doc.text(formatCurrency(calcularImpuesto()), totalsX, yPos, { align: 'right' });
+        yPos += 6;
+
+        doc.setDrawColor(100, 100, 100);
+        doc.setLineWidth(0.5);
+        doc.line(totalsLabelX - 5, yPos - 4, totalsX, yPos - 4);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(60, 60, 60);
+        doc.text('TOTAL:', totalsLabelX, yPos);
+        doc.text(formatCurrency(calcularTotal()), totalsX, yPos, { align: 'right' });
+
+        yPos += 15;
+
+        const pageHeight = doc.internal.pageSize.height;
+        const footerHeight = 20;
+        const maxY = pageHeight - footerHeight;
+
+        let notasHeight = 0;
+        let notasLines = [];
+        if (formData.notas) {
+            doc.setFontSize(8);
+            notasLines = doc.splitTextToSize(formData.notas, pageWidth - 28);
+            notasHeight = 10 + 6 + (notasLines.length * 4) + 12;
+        }
+
+        let termsHeight = 0;
+        let termLines = [];
+        if (formData.terminosCondiciones) {
+            doc.setFontSize(8);
+            termLines = doc.splitTextToSize(formData.terminosCondiciones, pageWidth - 28);
+            termsHeight = 10 + 6 + (termLines.length * 4);
+        }
+
+        const totalContentHeight = notasHeight + termsHeight;
+        const spaceAvailable = maxY - yPos;
+
+        if (totalContentHeight > spaceAvailable && totalContentHeight < maxY - 20) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        if (formData.notas) {
+            if (yPos + notasHeight > maxY) {
+                doc.addPage();
+                yPos = 20;
+            }
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(60, 60, 60);
+            doc.text('NOTAS:', 14, yPos);
+            yPos += 6;
+
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text(notasLines, 14, yPos);
+            yPos += notasLines.length * 4 + 12;
+        }
+
+        if (formData.terminosCondiciones) {
+            if (yPos + termsHeight > maxY) {
+                doc.addPage();
+                yPos = 20;
+            }
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(60, 60, 60);
+            doc.text('TÉRMINOS Y CONDICIONES:', 14, yPos);
+            yPos += 6;
+
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text(termLines, 14, yPos);
+        }
+
+        const footerY = doc.internal.pageSize.height - 15;
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+
+        if (formData.creadoPor) {
+            doc.text(`Creado por: ${formData.creadoPor}`, 14, footerY);
+        }
+
+        return doc;
+    };
+
+    // Live preview generation
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            try {
+                const doc = generarDocumentoPDF(previewQuotationNumber);
+                const blob = doc.output('blob');
+                const url = URL.createObjectURL(blob);
+                setPdfPreviewUrl(url);
+                return () => URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error("Error generating preview", error);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [formData, items, logoSeleccionado, previewQuotationNumber]);
+
     // Generate PDF and Save
     const generarPDF = async () => {
         if (loading) return; // Prevent multiple clicks
@@ -146,10 +440,6 @@ const CrearCotizaciones = () => {
         const loadingToast = toast.loading(isEditing ? 'Actualizando cotización...' : 'Generando y guardando cotización...');
 
         try {
-            const doc = new jsPDF();
-            const pageWidth = doc.internal.pageSize.width;
-            let yPos = 10;
-
             // Generate/Use quotation number
             let quotationNumber;
             if (isEditing) {
@@ -158,294 +448,7 @@ const CrearCotizaciones = () => {
                 quotationNumber = await obtenerProximoNumeroCotizacion();
             }
 
-            // Logo on the left
-            let logoWidth = 40;
-            let logoHeight = 20;
-            const img = new Image();
-
-            if (logoSeleccionado === 'INFINIGUARD') {
-                img.src = logoInfiniguard;
-                logoWidth = 60; // Más largo como pidió el usuario
-                logoHeight = 18;
-            } else {
-                img.src = logoUPDM;
-            }
-
-            try {
-                doc.addImage(img, 'PNG', 14, yPos, logoWidth, logoHeight);
-            } catch (error) {
-                console.warn('Error loading logo, using text fallback:', error);
-                doc.setTextColor(60, 60, 60);
-                doc.setFontSize(14);
-                doc.setFont('helvetica', 'bold');
-                doc.text(logoSeleccionado, 14, yPos + 10);
-            }
-
-            // Quotation number on the right
-            doc.setTextColor(80, 80, 80);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Cotización', pageWidth - 14, yPos + 5, { align: 'right' });
-            doc.setFontSize(16);
-            doc.setTextColor(60, 60, 60);
-            doc.text(quotationNumber, pageWidth - 14, yPos + 12, { align: 'right' });
-
-            // Separator line
-            yPos = 35;
-            doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.5);
-            doc.line(14, yPos, pageWidth - 14, yPos);
-
-            yPos = 45;
-
-            // Title
-            doc.setTextColor(60, 60, 60);
-            doc.setFontSize(18);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Cotización', pageWidth / 2, yPos, { align: 'center' });
-
-            yPos += 10;
-
-            // Date and validity on the same line
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Fecha: ${formData.fecha}`, 14, yPos);
-            doc.text(`Válida por: ${formData.validez} días`, pageWidth - 14, yPos, { align: 'right' });
-
-            yPos += 7;
-
-            // Issuer info below date
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(60, 60, 60);
-            doc.text(`Emisor: ${logoSeleccionado === 'INFINIGUARD' ? 'INFINIGUARD' : 'UPDM'}`, 14, yPos);
-            doc.setFont('helvetica', 'normal');
-            doc.text('RFC: UPD141011MC3', pageWidth - 14, yPos, { align: 'right' });
-
-            yPos += 5;
-            doc.text('Blvd. Rogelio Cantú Gómez 333-9, col Santa María, Monterrey, N.L, 64650', 14, yPos);
-
-            yPos += 5;
-            doc.text('TEL: 813-557-3724 & 811-418-5412', 14, yPos);
-
-            yPos += 7;
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${formData.titulo}`, 14, yPos);
-
-            yPos += 10;
-
-            // Client Info Box
-            const boxStartY = yPos;
-            let boxContentHeight = 5;
-            boxContentHeight += 4;
-
-            if (formData.clienteEmpresa) {
-                boxContentHeight += 5;
-            }
-            if (formData.clienteEmail) {
-                boxContentHeight += 5;
-            }
-            if (formData.clienteTelefono) {
-                boxContentHeight += 5;
-            }
-            if (formData.clienteDireccion) {
-                const direccionLines = doc.splitTextToSize(formData.clienteDireccion, pageWidth - 60);
-                boxContentHeight += 5 + (direccionLines.length - 1) * 4;
-            }
-            boxContentHeight += 4;
-
-            doc.setDrawColor(200, 200, 200);
-            doc.setFillColor(248, 250, 252);
-            doc.roundedRect(14, boxStartY, pageWidth - 28, boxContentHeight, 2, 2, 'FD');
-
-            yPos += 6;
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.text('CLIENTE:', 18, yPos);
-            doc.setFont('helvetica', 'normal');
-            doc.text(formData.clienteNombre, 35, yPos);
-
-            if (formData.clienteEmpresa) {
-                yPos += 5;
-                doc.text('Empresa:', 18, yPos);
-                doc.text(formData.clienteEmpresa, 35, yPos);
-            }
-            if (formData.clienteEmail) {
-                yPos += 5;
-                doc.text('Email:', 18, yPos);
-                doc.text(formData.clienteEmail, 35, yPos);
-            }
-            if (formData.clienteTelefono) {
-                yPos += 5;
-                doc.text('Teléfono:', 18, yPos);
-                doc.text(formData.clienteTelefono, 35, yPos);
-            }
-            if (formData.clienteDireccion) {
-                yPos += 5;
-                doc.text('Dirección:', 18, yPos);
-                const direccionLines = doc.splitTextToSize(formData.clienteDireccion, pageWidth - 60);
-                doc.text(direccionLines, 35, yPos);
-                yPos += (direccionLines.length - 1) * 4;
-            }
-
-            yPos += boxContentHeight - (yPos - boxStartY) + 12;
-
-            // Description
-            if (formData.descripcion) {
-                doc.setFontSize(9);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(60, 60, 60);
-                doc.text('Descripción:', 18, yPos);
-                yPos += 5;
-                doc.setFont('helvetica', 'normal');
-                const descLines = doc.splitTextToSize(formData.descripcion, pageWidth - 35);
-                doc.text(descLines, 18, yPos);
-                yPos += descLines.length * 5 + 5;
-            }
-
-            // Items Table
-            const tableData = items.map(item => [
-                item.descripcion,
-                item.cantidad.toString(),
-                formatCurrency(item.precioUnitario),
-                formatCurrency(calcularSubtotal(item))
-            ]);
-
-            autoTable(doc, {
-                startY: yPos,
-                head: [['Descripción', 'Cantidad', 'Precio Unit.', 'Subtotal']],
-                body: tableData,
-                theme: 'grid',
-                headStyles: {
-                    fillColor: [100, 100, 100],
-                    textColor: 255,
-                    fontStyle: 'bold',
-                    fontSize: 9
-                },
-                bodyStyles: {
-                    fontSize: 9,
-                    textColor: [60, 60, 60]
-                },
-                columnStyles: {
-                    0: { cellWidth: 'auto' },
-                    1: { cellWidth: 25, halign: 'center' },
-                    2: { cellWidth: 35, halign: 'right' },
-                    3: { cellWidth: 35, halign: 'right' }
-                },
-                margin: { left: 14, right: 14 }
-            });
-
-            yPos = doc.lastAutoTable.finalY + 8;
-
-            // Totals
-            const totalsX = pageWidth - 14;
-            const totalsLabelX = totalsX - 70;
-
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(60, 60, 60);
-
-            doc.text('Subtotal:', totalsLabelX, yPos);
-            doc.text(formatCurrency(calcularTotalItems()), totalsX, yPos, { align: 'right' });
-            yPos += 5;
-
-            if (parseFloat(formData.descuento) > 0) {
-                doc.text(`Descuento (${formData.descuento}%):`, totalsLabelX, yPos);
-                doc.text(`-${formatCurrency(calcularDescuento())}`, totalsX, yPos, { align: 'right' });
-                yPos += 5;
-            }
-
-            doc.text(`IVA (${formData.impuesto}%):`, totalsLabelX, yPos);
-            doc.text(formatCurrency(calcularImpuesto()), totalsX, yPos, { align: 'right' });
-            yPos += 6;
-
-            // Total line
-            doc.setDrawColor(100, 100, 100);
-            doc.setLineWidth(0.5);
-            doc.line(totalsLabelX - 5, yPos - 4, totalsX, yPos - 4);
-
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.setTextColor(60, 60, 60);
-            doc.text('TOTAL:', totalsLabelX, yPos);
-            doc.text(formatCurrency(calcularTotal()), totalsX, yPos, { align: 'right' });
-
-            yPos += 15;
-
-            // Pre-calculate space needed for notes and terms
-            const pageHeight = doc.internal.pageSize.height;
-            const footerHeight = 20;
-            const maxY = pageHeight - footerHeight;
-
-            let notasHeight = 0;
-            let notasLines = [];
-            if (formData.notas) {
-                doc.setFontSize(8);
-                notasLines = doc.splitTextToSize(formData.notas, pageWidth - 28);
-                notasHeight = 10 + 6 + (notasLines.length * 4) + 12;
-            }
-
-            let termsHeight = 0;
-            let termLines = [];
-            if (formData.terminosCondiciones) {
-                doc.setFontSize(8);
-                termLines = doc.splitTextToSize(formData.terminosCondiciones, pageWidth - 28);
-                termsHeight = 10 + 6 + (termLines.length * 4);
-            }
-
-            const totalContentHeight = notasHeight + termsHeight;
-            const spaceAvailable = maxY - yPos;
-
-            if (totalContentHeight > spaceAvailable && totalContentHeight < maxY - 20) {
-                doc.addPage();
-                yPos = 20;
-            }
-
-            // Notes section
-            if (formData.notas) {
-                if (yPos + notasHeight > maxY) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-
-                doc.setFontSize(10);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(60, 60, 60);
-                doc.text('NOTAS:', 14, yPos);
-                yPos += 6;
-
-                doc.setFontSize(8);
-                doc.setFont('helvetica', 'normal');
-                doc.text(notasLines, 14, yPos);
-                yPos += notasLines.length * 4 + 12;
-            }
-
-            // Terms and Conditions
-            if (formData.terminosCondiciones) {
-                if (yPos + termsHeight > maxY) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-
-                doc.setFontSize(10);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(60, 60, 60);
-                doc.text('TÉRMINOS Y CONDICIONES:', 14, yPos);
-                yPos += 6;
-
-                doc.setFontSize(8);
-                doc.setFont('helvetica', 'normal');
-                doc.text(termLines, 14, yPos);
-            }
-
-            // Footer
-            const footerY = doc.internal.pageSize.height - 15;
-            doc.setFontSize(8);
-            doc.setTextColor(128, 128, 128);
-
-            if (formData.creadoPor) {
-                doc.text(`Creado por: ${formData.creadoPor}`, 14, footerY);
-            }
+            const doc = generarDocumentoPDF(quotationNumber);
 
             // Save PDF locally
             const fileName = `${quotationNumber}_${formData.clienteNombre.replace(/\s+/g, '_')}.pdf`;
@@ -715,167 +718,8 @@ const CrearCotizaciones = () => {
                     </div>
                 </div>
 
-                {/* RIGHT: Live Preview (Faithful layout mimicking the jsPDF layout) */}
-                <div className="flex-1 overflow-y-auto bg-slate-100 flex items-start justify-center p-8">
-                    <div className="bg-white w-full max-w-[720px] shadow-lg border border-slate-200/60 rounded-sm p-10 min-h-[960px] flex flex-col justify-between" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
-                        
-                        <div>
-                            {/* Header del documento (Fiel a jsPDF) */}
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    {logoSeleccionado === 'INFINIGUARD'
-                                        ? <img src={logoInfiniguard} alt="Infiniguard" className="h-12 object-contain object-left" style={{ maxWidth: '280px' }} />
-                                        : <img src={logoUPDM} alt="UPDM" className="h-12 object-contain object-left" style={{ maxWidth: '180px' }} />
-                                    }
-                                </div>
-                                <div className="text-right flex flex-col items-end">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cotización</span>
-                                    <span className="text-2xl font-bold text-slate-800 font-mono mt-0.5">{previewQuotationNumber}</span>
-                                </div>
-                            </div>
-
-                            {/* Separator line */}
-                            <div className="border-b border-gray-300 w-full my-4"></div>
-
-                            {/* Date, validity, issuer info */}
-                            <div className="text-[10px] text-slate-700 leading-normal">
-                                <div className="flex justify-between">
-                                    <div>Fecha: {formData.fecha}</div>
-                                    <div>Válida por: {formData.validez} días</div>
-                                </div>
-                                <div className="flex justify-between mt-1">
-                                    <div><span className="font-bold">Emisor:</span> {logoSeleccionado === 'INFINIGUARD' ? 'INFINIGUARD' : 'UPDM'}</div>
-                                    <div>RFC: UPD141011MC3</div>
-                                </div>
-                                <div className="text-[9px] text-slate-500 mt-1">
-                                    <div>Blvd. Rogelio Cantú Gómez 333-9, col Santa María, Monterrey, N.L, 64650</div>
-                                    <div>TEL: 813-557-3724 & 811-418-5412</div>
-                                </div>
-                            </div>
-
-                            {/* Título de Cotización */}
-                            {formData.titulo && (
-                                <div className="mt-4">
-                                    <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">{formData.titulo}</h2>
-                                </div>
-                            )}
-
-                            {/* Caja del cliente (Estilo exacto de jsPDF) */}
-                            <div className="mt-4 bg-slate-50 border border-gray-300 rounded-lg p-4 text-[11px] text-slate-700">
-                                <div className="grid grid-cols-[80px_1fr] gap-x-2 gap-y-1">
-                                    <span className="font-bold text-slate-800">CLIENTE:</span>
-                                    <span className="text-slate-800 font-bold">{formData.clienteNombre || '—'}</span>
-                                    {formData.clienteEmpresa && (
-                                        <>
-                                            <span className="font-bold text-slate-800">Empresa:</span>
-                                            <span className="text-slate-800">{formData.clienteEmpresa}</span>
-                                        </>
-                                    )}
-                                    {formData.clienteEmail && (
-                                        <>
-                                            <span className="font-bold text-slate-800">Email:</span>
-                                            <span className="text-slate-850">{formData.clienteEmail}</span>
-                                        </>
-                                    )}
-                                    {formData.clienteTelefono && (
-                                        <>
-                                            <span className="font-bold text-slate-800">Teléfono:</span>
-                                            <span className="text-slate-855">{formData.clienteTelefono}</span>
-                                        </>
-                                    )}
-                                    {formData.clienteDireccion && (
-                                        <>
-                                            <span className="font-bold text-slate-800">Dirección:</span>
-                                            <span className="text-slate-855">{formData.clienteDireccion}</span>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Descripción de Cotización (Debajo de caja cliente y arriba de tabla) */}
-                            {formData.descripcion && (
-                                <div className="mt-4">
-                                    <span className="text-xs font-bold text-slate-700">Descripción:</span>
-                                    <p className="text-[11px] text-slate-600 mt-1 leading-relaxed whitespace-pre-wrap">{formData.descripcion}</p>
-                                </div>
-                            )}
-
-                            {/* Tabla de Conceptos (Fiel al autoTable de jsPDF) */}
-                            <div className="mt-6">
-                                <table className="w-full border-collapse text-[10px] text-slate-700 border border-gray-300">
-                                    <thead>
-                                        <tr className="text-white" style={{ backgroundColor: '#646464' }}>
-                                            <th className="text-left px-3 py-2 font-bold border border-gray-300">Descripción</th>
-                                            <th className="text-center px-3 py-2 font-bold w-16 border border-gray-300">Cantidad</th>
-                                            <th className="text-right px-3 py-2 font-bold w-24 border border-gray-300">Precio Unit.</th>
-                                            <th className="text-right px-3 py-2 font-bold w-24 border border-gray-300">Subtotal</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {items.map((item, idx) => (
-                                            <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                                                <td className="px-3 py-2 leading-tight text-slate-800 border border-gray-300">
-                                                    {item.descripcion || <span className="text-slate-300 italic">Sin descripción</span>}
-                                                </td>
-                                                <td className="px-3 py-2 text-center text-slate-700 border border-gray-300">{item.cantidad}</td>
-                                                <td className="px-3 py-2 text-right text-slate-700 border border-gray-300">{formatCurrency(parseFloat(item.precioUnitario) || 0)}</td>
-                                                <td className="px-3 py-2 text-right font-semibold text-slate-800 border border-gray-300">{formatCurrency(calcularSubtotal(item))}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Totales (Derecha, Fiel a jsPDF) */}
-                            <div className="flex justify-end mt-4 text-[10px]">
-                                <div className="w-56 flex flex-col gap-1 text-slate-700">
-                                    <div className="flex justify-between">
-                                        <span>Subtotal:</span>
-                                        <span className="font-mono font-medium">{formatCurrency(calcularTotalItems())}</span>
-                                    </div>
-                                    {parseFloat(formData.descuento) > 0 && (
-                                        <div className="flex justify-between text-emerald-600 font-medium">
-                                            <span>Descuento ({formData.descuento}%):</span>
-                                            <span className="font-mono font-medium">-{formatCurrency(calcularDescuento())}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between">
-                                        <span>IVA ({formData.impuesto}%):</span>
-                                        <span className="font-mono font-medium">{formatCurrency(calcularImpuesto())}</span>
-                                    </div>
-                                    <div className="border-t-2 border-slate-700 mt-1 pt-1 flex justify-between items-center">
-                                        <span className="font-bold text-slate-850">TOTAL:</span>
-                                        <span className="font-mono text-[11px] font-bold text-slate-900">{formatCurrency(calcularTotal())}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Notas */}
-                            {formData.notas && (
-                                <div className="mt-8">
-                                    <div className="text-[10px] font-bold text-slate-800 mb-1">NOTAS:</div>
-                                    <p className="text-[10px] text-slate-700 leading-relaxed whitespace-pre-wrap">{formData.notas}</p>
-                                </div>
-                            )}
-
-                            {/* Términos y Condiciones */}
-                            {formData.terminosCondiciones && (
-                                <div className="mt-6">
-                                    <div className="text-[10px] font-bold text-slate-800 mb-1">TÉRMINOS Y CONDICIONES:</div>
-                                    <p className="text-[9px] text-slate-655 leading-relaxed whitespace-pre-wrap">{formData.terminosCondiciones}</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Footer (Fiel a jsPDF) */}
-                        <div className="border-t border-slate-200 pt-4 flex justify-between items-center mt-10 text-[9px] text-slate-400">
-                            <div>{formData.creadoPor ? `Creado por: ${formData.creadoPor}` : ''}</div>
-                            <div className="font-semibold text-slate-300">Generado por InfiniguardSYS</div>
-                        </div>
-
-                    </div>
-                </div>
-
+                {/* RIGHT: Live Preview (Faithful native PDF engine) */}
+                <PDFPreviewer url={pdfPreviewUrl} loading={!pdfPreviewUrl} />
             </div>
         </div>
     );

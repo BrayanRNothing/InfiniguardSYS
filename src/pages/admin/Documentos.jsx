@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../../config/api';
 import BotonMenu from '../../components/ui/BotonMenu';
-import { obtenerTodasLasCotizaciones, eliminarCotizacionSimple, eliminarOrdenTrabajo, eliminarReporteTrabajo, subirPDFCotizacion } from '../../utils/documentStorage';
+import { obtenerTodasLasCotizaciones, eliminarCotizacionSimple, eliminarOrdenTrabajo, eliminarReporteTrabajo, subirPDFCotizacion, guardarCotizacionSimple, guardarOrdenTrabajo, guardarReporteTrabajo } from '../../utils/documentStorage';
 import { formatearFecha } from '../../utils/documentConverter';
 import { generarPDFCotizacion } from '../../utils/pdfGenerator';
+import { regenerarPDF } from '../../utils/pdfRegenerator';
 import toast from 'react-hot-toast';
 
 function Documentos() {
@@ -52,11 +53,34 @@ function Documentos() {
         }
     };
 
-    const handleDescargar = (doc) => {
-        if (doc.pdfUrl) {
-            window.open(`${API_URL}/${doc.pdfUrl}`, '_blank');
-        } else {
-            toast.error('PDF no disponible');
+    const handleDescargar = async (doc) => {
+        try {
+            const toastId = toast.loading('Abriendo documento...');
+            
+            // Intentamos verificar si el PDF aún existe en el servidor (podría haberse borrado si Railway reinició y no hay volumen)
+            if (doc.pdfUrl) {
+                try {
+                    const response = await fetch(`${API_URL}/${doc.pdfUrl}`, { method: 'HEAD' });
+                    if (response.ok) {
+                        toast.dismiss(toastId);
+                        window.open(`${API_URL}/${doc.pdfUrl}`, '_blank');
+                        return;
+                    }
+                } catch (e) {
+                    console.log('El PDF no está disponible en el servidor, se regenerará al vuelo.');
+                }
+            }
+
+            // Regeneración dinámica al vuelo usando los datos almacenados
+            const pdfFile = await regenerarPDF(doc);
+            const url = URL.createObjectURL(pdfFile);
+            toast.dismiss(toastId);
+            window.open(url, '_blank');
+            
+        } catch (error) {
+            console.error('Error al procesar el documento:', error);
+            toast.dismiss();
+            toast.error('No se pudo generar ni descargar el PDF.');
         }
     };
 
@@ -162,7 +186,16 @@ function Documentos() {
                 // NO enviamos oldPdfUrl para que no se intente eliminar nada
             };
 
-            await guardarCotizacionSimple(datosActualizados, true);
+            const numeroOriginalUpper = doc.numero.toUpperCase();
+            if (numeroOriginalUpper.startsWith('COT-')) {
+                await guardarCotizacionSimple(datosActualizados, true);
+            } else if (numeroOriginalUpper.startsWith('OT-')) {
+                await guardarOrdenTrabajo(datosActualizados, true);
+            } else if (numeroOriginalUpper.startsWith('RT-')) {
+                await guardarReporteTrabajo(datosActualizados, true);
+            } else {
+                await guardarCotizacionSimple(datosActualizados, true);
+            }
 
             toast.dismiss(toastId);
             const msg = pdfRegenerado ? 'Número actualizado y PDF regenerado' : 'Número actualizado';
