@@ -25,17 +25,13 @@ const PDFPreviewer = ({ url, loading }) => {
     }
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-slate-600 relative group">
-            {/* Toolbar overlay */}
-            <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center px-4 justify-between pointer-events-none z-10">
-                <span className="text-white/90 text-sm font-medium drop-shadow-md">Vista Previa en Vivo</span>
-                <span className="bg-blue-500/80 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded">100% Fiel al Original</span>
-            </div>
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-100/50 relative group">
+
             
-            <div className="flex-1 w-full h-full p-0 md:p-4 lg:p-8 overflow-hidden flex items-center justify-center shadow-inner">
+            <div className="flex-1 w-full h-full overflow-hidden flex">
                 <iframe 
                     src={`${url}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`} 
-                    className="w-full h-full max-w-[850px] bg-white shadow-2xl rounded-sm border border-slate-300"
+                    className="w-full h-full bg-white"
                     title="PDF Preview"
                 />
             </div>
