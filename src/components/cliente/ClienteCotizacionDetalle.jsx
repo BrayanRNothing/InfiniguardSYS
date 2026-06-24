@@ -7,6 +7,33 @@ import Avatar from '../ui/Avatar';
 function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
     const [imagenZoom, setImagenZoom] = useState(null);
     const [modalConfirmacion, setModalConfirmacion] = useState(null); // { tipo: 'aprobado' | 'rechazado' }
+    const [preguntas, setPreguntas] = useState(cotizacion.preguntas_cotizacion || []);
+    const [respuestasModificadas, setRespuestasModificadas] = useState(false);
+
+    const handleEnviarRespuestas = async () => {
+        const loadingToast = toast.loading('Enviando respuestas...');
+        try {
+            const res = await fetch(`${API_URL}/api/servicios/${cotizacion.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preguntas_cotizacion: preguntas })
+            });
+
+            if (res.ok) {
+                toast.dismiss(loadingToast);
+                toast.success('Respuestas enviadas');
+                setRespuestasModificadas(false);
+                if (onUpdate) onUpdate();
+            } else {
+                toast.dismiss(loadingToast);
+                toast.error('Error al enviar');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.dismiss(loadingToast);
+            toast.error('Error de conexión');
+        }
+    };
 
     const handleRespuesta = async (respuesta) => {
         setModalConfirmacion(null);
@@ -97,8 +124,26 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                 {/* Imágenes y PDF */}
                 <div className="bg-gray-200 rounded-2xl p-4 mb-4">
                     <div className="grid grid-cols-3 gap-3">
-                        {/* Imagen 1 */}
-                        {fotoUrl ? (
+                        {/* Imágenes dinámicas */}
+                        {(cotizacion.fotos && cotizacion.fotos.length > 0) ? (
+                            cotizacion.fotos.map((f, idx) => {
+                                const url = getSafeUrl(f);
+                                return (
+                                    <div
+                                        key={idx}
+                                        onClick={() => setImagenZoom(url)}
+                                        className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition"
+                                    >
+                                        <img
+                                            src={url}
+                                            alt={`Proyecto ${idx + 1}`}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => e.target.parentElement.remove()}
+                                        />
+                                    </div>
+                                );
+                            })
+                        ) : fotoUrl ? (
                             <div
                                 onClick={() => setImagenZoom(fotoUrl)}
                                 className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition"
@@ -115,11 +160,6 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                 <span className="text-gray-400 text-2xl">📷</span>
                             </div>
                         )}
-
-                        {/* Imagen placeholder 2 */}
-                        <div className="aspect-square rounded-xl bg-gray-300 flex items-center justify-center">
-                            <span className="text-gray-400 text-2xl">📷</span>
-                        </div>
 
                         {/* Botón PDF */}
                         {cotizacion.pdf ? (
@@ -149,7 +189,7 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                         {(esCotizado || esAprobado || esEnProceso || esFinalizado) && cotizacion.precioestimado && (
                             <div className="bg-gray-200 rounded-xl p-4 mb-3">
                                 <div className="text-xs text-gray-600 mb-1">Precio (respuesta admin)</div>
-                                <div className="text-2xl font-bold text-gray-900">${cotizacion.precioestimado}</div>
+                                <div className="text-2xl font-bold text-gray-900">${cotizacion.precioestimado} {cotizacion.moneda || 'MXN'}</div>
                             </div>
                         )}
 
@@ -168,6 +208,42 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                             <div className="bg-gray-200 rounded-xl p-4 mb-3">
                                 <div className="text-xs text-gray-600 mb-2">Notas extra</div>
                                 <p className="text-gray-800 text-sm">{cotizacion.respuestacotizacion}</p>
+                            </div>
+                        )}
+
+                        {/* Preguntas Personalizadas */}
+                        {preguntas && preguntas.length > 0 && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-3">
+                                <div className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+                                    <span>❓</span> Preguntas del Administrador
+                                </div>
+                                <div className="space-y-4">
+                                    {preguntas.map((p, idx) => (
+                                        <div key={p.id || idx} className="bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
+                                            <p className="text-sm text-gray-800 font-semibold mb-2">{p.pregunta}</p>
+                                            <textarea 
+                                                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm outline-none focus:border-blue-400 resize-none"
+                                                placeholder="Escribe tu respuesta aquí..."
+                                                rows="2"
+                                                value={p.respuesta || ''}
+                                                onChange={(e) => {
+                                                    const newP = [...preguntas];
+                                                    newP[idx].respuesta = e.target.value;
+                                                    setPreguntas(newP);
+                                                    setRespuestasModificadas(true);
+                                                }}
+                                            ></textarea>
+                                        </div>
+                                    ))}
+                                    {respuestasModificadas && (
+                                        <button 
+                                            onClick={handleEnviarRespuestas}
+                                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl transition-all shadow-md"
+                                        >
+                                            Enviar Respuestas
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         )}
 
@@ -316,7 +392,7 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                 }`}>
                                 <div className="text-xs text-gray-600 mb-1">Precio de la cotización</div>
                                 <div className="text-3xl font-bold text-gray-900">
-                                    ${cotizacion.precioestimado}
+                                    ${cotizacion.precioestimado} {cotizacion.moneda || 'MXN'}
                                 </div>
                             </div>
                         )}

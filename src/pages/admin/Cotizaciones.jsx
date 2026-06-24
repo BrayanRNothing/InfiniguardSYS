@@ -225,7 +225,7 @@ function Cotizaciones() {
                                                 {cot.precio && (
                                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
                                                         <span className="text-[10px] text-green-600 font-bold uppercase block mb-1">Precio cotizado</span>
-                                                        <span className="text-green-700 font-bold text-xl">${parseFloat(cot.precio).toLocaleString()}</span>
+                                                        <span className="text-green-700 font-bold text-xl">${parseFloat(cot.precio).toLocaleString()} {cot.moneda || 'MXN'}</span>
                                                     </div>
                                                 )}
 

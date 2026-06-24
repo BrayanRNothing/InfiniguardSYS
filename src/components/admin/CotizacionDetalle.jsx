@@ -5,11 +5,12 @@ import { getSafeUrl } from '../../utils/helpers';
 import InfoItem from '../../components/ui/InfoItem';
 
 function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
-    const [respuesta, setRespuesta] = useState({ texto: '', precio: '' });
+    const [respuesta, setRespuesta] = useState({ texto: '', precio: '', moneda: 'MXN' });
     const [archivo, setArchivo] = useState(null);
     const [imagenZoom, setImagenZoom] = useState(null);
     const [folio, setFolio] = useState(cotizacion.folio || '');
     const [editandoFolio, setEditandoFolio] = useState(false);
+    const [preguntas, setPreguntas] = useState(cotizacion.preguntas_cotizacion || []);
 
     const handleEnviarCotizacion = async () => {
         if (!respuesta.texto || !respuesta.precio) {
@@ -33,7 +34,9 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
         formData.append('estado', 'cotizado');
         formData.append('respuestaAdmin', respuesta.texto);
         formData.append('precio', respuesta.precio);
+        formData.append('moneda', respuesta.moneda);
         formData.append('adminVendedor', adminNombre);
+        formData.append('preguntas_cotizacion', JSON.stringify(preguntas));
         if (archivo) formData.append('archivo', archivo);
 
         const loadingToast = toast.loading('Enviando...');
@@ -47,7 +50,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
             if (res.ok) {
                 toast.dismiss(loadingToast);
                 toast.success('Enviado correctamente');
-                setRespuesta({ texto: '', precio: '' });
+                setRespuesta({ texto: '', precio: '', moneda: 'MXN' });
                 setArchivo(null);
                 if (onUpdate) onUpdate();
             } else {
@@ -241,11 +244,27 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                     <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Archivos Adjuntos</h3>
                                     <div className="flex flex-wrap gap-3">
 
-                                        {/* 1. FOTO PREVIEW */}
-                                        {cotizacion.foto ? (
+                                        {/* 1. FOTOS PREVIEW */}
+                                        {(cotizacion.fotos && cotizacion.fotos.length > 0) ? (
+                                            cotizacion.fotos.map((f, idx) => {
+                                                const url = getSafeUrl(f);
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        onClick={() => setImagenZoom(url)}
+                                                        className="group relative h-24 w-36 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all shrink-0"
+                                                    >
+                                                        <img src={url} alt={`Evidencia ${idx}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" onError={(e) => e.target.style.display = 'none'} />
+                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                            <span className="bg-white/90 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all">Ver Foto</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        ) : cotizacion.foto ? (
                                             <div
                                                 onClick={() => setImagenZoom(fotoUrl)}
-                                                className="group relative h-24 w-36 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all"
+                                                className="group relative h-24 w-36 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all shrink-0"
                                             >
                                                 <img src={fotoUrl} alt="Evidencia" className="h-full w-full object-cover transition duration-500 group-hover:scale-110" onError={(e) => e.target.style.display = 'none'} />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -308,17 +327,27 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                         <label className="flex justify-between text-xs font-bold text-gray-500 uppercase mb-2">
                                             Precio Total <span className="text-red-500">*</span>
                                         </label>
-                                        <div className="relative group">
-                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                <span className="text-gray-400 font-bold text-lg group-focus-within:text-blue-500 transition">$</span>
+                                        <div className="relative group flex gap-2">
+                                            <div className="relative flex-1">
+                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                    <span className="text-gray-400 font-bold text-lg group-focus-within:text-blue-500 transition">$</span>
+                                                </div>
+                                                <input
+                                                    type="number"
+                                                    className="w-full pl-9 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition font-bold text-2xl text-gray-900 placeholder-gray-300"
+                                                    placeholder="0.00"
+                                                    value={respuesta.precio}
+                                                    onChange={(e) => setRespuesta({ ...respuesta, precio: e.target.value })}
+                                                />
                                             </div>
-                                            <input
-                                                type="number"
-                                                className="w-full pl-9 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition font-bold text-2xl text-gray-900 placeholder-gray-300"
-                                                placeholder="0.00"
-                                                value={respuesta.precio}
-                                                onChange={(e) => setRespuesta({ ...respuesta, precio: e.target.value })}
-                                            />
+                                            <select
+                                                value={respuesta.moneda}
+                                                onChange={(e) => setRespuesta({ ...respuesta, moneda: e.target.value })}
+                                                className="w-24 bg-gray-50 border border-gray-200 rounded-xl px-2 py-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition font-bold text-gray-700"
+                                            >
+                                                <option value="MXN">MXN</option>
+                                                <option value="USD">USD</option>
+                                            </select>
                                         </div>
                                     </div>
 
@@ -351,6 +380,57 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                         value={respuesta.texto}
                                         onChange={(e) => setRespuesta({ ...respuesta, texto: e.target.value })}
                                     ></textarea>
+                                </div>
+
+                                {/* Preguntas Personalizadas */}
+                                <div className="mt-4 border-t border-gray-100 pt-4">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">
+                                            Preguntas para el Cliente
+                                        </label>
+                                        <button 
+                                            onClick={() => setPreguntas([...preguntas, { id: Date.now(), pregunta: '', respuesta: '' }])}
+                                            className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-1 rounded-full transition"
+                                        >
+                                            + Agregar Pregunta
+                                        </button>
+                                    </div>
+                                    {preguntas.length === 0 ? (
+                                        <p className="text-[10px] text-gray-400 italic">Si necesitas más información, agrega preguntas aquí.</p>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {preguntas.map((p, index) => (
+                                                <div key={p.id} className="bg-gray-50 p-3 rounded-xl border border-gray-200 flex gap-2">
+                                                    <div className="flex-1">
+                                                        <input 
+                                                            type="text" 
+                                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 mb-2" 
+                                                            placeholder={`Pregunta ${index + 1}`}
+                                                            value={p.pregunta}
+                                                            onChange={(e) => {
+                                                                const newP = [...preguntas];
+                                                                newP[index].pregunta = e.target.value;
+                                                                setPreguntas(newP);
+                                                            }}
+                                                        />
+                                                        {p.respuesta && (
+                                                            <div className="bg-green-50 text-green-800 text-xs p-2 rounded border border-green-200">
+                                                                <span className="font-bold block text-[10px] text-green-600 uppercase mb-1">Respuesta del cliente:</span>
+                                                                {p.respuesta}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => setPreguntas(preguntas.filter(q => q.id !== p.id))}
+                                                        className="text-red-400 hover:text-red-600 p-2"
+                                                        title="Eliminar pregunta"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <hr className="border-gray-200" />

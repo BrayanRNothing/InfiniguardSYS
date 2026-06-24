@@ -142,6 +142,7 @@ const initDB = async () => {
     await addColumn('servicios', 'fechaProgramada', 'TEXT');
     await addColumn('servicios', 'porcentajeComision', 'REAL', '0');
     await addColumn('servicios', 'adminVendedor', 'TEXT');
+    await addColumn('servicios', 'preguntas_cotizacion', 'JSONB', "'[]'");
 
     // Migración: Agregar teléfono a usuarios
     await addColumn('usuarios', 'telefono', 'TEXT');
@@ -470,6 +471,7 @@ app.get('/api/servicios', async (req, res) => {
       }
       return {
         ...s,
+        fotos: Array.isArray(fotoArray) ? fotoArray : (fotoArray ? [fotoArray] : []),
         foto: Array.isArray(fotoArray) ? fotoArray[0] : (fotoArray ? [fotoArray][0] : null)
       };
     });
@@ -479,13 +481,13 @@ app.get('/api/servicios', async (req, res) => {
   }
 });
 
-app.post('/api/servicios', upload.fields([{ name: 'foto', maxCount: 1 }, { name: 'pdf', maxCount: 1 }]), async (req, res) => {
+app.post('/api/servicios', upload.fields([{ name: 'foto', maxCount: 10 }, { name: 'pdf', maxCount: 1 }]), async (req, res) => {
   const data = req.body;
   let fotoPath = JSON.stringify([]);
   let pdfPath = null;
 
   if (req.files && req.files['foto']) {
-    fotoPath = JSON.stringify([`uploads/${req.files['foto'][0].filename}`]);
+    fotoPath = JSON.stringify(req.files['foto'].map(f => `uploads/${f.filename}`));
   }
   if (req.files && req.files['pdf']) {
     pdfPath = `uploads/${req.files['pdf'][0].filename}`;
@@ -612,6 +614,11 @@ app.put('/api/servicios/:id', uploadDocumentos.single('archivo'), async (req, re
 
     if (update.folio) {
       await pool.query('UPDATE servicios SET folio = $1 WHERE id = $2', [update.folio, id]);
+    }
+
+    if (update.preguntas_cotizacion) {
+      const preguntasStr = typeof update.preguntas_cotizacion === 'string' ? update.preguntas_cotizacion : JSON.stringify(update.preguntas_cotizacion);
+      await pool.query('UPDATE servicios SET preguntas_cotizacion = $1 WHERE id = $2', [preguntasStr, id]);
     }
 
     // Si cambió el estado, notificar al cliente

@@ -252,7 +252,7 @@ function Servicios() {
                   </div>
 
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-green-600">${cot.precio || cot.precioestimado || 'N/A'}</p>
+                    <p className="text-3xl font-bold text-green-600">${cot.precio || cot.precioestimado || 'N/A'} {cot.moneda || 'MXN'}</p>
                     <p className="text-xs text-gray-500 mt-1">Precio aprobado</p>
                   </div>
 
@@ -315,7 +315,7 @@ function Servicios() {
                         {cotizacionSeleccionada.tipo.replace(/_/g, ' ')}
                       </span>
                       <span className="ml-auto text-4xl font-bold text-green-600">
-                        ${cotizacionSeleccionada.precio || cotizacionSeleccionada.precioestimado || 'N/A'}
+                        ${cotizacionSeleccionada.precio || cotizacionSeleccionada.precioestimado || 'N/A'} {cotizacionSeleccionada.moneda || 'MXN'}
                       </span>
                     </div>
                   </div>
@@ -515,7 +515,7 @@ function Servicios() {
                       </span>
                     </div>
                     <div className="text-right ml-2">
-                      <div className="text-2xl font-bold text-green-600">${serv.precio || serv.precioestimado || 'N/A'}</div>
+                      <div className="text-2xl font-bold text-green-600">${serv.precio || serv.precioestimado || 'N/A'} {serv.moneda || 'MXN'}</div>
                       <div className="text-[10px] text-gray-400 uppercase">Precio</div>
                     </div>
                   </div>
@@ -672,7 +672,7 @@ function Servicios() {
                       </span>
                     </div>
                     <div className="text-right ml-2">
-                      <div className="text-2xl font-bold text-green-600">${serv.precio || serv.precioestimado || 'N/A'}</div>
+                      <div className="text-2xl font-bold text-green-600">${serv.precio || serv.precioestimado || 'N/A'} {serv.moneda || 'MXN'}</div>
                       <div className="text-[10px] text-gray-400 uppercase">Precio</div>
                     </div>
                   </div>

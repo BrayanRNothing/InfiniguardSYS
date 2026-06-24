@@ -60,9 +60,11 @@ function CotizacionForm({ titulo, tipoServicio, onSuccess }) {
 
     formData.append('modelo', formDatos.modelo || '');
 
-    // Adjuntar la primera imagen (por compatibilidad con el backend actual)
+    // Adjuntar todas las imágenes
     if (fileImages.length > 0) {
-      formData.append('foto', fileImages[0].file);
+      fileImages.forEach(img => {
+        formData.append('foto', img.file);
+      });
     }
 
     if (filePdf) formData.append('pdf', filePdf);
