@@ -144,6 +144,7 @@ const initDB = async () => {
     await addColumn('servicios', 'adminVendedor', 'TEXT');
     await addColumn('servicios', 'preguntas_cotizacion', 'JSONB', "'[]'");
     await addColumn('servicios', 'moneda', 'TEXT', "'MXN'");
+    await addColumn('servicios', 'ordenTrabajo', 'TEXT');
 
     // Migración: Agregar teléfono a usuarios
     await addColumn('usuarios', 'telefono', 'TEXT');
@@ -539,14 +540,14 @@ app.post('/api/servicios', upload.fields([{ name: 'foto', maxCount: 10 }, { name
   }
 });
 
-app.put('/api/servicios/:id', uploadDocumentos.array('archivos', 10), async (req, res) => {
+app.put('/api/servicios/:id', uploadDocumentos.fields([{ name: 'archivos', maxCount: 10 }, { name: 'archivoOT', maxCount: 10 }]), async (req, res) => {
   const { id } = req.params;
   const update = req.body;
   let estadoCambiado = false;
 
   try {
-    if (req.files && req.files.length > 0) {
-      const pdfPaths = req.files.map(f => `uploads/documentos/${f.filename}`);
+    if (req.files && req.files['archivos'] && req.files['archivos'].length > 0) {
+      const pdfPaths = req.files['archivos'].map(f => `uploads/documentos/${f.filename}`);
       
       // Obtener PDFs actuales
       const currentRes = await pool.query('SELECT pdfCotizacion FROM servicios WHERE id = $1', [id]);
@@ -562,6 +563,25 @@ app.put('/api/servicios/:id', uploadDocumentos.array('archivos', 10), async (req
       const allPdfs = [...existingPdfs, ...pdfPaths];
       await pool.query('UPDATE servicios SET pdfCotizacion = $1 WHERE id = $2', [JSON.stringify(allPdfs), id]);
     }
+
+    if (req.files && req.files['archivoOT'] && req.files['archivoOT'].length > 0) {
+      const otPaths = req.files['archivoOT'].map(f => `uploads/documentos/${f.filename}`);
+      
+      // Obtener OTs actuales
+      const currentRes = await pool.query('SELECT ordenTrabajo FROM servicios WHERE id = $1', [id]);
+      let existingOTs = [];
+      if (currentRes.rows[0]?.ordentrabajo) {
+        try {
+          existingOTs = JSON.parse(currentRes.rows[0].ordentrabajo);
+        } catch {
+          existingOTs = [currentRes.rows[0].ordentrabajo];
+        }
+      }
+      
+      const allOTs = [...existingOTs, ...otPaths];
+      await pool.query('UPDATE servicios SET ordenTrabajo = $1 WHERE id = $2', [JSON.stringify(allOTs), id]);
+    }
+
 
     if (update.estado) {
       await pool.query('UPDATE servicios SET estado = $1 WHERE id = $2', [update.estado, id]);
@@ -580,6 +600,39 @@ app.put('/api/servicios/:id', uploadDocumentos.array('archivos', 10), async (req
 
     if (update.estadoCliente) {
       await pool.query('UPDATE servicios SET estadoCliente = $1 WHERE id = $2', [update.estadoCliente, id]);
+      if (update.estadoCliente === 'aprobado' && !update.estado) {
+        await pool.query('UPDATE servicios SET estado = $1 WHERE id = $2', ['aprobado', id]);
+        estadoCambiado = true;
+      }
+    }
+
+    // AUTOMATIZACIÓN: Si se acaba de aprobar, crear la Orden de Trabajo en la nueva tabla
+    if ((update.estado === 'aprobado' || update.estadoCliente === 'aprobado') && estadoCambiado) {
+      try {
+        const servicioActual = await pool.query('SELECT * FROM servicios WHERE id = $1', [id]);
+        if (servicioActual.rows.length > 0) {
+          const s = servicioActual.rows[0];
+          // Generar número de OT
+          const otCount = await pool.query("SELECT COUNT(*) FROM ordenes_trabajo");
+          const nextNum = 14000 + parseInt(otCount.rows[0].count);
+          const numeroOT = `OT-${nextNum.toString().padStart(6, '0')}`;
+          
+          await pool.query(`
+            INSERT INTO ordenes_trabajo (numero, fecha, cliente_nombre, titulo, datos, pdf_url)
+            VALUES ($1, CURRENT_DATE, $2, $3, $4, $5)
+            ON CONFLICT (numero) DO NOTHING
+          `, [
+            numeroOT,
+            s.cliente || s.usuario,
+            s.titulo,
+            JSON.stringify(s), // Guardamos una instantánea completa de la cotización
+            s.pdfcotizacion ? JSON.parse(s.pdfcotizacion || '[]')[0] : null
+          ]);
+          console.log(`✅ Orden de trabajo ${numeroOT} creada automáticamente a partir del servicio ${id}`);
+        }
+      } catch (err) {
+        console.error('❌ Error creando Orden de Trabajo automática:', err.message);
+      }
     }
 
     if (update.precio || update.precioEstimado) {

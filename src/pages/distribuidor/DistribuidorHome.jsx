@@ -116,7 +116,7 @@ const DistribuidorHome = () => {
 
         <div className="flex items-center justify-between border-t border-gray-50 pt-3">
           <div className="text-sm font-bold text-gray-900">
-            {cotizacion.precio ? `$${cotizacion.precio.toLocaleString()}` : <span className="text-gray-400 font-normal">Por cotizar</span>}
+            {cotizacion.precioestimado ? `$${Number(cotizacion.precioestimado).toLocaleString()}` : <span className="text-gray-400 font-normal">Por cotizar</span>}
           </div>
           <button className="text-blue-600 font-bold text-xs hover:text-blue-700 uppercase tracking-wider">
             Detalles ≫

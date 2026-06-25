@@ -119,17 +119,22 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                 <h1 className="text-xl font-bold text-gray-900 mb-0.5">{cotizacion.titulo}</h1>
                 <p className="text-xs text-gray-500 mb-3">{cotizacion.tipo}</p>
 
-                {/* Descripción */}
-                <div className="bg-gray-200 rounded-2xl p-4 mb-4">
-                    <h3 className="text-xs font-semibold text-gray-600 mb-2">Descripción</h3>
-                    <p className="text-gray-800">{cotizacion.descripcion || 'Sin descripción'}</p>
-                </div>
+                {/* PASO 1: SOLICITUD ORIGINAL */}
+                <div className="mb-6">
+                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <span className="bg-gray-200 text-gray-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
+                        Tu Solicitud Original
+                    </h2>
+                    
+                    <div className="bg-gray-100 rounded-2xl p-4 mb-3 border border-gray-200">
+                        <h3 className="text-xs font-semibold text-gray-500 mb-2">Descripción</h3>
+                        <p className="text-gray-800">{cotizacion.descripcion || 'Sin descripción'}</p>
+                    </div>
 
-                {/* Dirección */}
-                <div className="bg-gray-200 rounded-2xl p-4 mb-4">
-                    <h3 className="text-xs font-semibold text-gray-600 mb-2">Dirección</h3>
-                    <p className="text-gray-800">{cotizacion.direccion || 'N/A'}</p>
-                </div>
+                    <div className="bg-gray-100 rounded-2xl p-4 mb-3 border border-gray-200">
+                        <h3 className="text-xs font-semibold text-gray-500 mb-2">Lugar de aplicación</h3>
+                        <p className="text-gray-800">{cotizacion.direccion || 'N/A'}</p>
+                    </div>
 
                 {/* Archivos Adjuntos - Acordeón */}
                 <details className="bg-white rounded-2xl mb-4 shadow-sm border border-gray-100 group [&_summary::-webkit-details-marker]:hidden">
@@ -224,11 +229,16 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                     )}
                     </div>
                 </details>
+                </div>
 
-                {/* Sección de Respuesta - Varía según estado */}
+                {/* PASO 2: RESPUESTA DEL ADMIN */}
                 {(esCotizado || esAprobado || esEnProceso || esFinalizado) && (
-                    <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
-                        <h2 className="text-lg font-bold text-gray-900 mb-4">Respuesta</h2>
+                    <div className="mb-6">
+                        <h2 className="text-sm font-bold text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> 
+                            Respuesta y Cotización
+                        </h2>
+                        <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm">
 
                         {/* Precio (si está cotizado o aprobado) */}
                         {(esCotizado || esAprobado || esEnProceso || esFinalizado) && cotizacion.precioestimado && (
@@ -342,6 +352,18 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                 )}
                             </div>
                         )}
+                    </div>
+                    </div>
+                )}
+
+                {/* PASO 3: DECISIÓN / ESTADO */}
+                {(esCotizado || esAprobado || esEnProceso || esFinalizado) && (
+                    <div className="mb-6">
+                        <h2 className="text-sm font-bold text-green-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <span className="bg-green-100 text-green-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span> 
+                            Tu Decisión
+                        </h2>
+
 
                         {/* Botones de acción solo si está cotizado */}
                         {esCotizado && (

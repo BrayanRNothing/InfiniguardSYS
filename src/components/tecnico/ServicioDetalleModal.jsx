@@ -10,6 +10,16 @@ function ServicioDetalleModal({ servicio, onClose }) {
     const fotoUrl = getSafeUrl(servicio.foto);
     const pdfUrl = getSafeUrl(servicio.pdf);
 
+    let pdfsOT = [];
+    if (servicio.ordentrabajo) {
+        try {
+            pdfsOT = JSON.parse(servicio.ordentrabajo);
+            if (!Array.isArray(pdfsOT)) pdfsOT = [servicio.ordentrabajo];
+        } catch (e) {
+            pdfsOT = [servicio.ordentrabajo];
+        }
+    }
+
     const handleDescargarArchivo = async (rutaRelativa, nombreArchivo) => {
         if (!rutaRelativa) return;
 
@@ -69,42 +79,52 @@ function ServicioDetalleModal({ servicio, onClose }) {
                             </div>
                         </div>
 
-                        {/* Información del Cliente */}
+                        {/* Información del Proyecto */}
                         <div>
-                            <h3 className="text-sm font-bold text-gray-600 uppercase mb-3">Información del Cliente</h3>
+                            <h3 className="text-sm font-bold text-gray-600 uppercase mb-3">Información del Proyecto</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <InfoItem label="Usuario" value={servicio.cliente} icon="👤" />
-                                <InfoItem label="Teléfono" value={servicio.telefono} icon="📞" />
-                                <InfoItem label="Dirección" value={servicio.direccion} icon="📍" />
-                                <InfoItem label="Fecha" value={servicio.fecha} icon="📅" />
+                                <InfoItem label="Lugar de aplicación" value={servicio.direccion} icon="📍" />
+                                <InfoItem label="Proyecto" value={servicio.titulo} icon="🏗️" />
                             </div>
                         </div>
 
                         {/* Información del Servicio */}
-                        {servicio.cantidad && (
+                        {servicio.modelo && (
                             <div>
                                 <h3 className="text-sm font-bold text-gray-600 uppercase mb-3">Detalles del Servicio</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <InfoItem label="Cantidad" value={servicio.cantidad} icon="📦" />
-                                    {servicio.modelo && <InfoItem label="Modelo" value={servicio.modelo} icon="🔖" />}
+                                    <InfoItem label="Modelo" value={servicio.modelo} icon="🔖" />
                                 </div>
                             </div>
                         )}
 
-                        {/* Descripción */}
+                        {/* Descripción Original */}
                         {servicio.descripcion && (
                             <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                                <h4 className="text-xs font-bold text-gray-600 uppercase mb-2">Descripción del Problema</h4>
+                                <h4 className="text-xs font-bold text-gray-600 uppercase mb-2">1️⃣ Solicitud Original del Cliente</h4>
                                 <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
                                     {servicio.descripcion}
                                 </p>
                             </div>
                         )}
 
+                        {/* Propuesta a Ejecutar (Sin precios) */}
+                        {servicio.respuestaAdmin && (
+                            <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+                                <h4 className="text-xs font-bold text-yellow-700 uppercase mb-2">2️⃣ Instrucciones / Propuesta Aprobada</h4>
+                                <div className="mb-3">
+                                    <span className="text-xs font-bold text-yellow-800 block mb-1">Diagnóstico/Propuesta acordada con el cliente:</span>
+                                    <p className="text-sm text-yellow-900 leading-relaxed whitespace-pre-line">
+                                        {servicio.respuestaAdmin}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Notas */}
                         {servicio.notas && (
                             <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                                <h4 className="text-xs font-bold text-blue-600 uppercase mb-2">📝 Notas Adicionales</h4>
+                                <h4 className="text-xs font-bold text-blue-600 uppercase mb-2">3️⃣ Notas Adicionales (Administración)</h4>
                                 <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
                                     {servicio.notas}
                                 </p>
@@ -113,10 +133,10 @@ function ServicioDetalleModal({ servicio, onClose }) {
 
                         {/* Fecha/Hora Programada */}
                         <div className="bg-green-50 rounded-xl p-4 border border-green-200">
-                            <h4 className="text-xs font-bold text-green-600 uppercase mb-2">🗓️ Servicio Programado</h4>
+                            <h4 className="text-xs font-bold text-green-600 uppercase mb-2">4️⃣ Servicio Programado</h4>
                             <div className="grid grid-cols-2 gap-3">
-                                <InfoItem label="Fecha" value={servicio.fechaServicio || 'Por definir'} icon="📅" />
-                                <InfoItem label="Hora" value={servicio.horaServicio || 'Por definir'} icon="⏰" />
+                                <InfoItem label="Fecha" value={servicio.fechaServicio || servicio.fechaservicio || 'Por definir'} icon="📅" />
+                                <InfoItem label="Hora" value={servicio.horaServicio || servicio.horaservicio || 'Por definir'} icon="⏰" />
                             </div>
                         </div>
 
@@ -125,7 +145,7 @@ function ServicioDetalleModal({ servicio, onClose }) {
                             <h3 className="text-sm font-bold text-gray-600 uppercase mb-3">Archivos Adjuntos</h3>
                             <div className="flex flex-wrap gap-3">
                                 {/* Foto */}
-                                {servicio.foto ? (
+                                {servicio.foto && (
                                     <div
                                         onClick={() => setImagenZoom(fotoUrl)}
                                         className="group relative h-32 w-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all"
@@ -142,27 +162,40 @@ function ServicioDetalleModal({ servicio, onClose }) {
                                             </span>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="h-32 w-32 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 text-xs">
-                                        Sin Foto
-                                    </div>
                                 )}
 
-                                {/* PDFs del Cliente */}
-                                {servicio.pdfs && servicio.pdfs.length > 0 ? (
+                                {/* Ordenes de Trabajo (OT) */}
+                                {pdfsOT && pdfsOT.length > 0 && (
+                                    pdfsOT.map((pdfUrl, idx) => (
+                                        <button
+                                            key={`ot-${idx}`}
+                                            onClick={() => handleDescargarArchivo(pdfUrl, `Orden_Trabajo_${servicio.id}_${idx + 1}.pdf`)}
+                                            className="h-32 w-40 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-200 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-blue-600 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                                        >
+                                            <span className="text-3xl group-hover:scale-110 transition">📋</span>
+                                            <span className="text-[10px] font-bold mt-2 text-center uppercase tracking-wider">Orden de Trabajo {idx + 1}</span>
+                                        </button>
+                                    ))
+                                )}
+
+                                {/* PDFs del Cliente (Si hay adicionales a la foto) */}
+                                {servicio.pdfs && servicio.pdfs.length > 0 && (
                                     servicio.pdfs.map((pdfUrl, idx) => (
                                         <button
-                                            key={idx}
-                                            onClick={() => handleDescargarArchivo(pdfUrl, `Evidencia_${servicio.id}_${idx + 1}.pdf`)}
+                                            key={`cli-${idx}`}
+                                            onClick={() => handleDescargarArchivo(pdfUrl, `Adjunto_${servicio.id}_${idx + 1}.pdf`)}
                                             className="h-32 w-40 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-red-600 transition-all cursor-pointer group shadow-sm hover:shadow-md"
                                         >
                                             <span className="text-3xl group-hover:scale-110 transition">📄</span>
-                                            <span className="text-[10px] font-bold mt-2 text-center">PDF {idx + 1}</span>
+                                            <span className="text-[10px] font-bold mt-2 text-center">PDF Cliente {idx + 1}</span>
                                         </button>
                                     ))
-                                ) : (
-                                    <div className="h-32 w-32 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 text-xs">
-                                        Sin PDF
+                                )}
+
+                                {(!servicio.foto && (!servicio.pdfs || servicio.pdfs.length === 0) && (!pdfsOT || pdfsOT.length === 0)) && (
+                                    <div className="w-full bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-200 text-center">
+                                        <span className="text-2xl mb-2 block opacity-50">📭</span>
+                                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">No hay archivos ni órdenes de trabajo</span>
                                     </div>
                                 )}
                             </div>

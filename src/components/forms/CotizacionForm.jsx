@@ -14,7 +14,6 @@ function CotizacionForm({ titulo, tipoServicio, onSuccess }) {
     cantidad: 1,
     direccion: '',
     descripcion: '',
-    clienteFinal: '', // Nuevo campo para distribuidores
     telefono: JSON.parse(sessionStorage.getItem('user') || '{}')?.telefono || ''
   });
 
@@ -65,10 +64,8 @@ function CotizacionForm({ titulo, tipoServicio, onSuccess }) {
     formData.append('direccion', formDatos.direccion);
     formData.append('telefono', formDatos.telefono);
 
-    // Si es distribuidor, usamos el clienteFinal. Si no, el nombre del usuario logueado.
-    const esDistribuidor = usuario?.rol === 'distribuidor';
     formData.append('usuario', usuario ? usuario.nombre : 'Usuario Externo');
-    formData.append('cliente', esDistribuidor ? (formDatos.clienteFinal || 'Consumidor Final') : (usuario?.nombre || 'Consumidor Final'));
+    formData.append('cliente', usuario?.nombre || 'Consumidor Final');
 
     formData.append('modelo', formDatos.modelo || '');
 
@@ -94,7 +91,7 @@ function CotizacionForm({ titulo, tipoServicio, onSuccess }) {
       if (response.ok) {
         setMensaje({ texto: '¡La solicitud ha sido creada y enviada correctamente!', tipo: 'success' });
         // Resetear formulario
-        setFormDatos({ nombreProyecto: '', modelo: '', cantidad: 1, direccion: '', descripcion: '', clienteFinal: '', telefono: usuario?.telefono || '' });
+        setFormDatos({ nombreProyecto: '', modelo: '', cantidad: 1, direccion: '', descripcion: '', telefono: usuario?.telefono || '' });
         setFileImages([]);
         setFilePdfs([]);
         setTimeout(() => {
@@ -155,20 +152,7 @@ function CotizacionForm({ titulo, tipoServicio, onSuccess }) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Nombre del cliente final (Solo distribuidores) */}
-        {JSON.parse(sessionStorage.getItem('user'))?.rol === 'distribuidor' && (
-          <div>
-            <input
-              required
-              type="text"
-              name="clienteFinal"
-              value={formDatos.clienteFinal}
-              onChange={handleChange}
-              placeholder="Nombre del Cliente Final"
-              className="w-full bg-gray-100 border-0 p-4 rounded-xl text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-            />
-          </div>
-        )}
+
 
         {/* Nombre del proyecto */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -216,7 +200,7 @@ function CotizacionForm({ titulo, tipoServicio, onSuccess }) {
             name="direccion"
             value={formDatos.direccion}
             onChange={handleChange}
-            placeholder="Dirección"
+            placeholder="Lugar de aplicación (Ej. Cancún)"
             className="w-full bg-gray-100 border-0 p-4 rounded-xl text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
           />
         </div>

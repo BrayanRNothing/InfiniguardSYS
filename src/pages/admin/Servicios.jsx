@@ -24,7 +24,8 @@ function Servicios() {
     tecnicoId: '',
     fechaServicio: '',
     horaServicio: '',
-    notas: ''
+    notas: '',
+    archivoOT: null
   });
   const [formCrear, setFormCrear] = useState({
     titulo: '',
@@ -112,24 +113,28 @@ function Servicios() {
         fechaProgramada = `${formAsignar.fechaServicio}T${formAsignar.horaServicio}:00`;
       }
 
+      const formData = new FormData();
+      formData.append('tecnicoAsignado', tecnicoSeleccionado.nombre);
+      formData.append('telefonoTecnico', tecnicoSeleccionado.telefono || tecnicoSeleccionado.usuario || '');
+      formData.append('tecnicoId', tecnicoSeleccionado.id);
+      formData.append('estado', 'en-proceso');
+      if (fechaProgramada) formData.append('fechaProgramada', fechaProgramada);
+      formData.append('fechaServicio', formAsignar.fechaServicio);
+      formData.append('horaServicio', formAsignar.horaServicio);
+      formData.append('notas', formAsignar.notas);
+      
+      if (formAsignar.archivoOT) {
+        formData.append('archivoOT', formAsignar.archivoOT);
+      }
+
       const res = await fetch(`${API_URL}/api/servicios/${formAsignar.cotizacionId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tecnicoAsignado: tecnicoSeleccionado.nombre,
-          telefonoTecnico: tecnicoSeleccionado.telefono || tecnicoSeleccionado.usuario || '',
-          tecnicoId: tecnicoSeleccionado.id,
-          estado: 'en-proceso',
-          fechaProgramada: fechaProgramada,
-          fechaServicio: formAsignar.fechaServicio,
-          horaServicio: formAsignar.horaServicio,
-          notas: formAsignar.notas
-        })
+        body: formData
       });
 
       if (res.ok) {
         toast.success('✅ Servicio asignado al técnico');
-        setFormAsignar({ cotizacionId: '', tecnicoId: '', fechaServicio: '', horaServicio: '', notas: '' });
+        setFormAsignar({ cotizacionId: '', tecnicoId: '', fechaServicio: '', horaServicio: '', notas: '', archivoOT: null });
         setCotizacionSeleccionada(null);
         cargarDatos();
         setVistaActual('en-curso'); // Redirigir a servicios en curso
@@ -323,7 +328,7 @@ function Servicios() {
               onClick={() => {
                 setVistaActual('asignar');
                 setCotizacionSeleccionada(null);
-                setFormAsignar({ cotizacionId: '', tecnicoId: '', fechaServicio: '', horaServicio: '', notas: '' });
+                setFormAsignar({ cotizacionId: '', tecnicoId: '', fechaServicio: '', horaServicio: '', notas: '', archivoOT: null });
               }}
               className="text-gray-600 hover:text-gray-700 font-semibold flex items-center gap-2 transition text-sm"
             >
@@ -368,7 +373,7 @@ function Servicios() {
                   {/* Grid de Datos Completos */}
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      <InfoItem label="Dirección" value={cotizacionSeleccionada.direccion} icon="📍" />
+                      <InfoItem label="Lugar de aplicación" value={cotizacionSeleccionada.direccion} icon="📍" />
                       <InfoItem label="Teléfono / Contacto" value={cotizacionSeleccionada.telefono} icon="📞" />
                       <InfoItem label="ID Sistema" value={cotizacionSeleccionada.id} icon="🆔" />
                     </div>
@@ -384,7 +389,7 @@ function Servicios() {
                         {/* Descripción */}
                         {cotizacionSeleccionada.descripcion ? (
                           <div>
-                            <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Descripción del problema</div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Descripción del servicio</div>
                             <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{cotizacionSeleccionada.descripcion}</p>
                           </div>
                         ) : (
@@ -598,6 +603,16 @@ function Servicios() {
                       />
                     </div>
 
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Adjuntar OT / RT (Opcional)</label>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => setFormAsignar({ ...formAsignar, archivoOT: e.target.files[0] })}
+                        className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-300 bg-white"
+                      />
+                    </div>
+
                     <button
                       type="submit"
                       disabled={loading}
@@ -674,7 +689,7 @@ function Servicios() {
                     {serv.direccion && (
                       <div className="flex items-start gap-2">
                         <span className="text-orange-600 mt-0.5">📍</span>
-                        <span className="text-gray-600">Dirección:</span>
+                        <span className="text-gray-600">Lugar de aplicación:</span>
                         <span className="text-gray-700 text-xs line-clamp-2 flex-1">{serv.direccion}</span>
                       </div>
                     )}
@@ -836,7 +851,7 @@ function Servicios() {
                     {serv.direccion && (
                       <div className="flex items-start gap-2 text-sm">
                         <span className="text-orange-600 mt-0.5">📍</span>
-                        <span className="text-gray-600">Dirección:</span>
+                        <span className="text-gray-600">Lugar de aplicación:</span>
                         <span className="text-gray-700 flex-1">{serv.direccion}</span>
                       </div>
                     )}
@@ -984,12 +999,12 @@ function Servicios() {
 
               {/* Dirección - Ocupa 3 columnas */}
               <div className="md:col-span-3">
-                <label className="block text-[10px] font-bold text-gray-700 mb-1 uppercase">Dirección</label>
+                <label className="block text-[10px] font-bold text-gray-700 mb-1 uppercase">Lugar de aplicación</label>
                 <input
                   type="text"
                   value={formCrear.direccion}
                   onChange={(e) => setFormCrear({ ...formCrear, direccion: e.target.value })}
-                  placeholder="Dirección del servicio"
+                  placeholder="Lugar de aplicación"
                   className="w-full px-2 py-1.5 text-xs border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>

@@ -177,7 +177,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                             {/* Grid de Datos Completas */}
                             <div className="p-4 sm:p-5 flex-1 min-h-0 overflow-auto bg-gray-50/50">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-                                    <InfoItem label="Dirección" value={cotizacion.direccion} icon="📍" />
+                                    <InfoItem label="Lugar de aplicación" value={cotizacion.direccion} icon="📍" />
                                     <InfoItem label="Teléfono / Contacto" value={cotizacion.telefono} icon="📞" />
                                     <InfoItem label="ID Sistema" value={cotizacion.id} icon="🆔" />
                                 </div>
@@ -185,7 +185,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                 <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm mb-6 relative overflow-hidden group">
                                     <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-xl"></div>
                                     <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <span>📝</span> Descripción del problema
+                                        <span>📝</span> Descripción del servicio
                                     </h4>
                                     <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line pl-1">
                                         {cotizacion.descripcion || "Sin descripción proporcionada."}
