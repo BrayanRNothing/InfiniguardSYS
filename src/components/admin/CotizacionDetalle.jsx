@@ -232,33 +232,20 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                             </div>
                                         )}
 
-                                        {/* 2. PDF DESCARGABLE */}
+                                        {/* 2. PDF(s) DESCARGABLE(s) */}
                                         {cotizacion.pdf ? (
-                                            <div
-                                                onClick={() => handleDescargarArchivo(cotizacion.pdf, cotizacion.pdf.split('/').pop().includes('-') ? cotizacion.pdf.split('/').pop().split('-').slice(1).join('-') : cotizacion.pdf.split('/').pop())}
-                                                className="w-full sm:w-72 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl p-3 flex items-center gap-4 cursor-pointer group shadow-sm hover:shadow-md transition-all"
-                                                title="Descargar documento PDF"
+                                            <button
+                                                onClick={() => handleDescargarArchivo(cotizacion.pdf, cotizacion.pdf.split('/').pop())}
+                                                className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl transition-all group w-full sm:w-auto text-left"
+                                                title="Descargar PDF"
                                             >
-                                                <div className="h-12 w-12 bg-red-100 group-hover:bg-red-500 text-red-600 group-hover:text-white rounded-lg flex items-center justify-center shrink-0 transition-colors duration-300">
-                                                    <span className="text-2xl">📄</span>
-                                                </div>
-                                                <div className="flex flex-col min-w-0 flex-1">
-                                                    <span className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-800 transition-colors">
-                                                        {cotizacion.pdf.split('/').pop().includes('-') ? cotizacion.pdf.split('/').pop().split('-').slice(1).join('-') : cotizacion.pdf.split('/').pop() || 'Documento Adjunto'}
-                                                    </span>
-                                                    <span className="text-[10px] text-gray-500 font-medium mt-0.5">
-                                                        Haz clic para descargar
-                                                    </span>
-                                                </div>
-                                                <div className="shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 font-bold">
-                                                    ↓
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="h-24 w-24 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 text-[10px]">
-                                                Sin PDF
-                                            </div>
-                                        )}
+                                                <span className="text-red-500 text-lg">📄</span>
+                                                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[180px] transition-colors">
+                                                    {cotizacion.pdf.split('/').pop().replace(/^\d+-[^_]+_/, '') || 'Documento PDF'}
+                                                </span>
+                                                <span className="ml-auto text-gray-400 group-hover:text-blue-500 transition-colors text-sm">↓</span>
+                                            </button>
+                                        ) : null}
                                     </div>
                                 </div>
                             </div>
@@ -267,7 +254,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
 
                     {/* --- DERECHA: FORMULARIO DE RESPUESTA --- */}
                     <div className="xl:col-span-4 h-full">
-                        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm h-full overflow-hidden flex flex-col">
+                        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm h-full flex flex-col min-h-0">
                             <div className="bg-white px-6 py-5 flex items-center justify-between border-b border-gray-100 shrink-0">
                                 <div>
                                     <h3 className="text-gray-900 font-extrabold text-lg tracking-tight">Panel de Respuesta</h3>
@@ -276,7 +263,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                 <div className="bg-blue-50 p-2.5 rounded-xl text-xl text-blue-500 shadow-sm">💬</div>
                             </div>
 
-                            <div className="p-6 space-y-6 flex-1 overflow-auto bg-gray-50/50">
+                            <div className="p-5 space-y-5 flex-1 overflow-y-auto min-h-0 bg-gray-50/50">
                                 {/* Fila: Precio + PDF */}
                                 <div className="flex gap-4 items-end">
                                     <div className="flex-1">
