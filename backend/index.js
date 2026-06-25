@@ -469,10 +469,23 @@ app.get('/api/servicios', async (req, res) => {
           fotoArray = [s.foto];
         }
       }
+      
+      let pdfArray = [];
+      if (s.pdf) {
+        try {
+          pdfArray = typeof s.pdf === 'string' && s.pdf.startsWith('[') ? JSON.parse(s.pdf) : s.pdf;
+        } catch (e) {
+          pdfArray = [s.pdf];
+        }
+        if (!Array.isArray(pdfArray)) pdfArray = [pdfArray];
+      }
+
       return {
         ...s,
         fotos: Array.isArray(fotoArray) ? fotoArray : (fotoArray ? [fotoArray] : []),
-        foto: Array.isArray(fotoArray) ? fotoArray[0] : (fotoArray ? [fotoArray][0] : null)
+        foto: Array.isArray(fotoArray) ? fotoArray[0] : (fotoArray ? [fotoArray][0] : null),
+        pdfs: pdfArray,
+        pdf: pdfArray.length > 0 ? pdfArray[0] : null
       };
     });
     res.json(formateados);
@@ -481,16 +494,16 @@ app.get('/api/servicios', async (req, res) => {
   }
 });
 
-app.post('/api/servicios', upload.fields([{ name: 'foto', maxCount: 10 }, { name: 'pdf', maxCount: 1 }]), async (req, res) => {
+app.post('/api/servicios', upload.fields([{ name: 'foto', maxCount: 10 }, { name: 'pdf', maxCount: 10 }]), async (req, res) => {
   const data = req.body;
   let fotoPath = JSON.stringify([]);
-  let pdfPath = null;
+  let pdfPath = JSON.stringify([]);
 
   if (req.files && req.files['foto']) {
     fotoPath = JSON.stringify(req.files['foto'].map(f => `uploads/${f.filename}`));
   }
   if (req.files && req.files['pdf']) {
-    pdfPath = `uploads/${req.files['pdf'][0].filename}`;
+    pdfPath = JSON.stringify(req.files['pdf'].map(f => `uploads/${f.filename}`));
   }
 
   try {

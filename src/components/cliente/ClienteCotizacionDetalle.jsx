@@ -121,63 +121,86 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                     <p className="text-gray-800">{cotizacion.direccion || 'N/A'}</p>
                 </div>
 
-                {/* Imágenes y PDF */}
-                <div className="bg-gray-200 rounded-2xl p-4 mb-4">
-                    <div className="grid grid-cols-3 gap-3">
-                        {/* Imágenes dinámicas */}
-                        {(cotizacion.fotos && cotizacion.fotos.length > 0) ? (
-                            cotizacion.fotos.map((f, idx) => {
-                                const url = getSafeUrl(f);
-                                return (
-                                    <div
-                                        key={idx}
-                                        onClick={() => setImagenZoom(url)}
-                                        className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition"
-                                    >
-                                        <img
-                                            src={url}
-                                            alt={`Proyecto ${idx + 1}`}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => e.target.parentElement.remove()}
-                                        />
-                                    </div>
-                                );
-                            })
-                        ) : fotoUrl ? (
-                            <div
-                                onClick={() => setImagenZoom(fotoUrl)}
-                                className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition"
-                            >
-                                <img
-                                    src={fotoUrl}
-                                    alt="Imagen del proyecto"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => e.target.parentElement.remove()}
-                                />
-                            </div>
-                        ) : (
-                            <div className="aspect-square rounded-xl bg-gray-300 flex items-center justify-center">
-                                <span className="text-gray-400 text-2xl">📷</span>
-                            </div>
-                        )}
+                {/* Archivos Adjuntos */}
+                <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <span>📎</span> Archivos Adjuntos
+                    </h3>
 
-                        {/* Botón PDF */}
-                        {cotizacion.pdf ? (
-                            <button
-                                onClick={() => handleDescargarPDF(cotizacion.pdf, `Documento_${cotizacion.id}.pdf`)}
-                                className="aspect-square rounded-xl bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 flex flex-col items-center justify-center transition-all shadow-md hover:shadow-lg group"
-                            >
-                                <svg className="w-8 h-8 text-white mb-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-white font-bold text-xs">PDF</span>
-                            </button>
-                        ) : (
-                            <div className="aspect-square rounded-xl bg-gray-300 flex items-center justify-center">
-                                <span className="text-gray-400 text-2xl">📄</span>
-                            </div>
-                        )}
-                    </div>
+                    {(!cotizacion.fotos?.length && !fotoUrl && !cotizacion.pdfs?.length) ? (
+                        <div className="text-center py-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                            <span className="text-gray-400 text-3xl mb-2 block">📭</span>
+                            <p className="text-xs text-gray-500 font-medium">No hay archivos adjuntos</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-5">
+                            {/* Sección de Imágenes */}
+                            {(cotizacion.fotos?.length > 0 || fotoUrl) && (
+                                <div>
+                                    <h4 className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wider">Imágenes del Proyecto</h4>
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                        {(cotizacion.fotos && cotizacion.fotos.length > 0) ? (
+                                            cotizacion.fotos.map((f, idx) => {
+                                                const url = getSafeUrl(f);
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        onClick={() => setImagenZoom(url)}
+                                                        className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:opacity-90 hover:shadow-md transition-all border border-gray-200 bg-gray-100"
+                                                    >
+                                                        <img
+                                                            src={url}
+                                                            alt={`Proyecto ${idx + 1}`}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => e.target.parentElement.remove()}
+                                                        />
+                                                    </div>
+                                                );
+                                            })
+                                        ) : fotoUrl ? (
+                                            <div
+                                                onClick={() => setImagenZoom(fotoUrl)}
+                                                className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:opacity-90 hover:shadow-md transition-all border border-gray-200 bg-gray-100"
+                                            >
+                                                <img
+                                                    src={fotoUrl}
+                                                    alt="Imagen del proyecto"
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => e.target.parentElement.remove()}
+                                                />
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Sección de PDFs */}
+                            {cotizacion.pdfs && cotizacion.pdfs.length > 0 && (
+                                <div>
+                                    <h4 className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wider">Documentos</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {cotizacion.pdfs.map((pdf, idx) => (
+                                            <button
+                                                key={`pdf-${idx}`}
+                                                onClick={() => handleDescargarPDF(pdf, `Documento_${cotizacion.id}_${idx + 1}.pdf`)}
+                                                className="flex items-center gap-3 bg-red-50 hover:bg-red-100 border border-red-100 p-3 rounded-xl transition-all text-left group shadow-sm hover:shadow-md"
+                                            >
+                                                <div className="bg-white p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform border border-red-50">
+                                                    <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                                <div className="flex-1 overflow-hidden">
+                                                    <div className="text-xs font-bold text-red-700 truncate">Documento PDF {cotizacion.pdfs.length > 1 ? idx + 1 : ''}</div>
+                                                    <div className="text-[10px] text-red-500 font-medium">Haz clic para descargar</div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Sección de Respuesta - Varía según estado */}

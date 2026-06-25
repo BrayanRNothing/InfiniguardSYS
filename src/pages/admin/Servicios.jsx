@@ -367,11 +367,19 @@ function Servicios() {
                         )}
 
                         {/* PDF si existe */}
-                        {cotizacionSeleccionada.pdf ? (
-                          <div className="h-24 w-36 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-red-600 transition-all cursor-pointer group shadow-sm hover:shadow-md">
-                            <span className="text-xl group-hover:scale-110 transition">📄</span>
-                            <span className="text-[10px] font-bold mt-1">Ver PDF</span>
-                          </div>
+                        {cotizacionSeleccionada.pdfs && cotizacionSeleccionada.pdfs.length > 0 ? (
+                          cotizacionSeleccionada.pdfs.map((pdfUrl, idx) => (
+                            <a 
+                              key={idx} 
+                              href={getSafeUrl(pdfUrl)} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="h-24 w-36 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-red-600 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                            >
+                              <span className="text-xl group-hover:scale-110 transition">📄</span>
+                              <span className="text-[10px] font-bold mt-1">Ver PDF {cotizacionSeleccionada.pdfs.length > 1 ? idx + 1 : ''}</span>
+                            </a>
+                          ))
                         ) : (
                           <div className="h-24 w-24 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 text-[10px]">
                             Sin PDF
@@ -570,30 +578,32 @@ function Servicios() {
                   )}
 
                   {/* Archivos del cliente */}
-                  {(serv.imagenes || serv.pdfs) && (
+                  {(serv.fotos?.length > 0 || serv.pdfs?.length > 0) && (
                     <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 mb-3">
                       <div className="text-[10px] font-bold text-blue-600 uppercase mb-2">📎 Archivos del Cliente</div>
-                      <div className="space-y-1">
-                        {serv.imagenes && (
+                      <div className="space-y-1 flex flex-col items-start gap-1">
+                        {serv.fotos?.length > 0 && serv.fotos.map((foto, idx) => (
                           <a
-                            href={serv.imagenes}
+                            key={`foto-${idx}`}
+                            href={getSafeUrl(foto)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
                           >
-                            🖼️ Ver imágenes
+                            🖼️ Ver imagen {serv.fotos.length > 1 ? idx + 1 : ''}
                           </a>
-                        )}
-                        {serv.pdfs && (
+                        ))}
+                        {serv.pdfs?.length > 0 && serv.pdfs.map((pdfUrl, idx) => (
                           <a
-                            href={serv.pdfs}
+                            key={`pdf-${idx}`}
+                            href={getSafeUrl(pdfUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
                           >
-                            📄 Ver PDF
+                            📄 Ver PDF {serv.pdfs.length > 1 ? idx + 1 : ''}
                           </a>
-                        )}
+                        ))}
                       </div>
                     </div>
                   )}
