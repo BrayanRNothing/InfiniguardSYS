@@ -101,13 +101,13 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
-            <div className="max-w-2xl mx-auto px-4 py-6">
+            <div className="max-w-2xl mx-auto px-4 py-4">
                 {/* Botón atrás y título - SIN cuadro blanco */}
-                <button onClick={onClose} className="mb-3 text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-1">
+                <button onClick={onClose} className="mb-1 text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-1 text-sm font-bold">
                     ← Atrás
                 </button>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">{cotizacion.titulo}</h1>
-                <p className="text-sm text-gray-500 mb-4">{cotizacion.tipo}</p>
+                <h1 className="text-xl font-bold text-gray-900 mb-0.5">{cotizacion.titulo}</h1>
+                <p className="text-xs text-gray-500 mb-3">{cotizacion.tipo}</p>
 
                 {/* Descripción */}
                 <div className="bg-gray-200 rounded-2xl p-4 mb-4">
@@ -121,11 +121,18 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                     <p className="text-gray-800">{cotizacion.direccion || 'N/A'}</p>
                 </div>
 
-                {/* Archivos Adjuntos */}
-                <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <span>📎</span> Archivos Adjuntos
-                    </h3>
+                {/* Archivos Adjuntos - Acordeón */}
+                <details className="bg-white rounded-2xl mb-4 shadow-sm border border-gray-100 group [&_summary::-webkit-details-marker]:hidden">
+                    <summary className="p-4 cursor-pointer flex justify-between items-center text-sm font-bold text-gray-800 list-none outline-none">
+                        <div className="flex items-center gap-2">
+                            <span>📎</span> Archivos Adjuntos
+                        </div>
+                        <span className="transition-transform duration-300 group-open:rotate-180 text-gray-400">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </span>
+                    </summary>
+                    
+                    <div className="px-5 pb-5 border-t border-gray-50 pt-4">
 
                     {(!cotizacion.fotos?.length && !fotoUrl && !cotizacion.pdfs?.length) ? (
                         <div className="text-center py-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
@@ -205,7 +212,8 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                             )}
                         </div>
                     )}
-                </div>
+                    </div>
+                </details>
 
                 {/* Sección de Respuesta - Varía según estado */}
                 {(esCotizado || esAprobado || esEnProceso || esFinalizado) && (
