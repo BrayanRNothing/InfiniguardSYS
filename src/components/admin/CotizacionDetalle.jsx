@@ -234,17 +234,32 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
 
                                         {/* 2. PDF(s) DESCARGABLE(s) */}
                                         {cotizacion.pdf ? (
-                                            <button
+                                            <div
                                                 onClick={() => handleDescargarArchivo(cotizacion.pdf, cotizacion.pdf.split('/').pop())}
-                                                className="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl transition-all group w-full sm:w-auto text-left"
+                                                className="group flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-red-400 hover:shadow-sm cursor-pointer transition-all w-full sm:w-72"
                                                 title="Descargar PDF"
                                             >
-                                                <span className="text-red-500 text-lg">📄</span>
-                                                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[180px] transition-colors">
-                                                    {cotizacion.pdf.split('/').pop().replace(/^\d+-[^_]+_/, '') || 'Documento PDF'}
-                                                </span>
-                                                <span className="ml-auto text-gray-400 group-hover:text-blue-500 transition-colors text-sm">↓</span>
-                                            </button>
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                    <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-red-50 text-red-600 rounded">
+                                                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                                            <path d="M12 2.5a.5.5 0 00-.5.5v3a.5.5 0 00.5.5h3a.5.5 0 00.5-.5V3a.5.5 0 00-.5-.5h-3z" />
+                                                            <text x="5" y="14" fontSize="5" fontWeight="bold" fill="currentColor">PDF</text>
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-sm font-semibold text-gray-800 truncate block">
+                                                            {cotizacion.pdf.split('/').pop().replace(/^\d+-[^_]+_/, '') || 'Documento PDF'}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500 font-medium">Documento adjunto</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-shrink-0 text-gray-400 group-hover:text-red-500 transition-colors ml-2">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    </svg>
+                                                </div>
+                                            </div>
                                         ) : null}
                                     </div>
                                 </div>
@@ -253,7 +268,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                     </div>
 
                     {/* --- DERECHA: FORMULARIO DE RESPUESTA --- */}
-                    <div className="xl:col-span-4 h-full">
+                    <div className="xl:col-span-4 h-full min-h-0">
                         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm h-full flex flex-col min-h-0">
                             <div className="bg-white px-6 py-5 flex items-center justify-between border-b border-gray-100 shrink-0">
                                 <div>
