@@ -179,23 +179,27 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                 <div>
                                     <h4 className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wider">Documentos</h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {cotizacion.pdfs.map((pdf, idx) => (
-                                            <button
-                                                key={`pdf-${idx}`}
-                                                onClick={() => handleDescargarPDF(pdf, `Documento_${cotizacion.id}_${idx + 1}.pdf`)}
-                                                className="flex items-center gap-3 bg-red-50 hover:bg-red-100 border border-red-100 p-3 rounded-xl transition-all text-left group shadow-sm hover:shadow-md"
-                                            >
-                                                <div className="bg-white p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform border border-red-50">
-                                                    <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
-                                                    </svg>
-                                                </div>
-                                                <div className="flex-1 overflow-hidden">
-                                                    <div className="text-xs font-bold text-red-700 truncate">Documento PDF {cotizacion.pdfs.length > 1 ? idx + 1 : ''}</div>
-                                                    <div className="text-[10px] text-red-500 font-medium">Haz clic para descargar</div>
-                                                </div>
-                                            </button>
-                                        ))}
+                                        {cotizacion.pdfs.map((pdf, idx) => {
+                                            const rawName = pdf.split('/').pop() || `Documento_${idx + 1}.pdf`;
+                                            const displayName = rawName.includes('-') ? rawName.split('-').slice(1).join('-') : rawName;
+                                            return (
+                                                <button
+                                                    key={`pdf-${idx}`}
+                                                    onClick={() => handleDescargarPDF(pdf, displayName)}
+                                                    className="flex items-center gap-3 bg-red-50 hover:bg-red-100 border border-red-100 p-3 rounded-xl transition-all text-left group shadow-sm hover:shadow-md"
+                                                >
+                                                    <div className="bg-white p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform border border-red-50">
+                                                        <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex-1 overflow-hidden">
+                                                        <div className="text-xs font-bold text-red-700 truncate" title={displayName}>{displayName}</div>
+                                                        <div className="text-[10px] text-red-500 font-medium">Haz clic para descargar</div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}

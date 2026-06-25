@@ -163,38 +163,42 @@ function Cotizaciones() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {(vistaActual === 'pendientes' ? pendientes : vistaActual === 'aprobadas' ? aprobadas : vistaActual === 'cotizadas' ? cotizadas : rechazadas).map(cot => (
                                         <div key={cot.id} className="bg-white rounded-xl border border-gray-300 hover:border-blue-400 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full group">
-                                            {/* Imagen */}
-                                            <div className="h-48 w-full bg-gray-100 relative overflow-hidden">
-                                                {cot.foto ? (
+                                            <div className="h-48 w-full bg-gray-100 relative overflow-hidden group">
+                                                {(cot.fotos && cot.fotos.length > 0) ? (
                                                     <>
                                                         <img
-                                                            src={getSafeUrl(cot.foto)}
-                                                            alt="Evidencia"
+                                                            src={getSafeUrl(cot.fotos[0])}
+                                                            alt="Evidencia principal"
                                                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                             onError={(e) => e.target.style.display = 'none'}
                                                         />
+                                                        {cot.fotos.length > 1 && (
+                                                            <div className="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm shadow-md">
+                                                                +{cot.fotos.length - 1} fotos
+                                                            </div>
+                                                        )}
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-4">
                                                             <button 
-                                                                onClick={(e) => { e.stopPropagation(); setImagenZoom(getSafeUrl(cot.foto)); }} 
-                                                                className="bg-white/95 hover:bg-white text-gray-800 px-4 py-2 rounded-full font-semibold text-xs shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-2"
+                                                                onClick={(e) => { e.stopPropagation(); setImagenZoom(getSafeUrl(cot.fotos[0])); }} 
+                                                                className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-full font-bold text-xs shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-2"
                                                             >
-                                                                🔍 Ver imagen
+                                                                Ampliar
                                                             </button>
                                                         </div>
                                                     </>
                                                 ) : (
                                                     <div className="h-full flex flex-col items-center justify-center text-gray-300 bg-gradient-to-br from-gray-50 to-gray-100">
-                                                        <span className="text-5xl mb-2">📄</span>
+                                                        <span className="text-5xl mb-2">📸</span>
                                                         <span className="text-xs font-medium">Sin imagen</span>
                                                     </div>
                                                 )}
                                                 {/* Badge de estado en la imagen */}
-                                                <div className="absolute top-3 right-3">
+                                                <div className="absolute top-3 left-3">
                                                     <span className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg backdrop-blur-sm ${
-                                                        cot.estado === 'pendiente' ? 'bg-orange-500/90 text-white' :
-                                                        cot.estado === 'cotizado' ? 'bg-blue-500/90 text-white' :
-                                                        cot.estado === 'aprobado' || cot.estadoCliente === 'aprobado' ? 'bg-green-500/90 text-white' :
-                                                        'bg-red-500/90 text-white'
+                                                        cot.estado === 'pendiente' ? 'bg-orange-500 text-white' :
+                                                        cot.estado === 'cotizado' ? 'bg-blue-500 text-white' :
+                                                        cot.estado === 'aprobado' || cot.estadoCliente === 'aprobado' ? 'bg-green-500 text-white' :
+                                                        'bg-red-500 text-white'
                                                     }`}>
                                                         {cot.estado}
                                                     </span>
@@ -235,17 +239,8 @@ function Cotizaciones() {
                                                         onClick={() => setDetalleCot(cot)} 
                                                         className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                                                     >
-                                                        👁️ Ver detalles
+                                                        Ver detalles completos
                                                     </button>
-                                                    {cot.pdf && (
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); handleDescargarArchivo(cot.pdf, `Cotizacion_${cot.id}.pdf`); }} 
-                                                            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold px-4 py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                                                            title="Descargar PDF"
-                                                        >
-                                                            📥
-                                                        </button>
-                                                    )}
                                                 </div>
                                             </div>
                                         </div>
