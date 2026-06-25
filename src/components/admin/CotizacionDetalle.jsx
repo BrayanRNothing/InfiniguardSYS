@@ -125,7 +125,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
     const fotoUrl = getSafeUrl(cotizacion.foto);
 
     return (
-        <div className="h-[calc(100vh-2rem)] flex flex-col animate-fadeIn bg-gray-50/50">
+        <div className="flex-1 min-h-0 w-full flex flex-col animate-fadeIn bg-gray-50/50 overflow-hidden">
             {/* Barra Superior */}
             <div className="flex items-center justify-between mb-4 shrink-0 px-1 gap-4">
                 <button onClick={onClose} className="group flex items-center text-gray-500 hover:text-blue-600 transition font-medium text-sm">
@@ -134,15 +134,15 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                 </button>
             </div>
 
-            <div className="flex-1 overflow-hidden pr-2 pb-2">
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 h-full">
+            <div className="flex-1 overflow-hidden pr-2 pb-2 min-h-0">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 h-full min-h-0">
 
                     {/* --- IZQUIERDA: FICHA TÉCNICA --- */}
-                    <div className="xl:col-span-8 h-full">
-                        <div className="bg-white rounded-3xl overflow-hidden h-full flex flex-col shadow-sm border border-gray-200">
+                    <div className="xl:col-span-8 h-full min-h-0">
+                        <div className="bg-white rounded-2xl overflow-hidden h-full flex flex-col shadow-sm border border-gray-200">
 
                             {/* Encabezado */}
-                            <div className="p-6 sm:p-8 bg-white border-b border-gray-100 shrink-0">
+                            <div className="p-4 sm:p-5 bg-white border-b border-gray-100 shrink-0">
                                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                     <div>
                                         <div className="flex items-center gap-3 mb-3">
@@ -175,15 +175,15 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                             </div>
 
                             {/* Grid de Datos Completas */}
-                            <div className="p-6 sm:p-8 flex-1 overflow-auto bg-gray-50/50">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                            <div className="p-4 sm:p-5 flex-1 min-h-0 overflow-auto bg-gray-50/50">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
                                     <InfoItem label="Dirección" value={cotizacion.direccion} icon="📍" />
                                     <InfoItem label="Teléfono / Contacto" value={cotizacion.telefono} icon="📞" />
                                     <InfoItem label="ID Sistema" value={cotizacion.id} icon="🆔" />
                                 </div>
 
-                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-8 relative overflow-hidden group">
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-2xl"></div>
+                                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm mb-6 relative overflow-hidden group">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-xl"></div>
                                     <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                                         <span>📝</span> Descripción del problema
                                     </h4>
@@ -233,34 +233,33 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                         )}
 
                                         {/* 2. PDF(s) DESCARGABLE(s) */}
-                                        {cotizacion.pdf ? (
-                                            <div
-                                                onClick={() => handleDescargarArchivo(cotizacion.pdf, cotizacion.pdf.split('/').pop())}
-                                                className="group flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-red-400 hover:shadow-sm cursor-pointer transition-all w-full sm:w-72"
-                                                title="Descargar PDF"
-                                            >
-                                                <div className="flex items-center gap-3 overflow-hidden">
-                                                    <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-red-50 text-red-600 rounded">
-                                                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                                                            <path d="M12 2.5a.5.5 0 00-.5.5v3a.5.5 0 00.5.5h3a.5.5 0 00.5-.5V3a.5.5 0 00-.5-.5h-3z" />
-                                                            <text x="5" y="14" fontSize="5" fontWeight="bold" fill="currentColor">PDF</text>
-                                                        </svg>
-                                                    </div>
-                                                    <div className="flex flex-col min-w-0">
-                                                        <span className="text-sm font-semibold text-gray-800 truncate block">
-                                                            {cotizacion.pdf.split('/').pop().replace(/^\d+-[^_]+_/, '') || 'Documento PDF'}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500 font-medium">Documento adjunto</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex-shrink-0 text-gray-400 group-hover:text-red-500 transition-colors ml-2">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                    </svg>
+                                        {cotizacion.pdfs && cotizacion.pdfs.length > 0 && (
+                                            <div className="w-full mt-2">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    {cotizacion.pdfs.map((pdf, idx) => {
+                                                        const rawName = pdf.split('/').pop() || `Documento_${idx + 1}.pdf`;
+                                                        const displayName = rawName.includes('-') ? rawName.split('-').slice(1).join('-') : rawName;
+                                                        return (
+                                                            <button
+                                                                key={`pdf-${idx}`}
+                                                                onClick={() => handleDescargarArchivo(pdf, displayName)}
+                                                                className="flex items-center gap-3 bg-red-50 hover:bg-red-100 border border-red-100 p-3 rounded-xl transition-all text-left group shadow-sm hover:shadow-md"
+                                                            >
+                                                                <div className="bg-white p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform border border-red-50">
+                                                                    <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                </div>
+                                                                <div className="flex-1 overflow-hidden">
+                                                                    <div className="text-xs font-bold text-red-700 truncate" title={displayName}>{displayName}</div>
+                                                                    <div className="text-[10px] text-red-500 font-medium">Haz clic para descargar</div>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
-                                        ) : null}
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -269,8 +268,8 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
 
                     {/* --- DERECHA: FORMULARIO DE RESPUESTA --- */}
                     <div className="xl:col-span-4 h-full min-h-0">
-                        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm h-full flex flex-col min-h-0">
-                            <div className="bg-white px-6 py-5 flex items-center justify-between border-b border-gray-100 shrink-0">
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm h-full flex flex-col min-h-0">
+                            <div className="bg-white px-4 py-3 flex items-center justify-between border-b border-gray-100 shrink-0">
                                 <div>
                                     <h3 className="text-gray-900 font-extrabold text-lg tracking-tight">Panel de Respuesta</h3>
                                     <p className="text-gray-400 text-[11px] font-medium uppercase tracking-wider mt-1">Enviar cotización al cliente</p>
@@ -278,9 +277,9 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                 <div className="bg-blue-50 p-2.5 rounded-xl text-xl text-blue-500 shadow-sm">💬</div>
                             </div>
 
-                            <div className="p-5 space-y-5 flex-1 overflow-y-auto min-h-0 bg-gray-50/50">
+                            <div className="p-4 space-y-4 flex-1 overflow-y-auto min-h-0 bg-gray-50/50">
                                 {/* Fila: Precio + PDF */}
-                                <div className="flex gap-4 items-end">
+                                <div className="flex gap-3 items-end">
                                     <div className="flex-1">
                                         <label className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
                                             Precio Total <span className="text-red-500">*</span>
@@ -292,7 +291,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                                 </div>
                                                 <input
                                                     type="number"
-                                                    className="w-full pl-10 pr-4 py-4 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-xl text-gray-900 placeholder-gray-300 shadow-sm"
+                                                    className="w-full pl-10 pr-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-lg text-gray-900 placeholder-gray-300 shadow-sm"
                                                     placeholder="0.00"
                                                     value={respuesta.precio}
                                                     onChange={(e) => setRespuesta({ ...respuesta, precio: e.target.value })}
@@ -301,7 +300,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                             <select
                                                 value={respuesta.moneda}
                                                 onChange={(e) => setRespuesta({ ...respuesta, moneda: e.target.value })}
-                                                className="w-24 bg-white border border-gray-200 rounded-2xl px-2 py-4 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-gray-700 shadow-sm"
+                                                className="w-20 bg-white border border-gray-200 rounded-xl px-2 py-2 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-gray-700 shadow-sm"
                                             >
                                                 <option value="MXN">MXN</option>
                                                 <option value="USD">USD</option>
@@ -310,10 +309,15 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                     </div>
 
                                     {/* Adjuntar PDF Compacto */}
-                                    <div className="w-20 shrink-0">
-                                        <label className="block text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">PDFs</label>
-                                        <label className={`flex flex-col items-center justify-center w-full h-[66px] transition-all ${archivos.length > 0 ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-white border-gray-200 text-gray-400 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-500'} border-2 border-dashed rounded-2xl cursor-pointer focus:outline-none group`}>
-                                            <span className="text-2xl group-hover:scale-110 transition-transform">{archivos.length > 0 ? '📄' : '☁️'}</span>
+                                    <div className="shrink-0">
+                                        <label className="block text-left text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Documentos</label>
+                                        <label className="flex items-center justify-center gap-2 px-4 h-[44px] transition-all bg-white border-2 border-dashed border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 rounded-xl cursor-pointer focus:outline-none group">
+                                            <span className="text-lg group-hover:scale-110 transition-transform">
+                                                {archivos.length > 0 ? '📑' : '📎'}
+                                            </span>
+                                            <span className="text-xs font-bold whitespace-nowrap">
+                                                {archivos.length > 0 ? `${archivos.length} PDF(s)` : 'SUBIR PDF'}
+                                            </span>
                                             <input type="file" className="hidden" accept="application/pdf" multiple onChange={handleFileChange} />
                                         </label>
                                     </div>
@@ -336,7 +340,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                         Notas / Diagnóstico <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
-                                        className="w-full p-4 bg-white border border-gray-200 rounded-2xl h-32 resize-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm text-gray-700 shadow-sm"
+                                        className="w-full p-3 bg-white border border-gray-200 rounded-xl min-h-[80px] resize-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm text-gray-700 shadow-sm"
                                         placeholder="Escribe la evaluación, diagnóstico o notas para el cliente..."
                                         value={respuesta.texto}
                                         onChange={(e) => setRespuesta({ ...respuesta, texto: e.target.value })}
@@ -358,13 +362,13 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                     </div>
 
                                     {preguntas.length > 0 ? (
-                                        <div className="space-y-3">
+                                        <div className="space-y-2">
                                             {preguntas.map((p, index) => (
-                                                <div key={p.id} className="flex gap-2 items-start bg-white p-3 border border-gray-200 rounded-2xl shadow-sm group transition-all hover:border-blue-300">
-                                                    <div className="mt-2 text-gray-400 font-bold text-xs w-6 text-center shrink-0">{index + 1}.</div>
+                                                <div key={p.id} className="flex gap-2 items-start bg-white p-2 border border-gray-200 rounded-xl shadow-sm group transition-all hover:border-blue-300">
+                                                    <div className="mt-1 text-gray-400 font-bold text-xs w-5 text-center shrink-0">{index + 1}.</div>
                                                     <div className="flex-1">
                                                         <textarea
-                                                            className="w-full bg-transparent border-none text-sm outline-none resize-none h-10 p-1 text-gray-700 placeholder-gray-300 focus:ring-0 font-medium"
+                                                            className="w-full bg-transparent border-none text-sm outline-none resize-none h-8 p-0 text-gray-700 placeholder-gray-300 focus:ring-0 font-medium"
                                                             placeholder={`Escribe la pregunta ${index + 1}...`}
                                                             value={p.pregunta}
                                                             onChange={(e) => {
@@ -374,7 +378,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                                             }}
                                                         />
                                                         {p.respuesta && (
-                                                            <div className="bg-green-50 text-green-800 text-xs p-3 rounded-xl border border-green-200 mt-2">
+                                                            <div className="bg-green-50 text-green-800 text-xs p-2 rounded-lg border border-green-200 mt-1">
                                                                 <span className="font-bold block text-[10px] text-green-600 uppercase mb-1">Respuesta del cliente:</span>
                                                                 {p.respuesta}
                                                             </div>
@@ -382,7 +386,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                                     </div>
                                                     <button
                                                         onClick={() => setPreguntas(preguntas.filter(q => q.id !== p.id))}
-                                                        className="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-xl hover:bg-red-50 opacity-0 group-hover:opacity-100"
+                                                        className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50 opacity-0 group-hover:opacity-100"
                                                         title="Eliminar pregunta"
                                                     >
                                                         ✕
@@ -391,7 +395,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-6 bg-white border border-dashed border-gray-200 rounded-2xl text-gray-400 text-xs shadow-sm">
+                                        <div className="text-center py-4 bg-white border border-dashed border-gray-200 rounded-xl text-gray-400 text-xs shadow-sm">
                                             No hay preguntas agregadas.
                                         </div>
                                     )}
@@ -399,21 +403,21 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                             </div>
 
                             {/* Controles Fijos al fondo */}
-                            <div className="p-6 bg-gray-50 border-t border-gray-200 shrink-0">
-                                <div className="flex flex-col gap-3">
+                            <div className="p-4 bg-gray-50 border-t border-gray-200 shrink-0">
+                                <div className="flex flex-col gap-2">
                                     <button
                                         onClick={handleEnviarCotizacion}
-                                        className="group relative w-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3 overflow-hidden"
+                                        className="group relative w-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3 overflow-hidden"
                                     >
                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                                        <span className="text-xl group-hover:scale-110 transition-transform duration-300">🚀</span>
-                                        <span className="text-base relative z-10">Enviar Cotización</span>
+                                        <span className="text-lg group-hover:scale-110 transition-transform duration-300">🚀</span>
+                                        <span className="text-sm relative z-10">Enviar Cotización</span>
                                     </button>
                                     <button
                                         onClick={handleRechazarCotizacionTecnico}
-                                        className="group relative w-full bg-white hover:bg-red-50 text-red-500 border-2 border-red-200 hover:border-red-300 font-bold py-3 px-6 rounded-xl transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3"
+                                        className="group relative w-full bg-white hover:bg-red-50 text-red-500 border-2 border-red-200 hover:border-red-300 font-bold py-2 px-6 rounded-xl transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3"
                                     >
-                                        <span className="text-lg group-hover:rotate-12 transition-transform duration-300">❌</span>
+                                        <span className="text-base group-hover:rotate-12 transition-transform duration-300">❌</span>
                                         <span className="text-sm relative z-10">Rechazar Solicitud</span>
                                     </button>
                                 </div>

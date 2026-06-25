@@ -357,6 +357,7 @@ const ClienteHome = () => {
             titulo={`Solicitud de ${tipoServicio}`}
             tipoServicio={tipoServicio}
             onSuccess={() => {
+              cargarSolicitudes(usuario);
               setActiveView('home');
               setTipoServicio('');
               toast.success('Solicitud enviada correctamente');

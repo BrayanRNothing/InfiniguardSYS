@@ -112,15 +112,13 @@ function ServicioDetalleModal({ servicio, onClose }) {
                         )}
 
                         {/* Fecha/Hora Programada */}
-                        {(servicio.fechaServicio || servicio.horaServicio) && (
-                            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
-                                <h4 className="text-xs font-bold text-green-600 uppercase mb-2">🗓️ Servicio Programado</h4>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {servicio.fechaServicio && <InfoItem label="Fecha" value={servicio.fechaServicio} icon="📅" />}
-                                    {servicio.horaServicio && <InfoItem label="Hora" value={servicio.horaServicio} icon="⏰" />}
-                                </div>
+                        <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                            <h4 className="text-xs font-bold text-green-600 uppercase mb-2">🗓️ Servicio Programado</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                                <InfoItem label="Fecha" value={servicio.fechaServicio || 'Por definir'} icon="📅" />
+                                <InfoItem label="Hora" value={servicio.horaServicio || 'Por definir'} icon="⏰" />
                             </div>
-                        )}
+                        </div>
 
                         {/* Archivos Adjuntos */}
                         <div>
@@ -150,15 +148,18 @@ function ServicioDetalleModal({ servicio, onClose }) {
                                     </div>
                                 )}
 
-                                {/* PDF */}
-                                {servicio.pdf ? (
-                                    <button
-                                        onClick={() => handleDescargarArchivo(servicio.pdf, `Evidencia_${servicio.id}.pdf`)}
-                                        className="h-32 w-40 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-red-600 transition-all cursor-pointer group shadow-sm hover:shadow-md"
-                                    >
-                                        <span className="text-3xl group-hover:scale-110 transition">📄</span>
-                                        <span className="text-xs font-bold mt-2">Descargar PDF</span>
-                                    </button>
+                                {/* PDFs del Cliente */}
+                                {servicio.pdfs && servicio.pdfs.length > 0 ? (
+                                    servicio.pdfs.map((pdfUrl, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleDescargarArchivo(pdfUrl, `Evidencia_${servicio.id}_${idx + 1}.pdf`)}
+                                            className="h-32 w-40 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-red-600 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                                        >
+                                            <span className="text-3xl group-hover:scale-110 transition">📄</span>
+                                            <span className="text-[10px] font-bold mt-2 text-center">PDF {idx + 1}</span>
+                                        </button>
+                                    ))
                                 ) : (
                                     <div className="h-32 w-32 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 text-xs">
                                         Sin PDF

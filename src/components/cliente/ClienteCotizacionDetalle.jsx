@@ -99,6 +99,16 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
     const esEnProceso = cotizacion.estado === 'en-proceso';
     const esFinalizado = cotizacion.estado === 'finalizado';
 
+    let pdfsRespuesta = [];
+    if (cotizacion.pdfcotizacion) {
+        try {
+            pdfsRespuesta = JSON.parse(cotizacion.pdfcotizacion);
+            if (!Array.isArray(pdfsRespuesta)) pdfsRespuesta = [cotizacion.pdfcotizacion];
+        } catch (e) {
+            pdfsRespuesta = [cotizacion.pdfcotizacion];
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             <div className="max-w-2xl mx-auto px-4 py-4">
@@ -228,14 +238,36 @@ function ClienteCotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                             </div>
                         )}
 
-                        {/* PDF de cotización */}
-                        {cotizacion.pdfcotizacion && (
-                            <button
-                                onClick={() => handleDescargarPDF(cotizacion.pdfcotizacion, `Cotizacion_${cotizacion.id}.pdf`)}
-                                className="w-full bg-gray-200 hover:bg-gray-300 rounded-xl p-4 mb-3 text-center font-semibold text-gray-700 transition-all"
-                            >
-                                📥 PDF
-                            </button>
+                        {/* PDFs de Respuesta (Cotización / Documentos) */}
+                        {pdfsRespuesta.length > 0 && (
+                            <div className="mb-4">
+                                <h4 className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                                    Documentos de Respuesta
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {pdfsRespuesta.map((pdf, idx) => {
+                                        const rawName = pdf.split('/').pop() || `Documento_${idx + 1}.pdf`;
+                                        const displayName = rawName.includes('-') ? rawName.split('-').slice(1).join('-') : rawName;
+                                        return (
+                                            <button
+                                                key={`pdf-resp-${idx}`}
+                                                onClick={() => handleDescargarPDF(pdf, displayName)}
+                                                className="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 border border-blue-100 p-3 rounded-xl transition-all text-left group shadow-sm hover:shadow-md"
+                                            >
+                                                <div className="bg-white p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform border border-blue-50">
+                                                    <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                                <div className="flex-1 overflow-hidden">
+                                                    <div className="text-xs font-bold text-blue-700 truncate" title={displayName}>{displayName}</div>
+                                                    <div className="text-[10px] text-blue-500 font-medium">Haz clic para descargar</div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         )}
 
                         {/* Notas extra */}

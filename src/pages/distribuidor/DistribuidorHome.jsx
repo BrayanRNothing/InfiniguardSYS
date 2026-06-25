@@ -262,6 +262,7 @@ const DistribuidorHome = () => {
               titulo={`Orden: ${tipoServicio}`}
               tipoServicio={tipoServicio}
               onSuccess={() => {
+                cargarSolicitudes(usuario);
                 setActiveView('home');
                 setTipoServicio('');
                 toast.success('Solicitud enviada al administrador');

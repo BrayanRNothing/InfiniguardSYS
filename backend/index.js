@@ -143,6 +143,7 @@ const initDB = async () => {
     await addColumn('servicios', 'porcentajeComision', 'REAL', '0');
     await addColumn('servicios', 'adminVendedor', 'TEXT');
     await addColumn('servicios', 'preguntas_cotizacion', 'JSONB', "'[]'");
+    await addColumn('servicios', 'moneda', 'TEXT', "'MXN'");
 
     // Migración: Agregar teléfono a usuarios
     await addColumn('usuarios', 'telefono', 'TEXT');
@@ -586,6 +587,10 @@ app.put('/api/servicios/:id', uploadDocumentos.array('archivos', 10), async (req
       await pool.query('UPDATE servicios SET precioEstimado = $1 WHERE id = $2', [precio, id]);
     }
 
+    if (update.moneda) {
+      await pool.query('UPDATE servicios SET moneda = $1 WHERE id = $2', [update.moneda, id]);
+    }
+
     if (update.respuestaAdmin || update.respuestaCotizacion) {
       const respuesta = update.respuestaAdmin || update.respuestaCotizacion;
       await pool.query('UPDATE servicios SET respuestaCotizacion = $1 WHERE id = $2', [respuesta, id]);
@@ -597,13 +602,6 @@ app.put('/api/servicios/:id', uploadDocumentos.array('archivos', 10), async (req
 
     if (update.tecnicoAsignado) {
       await pool.query('UPDATE servicios SET tecnicoAsignado = $1 WHERE id = $2', [update.tecnicoAsignado, id]);
-      
-      // 📧 Notificar al técnico sobre nueva tarea
-      const tecnicoResult = await pool.query('SELECT email FROM usuarios WHERE nombre = $1', [update.tecnicoAsignado]);
-      if (tecnicoResult.rows[0]?.email) {
-        const servicioResult = await pool.query('SELECT * FROM servicios WHERE id = $1', [id]);
-        notificarTecnicoNuevaTarea(tecnicoResult.rows[0].email, servicioResult.rows[0], pool).catch(err => console.error('❌ Error enviando email:', err));
-      }
     }
 
     if (update.telefonoTecnico) {
@@ -658,9 +656,28 @@ app.put('/api/servicios/:id', uploadDocumentos.array('archivos', 10), async (req
       }
     }
 
+    // Si se asignó un técnico, notificarle DESPUÉS de guardar todos los datos (fecha, hora, notas)
+    if (update.tecnicoAsignado) {
+      const tecnicoResult = await pool.query('SELECT email FROM usuarios WHERE nombre = $1', [update.tecnicoAsignado]);
+      if (tecnicoResult.rows[0]?.email) {
+        const servicioResult = await pool.query('SELECT * FROM servicios WHERE id = $1', [id]);
+        notificarTecnicoNuevaTarea(tecnicoResult.rows[0].email, servicioResult.rows[0], pool).catch(err => console.error('❌ Error enviando email:', err));
+      }
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error en PUT:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.delete('/api/servicios/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM servicios WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });

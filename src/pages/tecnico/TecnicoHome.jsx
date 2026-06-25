@@ -137,7 +137,7 @@ const TecnicoHome = () => {
           titulo={t.titulo}
           empresa={t.cliente}
           direccion={t.direccion || 'Ubicación no especificada'}
-          fecha={t.fecha}
+          fecha={t.fechaServicio ? `📅 ${t.fechaServicio} ⏰ ${t.horaServicio || ''}` : t.fecha}
           estado={t.estado}
           onDetalles={() => setServicioSeleccionado(t)}
           onFinalizar={handleFinalizar}
@@ -158,7 +158,7 @@ const TecnicoHome = () => {
           titulo={t.titulo}
           empresa={t.cliente}
           direccion={t.direccion || 'Finalizado'}
-          fecha={t.fecha}
+          fecha={t.fechaServicio ? `📅 ${t.fechaServicio} ⏰ ${t.horaServicio || ''}` : t.fecha}
           estado={t.estado}
           onDetalles={() => setServicioSeleccionado(t)}
         />

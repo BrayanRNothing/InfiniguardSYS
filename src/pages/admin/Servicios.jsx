@@ -4,6 +4,12 @@ import API_URL from '../../config/api';
 import BotonMenu from '../../components/ui/BotonMenu';
 import { getSafeUrl } from '../../utils/helpers';
 import InfoItem from '../../components/ui/InfoItem';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+registerLocale('es', es);
 
 function Servicios() {
   const [vistaActual, setVistaActual] = useState('menu'); // menu | asignar | en-curso | finalizados | crear | detalle-servicio
@@ -58,10 +64,41 @@ function Servicios() {
     }
   };
 
+  const handleEliminarServicio = async (id) => {
+    if (window.confirm("¿Estás seguro de que quieres eliminar este servicio permanentemente? Esto no se puede deshacer.")) {
+      try {
+        const res = await fetch(`${API_URL}/api/servicios/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          toast.success("Servicio eliminado con éxito");
+          cargarDatos();
+          if (cotizacionSeleccionada?.id === id) {
+             setVistaActual('menu');
+             setCotizacionSeleccionada(null);
+          }
+        } else {
+          toast.error("Error al eliminar servicio");
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Error de conexión");
+      }
+    }
+  };
+
   const handleAsignar = async (e) => {
     e.preventDefault();
     if (!formAsignar.cotizacionId || !formAsignar.tecnicoId) {
       toast.error('Selecciona una cotización y un técnico');
+      return;
+    }
+    
+    if (!formAsignar.fechaServicio) {
+      toast.error('Selecciona la fecha del servicio');
+      return;
+    }
+
+    if (!formAsignar.horaServicio) {
+      toast.error('Selecciona la hora del servicio');
       return;
     }
 
@@ -218,57 +255,57 @@ function Servicios() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-500 text-white px-6 py-4 rounded-xl shadow-lg">
-              <h2 className="text-xl font-bold">📋 {cotizacionesAprobadas.length} Servicio{cotizacionesAprobadas.length !== 1 ? 's' : ''} Pendiente{cotizacionesAprobadas.length !== 1 ? 's' : ''}</h2>
-              <p className="text-blue-100 text-sm">Haz clic en "Ver Detalles" para expandir y asignar técnico</p>
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">Servicios Pendientes ({cotizacionesAprobadas.length})</h2>
+              <p className="text-gray-500 text-sm">Selecciona un servicio aprobado para ver detalles y asignar un técnico</p>
             </div>
 
-            {/* Lista de tarjetas expandibles */}
-            {cotizacionesAprobadas.map(cot => (
-              <div key={cot.id} className="bg-white rounded-xl border-2 border-gray-200 shadow-md overflow-hidden transition hover:shadow-lg">
-                {/* Resumen siempre visible */}
-                <div className="flex items-center gap-4 p-6 hover:bg-gray-50 transition">
-                  {cot.foto && (
-                    <div className="w-20 h-20 flex-shrink-0">
-                      <img
-                        src={getSafeUrl(cot.foto)}
-                        alt="Preview"
-                        onClick={() => setImagenZoom(getSafeUrl(cot.foto))}
-                        className="w-full h-full object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition shadow-md"
-                      />
+            {/* Lista de tarjetas en grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {cotizacionesAprobadas.map(cot => (
+                <div key={cot.id} className="bg-white rounded-xl border-2 border-gray-200 shadow-sm overflow-hidden transition hover:shadow-md p-5 flex flex-col justify-between">
+                  <div className="flex items-start gap-4 mb-4">
+                    {cot.foto && (
+                      <div className="w-16 h-16 flex-shrink-0">
+                        <img
+                          src={getSafeUrl(cot.foto)}
+                          alt="Preview"
+                          onClick={(e) => { e.stopPropagation(); setImagenZoom(getSafeUrl(cot.foto)); }}
+                          className="w-full h-full object-cover rounded-lg border border-gray-300 cursor-zoom-in hover:border-blue-500 transition shadow-sm"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-800 mb-1 line-clamp-1">{cot.titulo}</h3>
+                      <p className="text-xs text-gray-600 mb-1">
+                        👤 <span className="font-semibold">{cot.cliente || cot.usuario}</span>
+                      </p>
+                      <span className="inline-block px-2 py-1 text-[10px] font-bold rounded-full bg-blue-100 text-blue-800 capitalize">
+                        {cot.tipo.replace(/_/g, ' ')}
+                      </span>
                     </div>
-                  )}
-
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-800 mb-1">{cot.titulo}</h3>
-                    <p className="text-sm text-gray-600">
-                      👤 {cot.cliente || cot.usuario}
-                      {cot.telefono && <span className="ml-3">📞 {cot.telefono}</span>}
-                    </p>
-                    <span className="inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
-                      {cot.tipo.replace(/_/g, ' ')}
-                    </span>
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-3xl font-bold text-green-600">${cot.precio || cot.precioestimado || 'N/A'} {cot.moneda || 'MXN'}</p>
-                    <p className="text-xs text-gray-500 mt-1">Precio aprobado</p>
-                  </div>
+                  <div className="flex items-end justify-between mt-auto">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-0.5">Precio Aprobado</p>
+                      <p className="text-xl font-bold text-green-600">${cot.precio || cot.precioestimado || 'N/A'} {cot.moneda || 'MXN'}</p>
+                    </div>
 
-                  <button
-                    onClick={() => {
-                      setCotizacionSeleccionada(cot);
-                      setFormAsignar({ ...formAsignar, cotizacionId: cot.id });
-                      setVistaActual('detalle-servicio');
-                    }}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl flex items-center gap-2"
-                  >
-                    Ver Detalles
-                  </button>
+                    <button
+                      onClick={() => {
+                        setCotizacionSeleccionada(cot);
+                        setFormAsignar({ ...formAsignar, cotizacionId: cot.id });
+                        setVistaActual('detalle-servicio');
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition shadow-sm hover:shadow-md"
+                    >
+                      Asignar Técnico
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -293,7 +330,13 @@ function Servicios() {
               ← Volver a la lista
             </button>
 
-            <div className="w-32"></div> {/* Spacer para centrar título */}
+            <button
+              onClick={() => handleEliminarServicio(cotizacionSeleccionada.id)}
+              className="text-red-500 hover:text-red-700 font-semibold flex items-center gap-1 transition text-sm px-3 py-1.5 rounded-lg hover:bg-red-50"
+              title="Eliminar este servicio"
+            >
+              🗑️ Eliminar Servicio
+            </button>
           </div>
         </div>
 
@@ -323,90 +366,168 @@ function Servicios() {
                   <hr className="border-gray-100" />
 
                   {/* Grid de Datos Completos */}
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       <InfoItem label="Dirección" value={cotizacionSeleccionada.direccion} icon="📍" />
                       <InfoItem label="Teléfono / Contacto" value={cotizacionSeleccionada.telefono} icon="📞" />
                       <InfoItem label="ID Sistema" value={cotizacionSeleccionada.id} icon="🆔" />
                     </div>
 
-                    {/* Descripción */}
-                    {cotizacionSeleccionada.descripcion && (
-                      <div className="bg-gray-100 rounded-xl p-4 border border-gray-100">
-                        <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-2">Descripción del problema</h4>
-                        <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-line">
-                          {cotizacionSeleccionada.descripcion}
-                        </p>
+                    {/* SECCIÓN 1: Solicitud Original del Cliente */}
+                    <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
+                        <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+                          <span>1️⃣</span> Solicitud Original del Cliente
+                        </h4>
                       </div>
-                    )}
-
-                    {/* Sección Archivos */}
-                    <div>
-                      <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Archivos Adjuntos</h3>
-                      <div className="flex flex-wrap gap-3">
-                        {/* Foto Preview */}
-                        {cotizacionSeleccionada.foto ? (
-                          <div
-                            onClick={() => setImagenZoom(getSafeUrl(cotizacionSeleccionada.foto))}
-                            className="group relative h-24 w-36 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all"
-                          >
-                            <img
-                              src={getSafeUrl(cotizacionSeleccionada.foto)}
-                              alt="Evidencia"
-                              className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-                              onError={(e) => e.target.style.display = 'none'}
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                              <span className="bg-white/90 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all">Ver Foto</span>
-                            </div>
+                      <div className="p-5 space-y-4">
+                        {/* Descripción */}
+                        {cotizacionSeleccionada.descripcion ? (
+                          <div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Descripción del problema</div>
+                            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{cotizacionSeleccionada.descripcion}</p>
                           </div>
                         ) : (
-                          <div className="h-24 w-24 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 text-[10px]">
-                            Sin Foto
-                          </div>
+                          <p className="text-gray-400 text-sm italic">Sin descripción proporcionada.</p>
                         )}
 
-                        {/* PDF si existe */}
-                        {cotizacionSeleccionada.pdfs && cotizacionSeleccionada.pdfs.length > 0 ? (
-                          cotizacionSeleccionada.pdfs.map((pdfUrl, idx) => (
-                            <a 
-                              key={idx} 
-                              href={getSafeUrl(pdfUrl)} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="h-24 w-36 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-red-600 transition-all cursor-pointer group shadow-sm hover:shadow-md"
-                            >
-                              <span className="text-xl group-hover:scale-110 transition">📄</span>
-                              <span className="text-[10px] font-bold mt-1">Ver PDF {cotizacionSeleccionada.pdfs.length > 1 ? idx + 1 : ''}</span>
-                            </a>
-                          ))
-                        ) : (
-                          <div className="h-24 w-24 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 text-[10px]">
-                            Sin PDF
+                        {/* Archivos del Cliente */}
+                        {(cotizacionSeleccionada.foto || (cotizacionSeleccionada.pdfs && cotizacionSeleccionada.pdfs.length > 0)) && (
+                          <div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase mb-2">Archivos Adjuntos</div>
+                            <div className="flex flex-wrap gap-3">
+                              {cotizacionSeleccionada.foto && (
+                                <div
+                                  onClick={() => setImagenZoom(getSafeUrl(cotizacionSeleccionada.foto))}
+                                  className="group relative h-20 w-32 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all"
+                                >
+                                  <img
+                                    src={getSafeUrl(cotizacionSeleccionada.foto)}
+                                    alt="Evidencia"
+                                    className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                                    onError={(e) => e.target.style.display = 'none'}
+                                  />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                    <span className="bg-white/90 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all">Ver Foto</span>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {cotizacionSeleccionada.pdfs?.map((pdfUrl, idx) => (
+                                <a 
+                                  key={idx} 
+                                  href={getSafeUrl(pdfUrl)} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="h-20 w-32 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl flex flex-col items-center justify-center text-gray-600 hover:text-red-600 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                                >
+                                  <span className="text-xl group-hover:scale-110 transition">📄</span>
+                                  <span className="text-[10px] font-bold mt-1 text-center truncate w-full px-2">PDF {idx + 1}</span>
+                                </a>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Cotización (si existe) */}
-                    {cotizacionSeleccionada.respuestacotizacion && (
-                      <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-                        <h4 className="text-[10px] font-bold text-blue-600 uppercase mb-2">Detalles de la Cotización</h4>
-                        <p className="text-gray-700 text-xs leading-relaxed">
-                          {cotizacionSeleccionada.respuestacotizacion}
-                        </p>
+                    {/* SECCIÓN 2: Cotización de Infiniguard */}
+                    {(cotizacionSeleccionada.respuestacotizacion || cotizacionSeleccionada.pdfcotizacion) && (
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl overflow-hidden">
+                        <div className="bg-blue-100/50 border-b border-blue-200 px-5 py-3">
+                          <h4 className="text-sm font-bold text-blue-800 uppercase tracking-wide flex items-center gap-2">
+                            <span>2️⃣</span> Cotización Enviada (Infiniguard)
+                          </h4>
+                        </div>
+                        <div className="p-5 space-y-4">
+                          {cotizacionSeleccionada.respuestacotizacion && (
+                            <div>
+                              <div className="text-[10px] font-bold text-blue-400 uppercase mb-1">Notas de Cotización</div>
+                              <p className="text-blue-900 text-sm leading-relaxed whitespace-pre-wrap">{cotizacionSeleccionada.respuestacotizacion}</p>
+                            </div>
+                          )}
+
+                          {/* PDFs de Respuesta de Cotización */}
+                          {(() => {
+                              let pdfsRespuesta = [];
+                              if (cotizacionSeleccionada.pdfcotizacion) {
+                                  try {
+                                      pdfsRespuesta = JSON.parse(cotizacionSeleccionada.pdfcotizacion);
+                                      if (!Array.isArray(pdfsRespuesta)) pdfsRespuesta = [cotizacionSeleccionada.pdfcotizacion];
+                                  } catch (e) {
+                                      pdfsRespuesta = [cotizacionSeleccionada.pdfcotizacion];
+                                  }
+                              }
+                              if (pdfsRespuesta.length === 0) return null;
+
+                              return (
+                                <div>
+                                  <div className="text-[10px] font-bold text-blue-400 uppercase mb-2">Documentos Adjuntos</div>
+                                  <div className="flex flex-wrap gap-3">
+                                    {pdfsRespuesta.map((pdfUrl, idx) => {
+                                      const rawName = pdfUrl.split('/').pop() || `Doc_${idx+1}.pdf`;
+                                      const displayName = rawName.includes('-') ? rawName.split('-').slice(1).join('-') : rawName;
+                                      return (
+                                        <a 
+                                          key={`resp-pdf-${idx}`} 
+                                          href={getSafeUrl(pdfUrl)} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          className="h-20 max-w-[160px] px-3 bg-white hover:bg-blue-100 border border-blue-200 rounded-xl flex flex-col items-center justify-center text-blue-600 hover:text-blue-800 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                                          title={displayName}
+                                        >
+                                          <span className="text-xl group-hover:scale-110 transition">📑</span>
+                                          <span className="text-[10px] font-bold mt-1 text-center truncate w-full">{displayName}</span>
+                                        </a>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                          })()}
+                        </div>
                       </div>
                     )}
 
-                    {/* Notas adicionales */}
-                    {cotizacionSeleccionada.notas && (
-                      <div className="bg-gray-100 rounded-xl p-4 border border-gray-100">
-                        <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-2">Notas Adicionales</h4>
-                        <p className="text-gray-700 text-xs leading-relaxed">
-                          {cotizacionSeleccionada.notas}
-                        </p>
-                      </div>
-                    )}
+                    {/* SECCIÓN 3: Respuestas del Cliente */}
+                    {(() => {
+                        let preguntasArr = [];
+                        if (cotizacionSeleccionada.preguntas_cotizacion) {
+                            try {
+                                preguntasArr = typeof cotizacionSeleccionada.preguntas_cotizacion === 'string'
+                                    ? JSON.parse(cotizacionSeleccionada.preguntas_cotizacion)
+                                    : cotizacionSeleccionada.preguntas_cotizacion;
+                            } catch (e) {
+                                console.error("Error parseando preguntas", e);
+                            }
+                        }
+
+                        if (!Array.isArray(preguntasArr) || preguntasArr.length === 0) return null;
+
+                        return (
+                          <div className="bg-green-50 border-2 border-green-200 rounded-2xl overflow-hidden">
+                            <div className="bg-green-100/50 border-b border-green-200 px-5 py-3">
+                              <h4 className="text-sm font-bold text-green-800 uppercase tracking-wide flex items-center gap-2">
+                                <span>3️⃣</span> Respuestas del Cliente
+                              </h4>
+                            </div>
+                            <div className="p-5 space-y-4">
+                              {preguntasArr.map((item, index) => (
+                                <div key={index} className="bg-white border border-green-100 rounded-xl p-4 shadow-sm">
+                                  <div className="flex items-start gap-2 mb-2">
+                                    <span className="text-green-500 font-bold mt-0.5">Q:</span>
+                                    <p className="text-sm font-semibold text-gray-800">{item.pregunta}</p>
+                                  </div>
+                                  <div className="flex items-start gap-2 bg-green-50/50 p-3 rounded-lg">
+                                    <span className="text-blue-500 font-bold mt-0.5">A:</span>
+                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.respuesta || <span className="text-gray-400 italic">Sin responder</span>}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -440,23 +561,28 @@ function Servicios() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Fecha *</label>
-                        <input
-                          type="date"
-                          value={formAsignar.fechaServicio}
-                          onChange={(e) => setFormAsignar({ ...formAsignar, fechaServicio: e.target.value })}
-                          className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-300"
-                          required
+                        <DatePicker
+                          selected={formAsignar.fechaServicio ? new Date(`${formAsignar.fechaServicio}T00:00:00`) : null}
+                          onChange={(date) => setFormAsignar({ ...formAsignar, fechaServicio: date ? format(date, 'yyyy-MM-dd') : '' })}
+                          dateFormat="yyyy-MM-dd"
+                          locale="es"
+                          placeholderText="Selecciona la fecha..."
+                          className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-300 bg-white cursor-pointer"
                         />
                       </div>
 
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Hora *</label>
-                        <input
-                          type="time"
-                          value={formAsignar.horaServicio}
-                          onChange={(e) => setFormAsignar({ ...formAsignar, horaServicio: e.target.value })}
-                          className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-300"
-                          required
+                        <DatePicker
+                          selected={formAsignar.horaServicio ? new Date(`1970-01-01T${formAsignar.horaServicio}:00`) : null}
+                          onChange={(time) => setFormAsignar({ ...formAsignar, horaServicio: time ? format(time, 'HH:mm') : '' })}
+                          showTimeSelect
+                          showTimeSelectOnly
+                          timeIntervals={15}
+                          timeCaption="Hora"
+                          dateFormat="HH:mm"
+                          placeholderText="--:--"
+                          className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm hover:border-gray-300 bg-white cursor-pointer"
                         />
                       </div>
                     </div>
@@ -517,7 +643,10 @@ function Servicios() {
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="font-bold text-lg text-gray-900 mb-1 line-clamp-2">{serv.titulo}</h3>
+                      <div className="flex items-start justify-between">
+                        <h3 className="font-bold text-lg text-gray-900 mb-1 line-clamp-2 pr-2">{serv.titulo}</h3>
+                        <button onClick={() => handleEliminarServicio(serv.id)} className="text-gray-400 hover:text-red-500 transition text-lg mt-0.5 shrink-0" title="Eliminar servicio">🗑️</button>
+                      </div>
                       <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full uppercase">
                         {serv.tipo?.replace(/_/g, ' ') || 'Servicio'}
                       </span>
@@ -670,11 +799,14 @@ function Servicios() {
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">✅</span>
-                        <span className="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">
-                          Completado
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">✅</span>
+                          <span className="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">
+                            Completado
+                          </span>
+                        </div>
+                        <button onClick={() => handleEliminarServicio(serv.id)} className="text-gray-400 hover:text-red-500 transition text-lg" title="Eliminar servicio">🗑️</button>
                       </div>
                       <h3 className="font-bold text-lg text-gray-900 mb-1 line-clamp-2">{serv.titulo}</h3>
                       <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-[10px] font-bold rounded-full uppercase">
