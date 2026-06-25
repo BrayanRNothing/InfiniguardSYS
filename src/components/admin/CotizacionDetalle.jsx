@@ -201,11 +201,11 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                                     <div
                                                         key={idx}
                                                         onClick={() => setImagenZoom(url)}
-                                                        className="group relative h-24 w-36 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all shrink-0"
+                                                        className="group relative h-28 w-40 bg-white rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all shrink-0 p-1"
                                                     >
-                                                        <img src={url} alt={`Evidencia ${idx}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" onError={(e) => e.target.style.display = 'none'} />
-                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                                            <span className="bg-white/90 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all">Ver Foto</span>
+                                                        <img src={url} alt={`Evidencia ${idx}`} className="h-full w-full object-contain rounded-lg transition duration-500 group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
+                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center rounded-xl">
+                                                            <span className="bg-white/95 text-gray-800 text-[10px] font-bold px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all shadow-lg">🔍 Ampliar</span>
                                                         </div>
                                                     </div>
                                                 );
@@ -213,11 +213,11 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                         ) : cotizacion.foto ? (
                                             <div
                                                 onClick={() => setImagenZoom(fotoUrl)}
-                                                className="group relative h-24 w-36 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all shrink-0"
+                                                className="group relative h-28 w-40 bg-white rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in hover:shadow-md transition-all shrink-0 p-1"
                                             >
-                                                <img src={fotoUrl} alt="Evidencia" className="h-full w-full object-cover transition duration-500 group-hover:scale-110" onError={(e) => e.target.style.display = 'none'} />
-                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                                    <span className="bg-white/90 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all">Ver Foto</span>
+                                                <img src={fotoUrl} alt="Evidencia" className="h-full w-full object-contain rounded-lg transition duration-500 group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center rounded-xl">
+                                                    <span className="bg-white/95 text-gray-800 text-[10px] font-bold px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all shadow-lg">🔍 Ampliar</span>
                                                 </div>
                                             </div>
                                         ) : (
@@ -229,22 +229,23 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                         {/* 2. PDF DESCARGABLE */}
                                         {cotizacion.pdf ? (
                                             <div
-                                                onClick={() => handleDescargarArchivo(cotizacion.pdf, `Evidencia_${cotizacion.id}.pdf`)}
-                                                className="w-full sm:w-64 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl p-3 flex items-center gap-3 cursor-pointer group shadow-sm hover:shadow-md transition-all"
+                                                onClick={() => handleDescargarArchivo(cotizacion.pdf, cotizacion.pdf.split('/').pop().includes('-') ? cotizacion.pdf.split('/').pop().split('-').slice(1).join('-') : cotizacion.pdf.split('/').pop())}
+                                                className="w-full sm:w-72 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl p-3 flex items-center gap-4 cursor-pointer group shadow-sm hover:shadow-md transition-all"
+                                                title="Descargar documento PDF"
                                             >
-                                                <div className="h-10 w-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center shrink-0">
-                                                    <span className="text-xl">📄</span>
+                                                <div className="h-12 w-12 bg-red-100 group-hover:bg-red-500 text-red-600 group-hover:text-white rounded-lg flex items-center justify-center shrink-0 transition-colors duration-300">
+                                                    <span className="text-2xl">📄</span>
                                                 </div>
-                                                <div className="flex flex-col min-w-0">
-                                                    <span className="text-xs font-bold text-gray-700 truncate group-hover:text-blue-700 transition-colors">
-                                                        Archivo Adjunto
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <span className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-800 transition-colors">
+                                                        {cotizacion.pdf.split('/').pop().includes('-') ? cotizacion.pdf.split('/').pop().split('-').slice(1).join('-') : cotizacion.pdf.split('/').pop() || 'Documento Adjunto'}
                                                     </span>
-                                                    <span className="text-[10px] text-gray-400 font-mono truncate">
-                                                        Evidencia_{cotizacion.id}.pdf
+                                                    <span className="text-[10px] text-gray-500 font-medium mt-0.5">
+                                                        Haz clic para descargar
                                                     </span>
                                                 </div>
-                                                <div className="ml-auto text-gray-300 group-hover:text-blue-500 transition-colors">
-                                                    ⬇️
+                                                <div className="shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 font-bold">
+                                                    ↓
                                                 </div>
                                             </div>
                                         ) : (
@@ -385,25 +386,25 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                         </div>
                                     )}
                                 </div>
+                            </div>
 
-                                <hr className="border-gray-200" />
-
-                                <div className="pt-4 flex flex-col gap-3">
+                            {/* Controles Fijos al fondo */}
+                            <div className="p-6 bg-gray-50 border-t border-gray-200 shrink-0">
+                                <div className="flex flex-col gap-3">
                                     <button
                                         onClick={handleEnviarCotizacion}
-                                        className="group relative w-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-xl shadow-xl shadow-blue-300/50 hover:shadow-2xl hover:shadow-blue-400/60 transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3 overflow-hidden"
+                                        className="group relative w-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3 overflow-hidden"
                                     >
                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                                        <span className="text-2xl group-hover:scale-110 transition-transform duration-300">🚀</span>
+                                        <span className="text-xl group-hover:scale-110 transition-transform duration-300">🚀</span>
                                         <span className="text-base relative z-10">Enviar Cotización</span>
                                     </button>
                                     <button
                                         onClick={handleRechazarCotizacionTecnico}
-                                        className="group relative w-full bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white font-bold py-4 px-6 rounded-xl shadow-xl shadow-red-300/50 hover:shadow-2xl hover:shadow-red-400/60 transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3 overflow-hidden"
+                                        className="group relative w-full bg-white hover:bg-red-50 text-red-500 border-2 border-red-200 hover:border-red-300 font-bold py-3 px-6 rounded-xl transition-all duration-300 active:scale-[0.97] flex justify-center items-center gap-3"
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                                        <span className="text-2xl group-hover:rotate-12 transition-transform duration-300">❌</span>
-                                        <span className="text-base relative z-10">Rechazar Solicitud</span>
+                                        <span className="text-lg group-hover:rotate-12 transition-transform duration-300">❌</span>
+                                        <span className="text-sm relative z-10">Rechazar Solicitud</span>
                                     </button>
                                 </div>
                             </div>
