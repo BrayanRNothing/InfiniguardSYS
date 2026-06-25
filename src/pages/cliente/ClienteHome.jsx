@@ -36,6 +36,7 @@ const ClienteHome = () => {
     }, 10000);
 
     const handleTabChange = (e) => {
+      setDetalleSeleccionado(null); // Limpiar detalle seleccionado al cambiar de tab
       if (e.detail === 'home') setActiveView('home');
       if (e.detail === 'solicitar') {
         setTipoServicio('');

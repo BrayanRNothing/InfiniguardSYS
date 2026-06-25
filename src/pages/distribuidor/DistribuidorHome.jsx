@@ -30,6 +30,7 @@ const DistribuidorHome = () => {
     }, 10000);
 
     const handleTabChange = (e) => {
+      setDetalleSeleccionado(null); // Limpiar detalle seleccionado al cambiar de tab
       if (e.detail === 'home' || e.detail === 'inicio') setActiveView('home');
       if (e.detail === 'solicitar' || e.detail === 'recubrimiento' || e.detail === 'garantia') {
         setTipoServicio(e.detail === 'garantia' ? 'Garantía Extendida' : '');
