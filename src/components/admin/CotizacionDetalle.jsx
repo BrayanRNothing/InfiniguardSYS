@@ -139,33 +139,35 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
 
                     {/* --- IZQUIERDA: FICHA TÉCNICA --- */}
                     <div className="xl:col-span-8 h-full">
-                        <div className="bg-gray-100 rounded-3xl overflow-hidden h-full flex flex-col">
+                        <div className="bg-white rounded-3xl overflow-hidden h-full flex flex-col shadow-sm border border-gray-200">
 
                             {/* Encabezado */}
-                            <div className="p-4 sm:p-5 bg-gray-100">
-                                <div className="flex flex-col sm:flex-row justify-between items-start gap-2 bg-gray-100">
+                            <div className="p-6 sm:p-8 bg-white border-b border-gray-100 shrink-0">
+                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                     <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full ${cotizacion.tipo === 'garantia' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                                                }`}>
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <span className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg ${cotizacion.tipo === 'garantia' ? 'bg-purple-50 text-purple-600 border border-purple-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
                                                 {cotizacion.tipo}
                                             </span>
-                                            <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                                            <span className="text-xs text-gray-400 font-medium flex items-center gap-1.5">
                                                 📅 {cotizacion.fecha}
                                             </span>
                                         </div>
-                                        <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight mb-1">
+                                        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-3">
                                             {cotizacion.titulo}
                                         </h1>
-                                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                                            <span className="font-medium text-gray-900">{cotizacion.usuario || cotizacion.cliente}</span>
-                                            <span>•</span>
-                                            <span>Solicitante</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="flex items-center gap-2 text-gray-600 font-medium">
+                                                <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[12px] border border-gray-200">👤</div>
+                                                {cotizacion.usuario || cotizacion.cliente}
+                                            </div>
+                                            <span className="text-gray-300">•</span>
+                                            <span className="text-gray-500 font-medium">Solicitante</span>
                                         </div>
                                     </div>
-                                    <div className="bg-gray-100 p-2 rounded-xl shadow-sm border border-gray-100 text-center min-w-[100px]">
-                                        <div className="text-[10px] text-gray-400 uppercase font-bold">Estado</div>
-                                        <div className={`font-bold capitalize ${cotizacion.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'}`}>
+                                    <div className="bg-gray-50 px-6 py-4 rounded-2xl border border-gray-100 text-center min-w-[120px] shadow-sm">
+                                        <div className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-1.5">Estado</div>
+                                        <div className={`text-sm font-black uppercase tracking-wider ${cotizacion.estado === 'pendiente' ? 'text-orange-500' : 'text-emerald-500'}`}>
                                             {cotizacion.estado}
                                         </div>
                                     </div>
@@ -173,25 +175,29 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                             </div>
 
                             {/* Grid de Datos Completas */}
-                            <div className="p-4 sm:p-6 flex-1 overflow-auto">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                            <div className="p-6 sm:p-8 flex-1 overflow-auto bg-gray-50/50">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                                     <InfoItem label="Dirección" value={cotizacion.direccion} icon="📍" />
                                     <InfoItem label="Teléfono / Contacto" value={cotizacion.telefono} icon="📞" />
-
                                     <InfoItem label="ID Sistema" value={cotizacion.id} icon="🆔" />
                                 </div>
 
-                                <div className="bg-gray-100 rounded-xl p-4 border border-gray-100 mb-4">
-                                    <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-2">Descripción del problema</h4>
-                                    <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-line">
+                                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-8 relative overflow-hidden group">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-2xl"></div>
+                                    <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <span>📝</span> Descripción del problema
+                                    </h4>
+                                    <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line pl-1">
                                         {cotizacion.descripcion || "Sin descripción proporcionada."}
                                     </p>
                                 </div>
 
                                 {/* Sección Archivos */}
                                 <div>
-                                    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Archivos Adjuntos</h3>
-                                    <div className="flex flex-wrap gap-3">
+                                    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <span>📎</span> Archivos Adjuntos
+                                    </h3>
+                                    <div className="flex flex-wrap gap-4">
 
                                         {/* 1. FOTOS PREVIEW */}
                                         {(cotizacion.fotos && cotizacion.fotos.length > 0) ? (
@@ -261,20 +267,20 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
 
                     {/* --- DERECHA: FORMULARIO DE RESPUESTA --- */}
                     <div className="xl:col-span-4 h-full">
-                        <div className="bg-white rounded-2xl border-2 border-gray-400 h-full overflow-hidden flex flex-col">
-                            <div className="bg-white px-8 py-5 flex items-center justify-between">
+                        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm h-full overflow-hidden flex flex-col">
+                            <div className="bg-white px-6 py-5 flex items-center justify-between border-b border-gray-100 shrink-0">
                                 <div>
-                                    <h3 className="text-black font-bold text-lg">Panel de Respuesta</h3>
-                                    <p className="text-gray-400 text-xs mt-0.5">Enviar cotización al cliente</p>
+                                    <h3 className="text-gray-900 font-extrabold text-lg tracking-tight">Panel de Respuesta</h3>
+                                    <p className="text-gray-400 text-[11px] font-medium uppercase tracking-wider mt-1">Enviar cotización al cliente</p>
                                 </div>
-                                <div className="bg-white p-2 rounded-lg text-xl">💬</div>
+                                <div className="bg-blue-50 p-2.5 rounded-xl text-xl text-blue-500 shadow-sm">💬</div>
                             </div>
 
-                            <div className="p-6 space-y-5 flex-1 overflow-auto">
+                            <div className="p-6 space-y-6 flex-1 overflow-auto bg-gray-50/50">
                                 {/* Fila: Precio + PDF */}
                                 <div className="flex gap-4 items-end">
                                     <div className="flex-1">
-                                        <label className="flex justify-between text-xs font-bold text-gray-500 uppercase mb-2">
+                                        <label className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
                                             Precio Total <span className="text-red-500">*</span>
                                         </label>
                                         <div className="relative group flex gap-2">
@@ -284,7 +290,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                                 </div>
                                                 <input
                                                     type="number"
-                                                    className="w-full pl-9 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition font-bold text-2xl text-gray-900 placeholder-gray-300"
+                                                    className="w-full pl-10 pr-4 py-4 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-xl text-gray-900 placeholder-gray-300 shadow-sm"
                                                     placeholder="0.00"
                                                     value={respuesta.precio}
                                                     onChange={(e) => setRespuesta({ ...respuesta, precio: e.target.value })}
@@ -293,7 +299,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                                             <select
                                                 value={respuesta.moneda}
                                                 onChange={(e) => setRespuesta({ ...respuesta, moneda: e.target.value })}
-                                                className="w-24 bg-gray-50 border border-gray-200 rounded-xl px-2 py-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition font-bold text-gray-700"
+                                                className="w-24 bg-white border border-gray-200 rounded-2xl px-2 py-4 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-gray-700 shadow-sm"
                                             >
                                                 <option value="MXN">MXN</option>
                                                 <option value="USD">USD</option>
@@ -303,9 +309,9 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
 
                                     {/* Adjuntar PDF Compacto */}
                                     <div className="w-20 shrink-0">
-                                        <label className="block text-center text-[10px] font-bold text-gray-500 uppercase mb-2">PDFs</label>
-                                        <label className={`flex flex-col items-center justify-center w-full h-[68px] transition ${archivos.length > 0 ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-blue-50 hover:border-blue-300'} border-2 border-dashed rounded-xl cursor-pointer focus:outline-none group`}>
-                                            <span className="text-2xl group-hover:scale-110 transition">{archivos.length > 0 ? '📄' : '☁️'}</span>
+                                        <label className="block text-center text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">PDFs</label>
+                                        <label className={`flex flex-col items-center justify-center w-full h-[66px] transition-all ${archivos.length > 0 ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-white border-gray-200 text-gray-400 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-500'} border-2 border-dashed rounded-2xl cursor-pointer focus:outline-none group`}>
+                                            <span className="text-2xl group-hover:scale-110 transition-transform">{archivos.length > 0 ? '📄' : '☁️'}</span>
                                             <input type="file" className="hidden" accept="application/pdf" multiple onChange={handleFileChange} />
                                         </label>
                                     </div>
@@ -324,65 +330,67 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
 
                                 {/* Mensaje */}
                                 <div>
-                                    <label className="flex justify-between text-xs font-bold text-gray-500 uppercase mb-2">
+                                    <label className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
                                         Notas / Diagnóstico <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
-                                        rows="6"
-                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700 resize-none placeholder-gray-400"
-                                        placeholder="Describe los detalles de la cotización..."
+                                        className="w-full p-4 bg-white border border-gray-200 rounded-2xl h-32 resize-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm text-gray-700 shadow-sm"
+                                        placeholder="Escribe la evaluación, diagnóstico o notas para el cliente..."
                                         value={respuesta.texto}
                                         onChange={(e) => setRespuesta({ ...respuesta, texto: e.target.value })}
                                     ></textarea>
                                 </div>
 
-                                {/* Preguntas Personalizadas */}
-                                <div className="mt-4 border-t border-gray-100 pt-4">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">
-                                            Preguntas para el Cliente
+                                {/* Preguntas Dinámicas */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                            Preguntas para el cliente
                                         </label>
-                                        <button 
-                                            onClick={() => setPreguntas([...preguntas, { id: Date.now(), pregunta: '', respuesta: '' }])}
-                                            className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-1 rounded-full transition"
+                                        <button
+                                            onClick={() => setPreguntas([...preguntas, { id: Date.now().toString(), pregunta: '', respuesta: null }])}
+                                            className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full"
                                         >
-                                            + Agregar Pregunta
+                                            <span className="text-lg leading-none">+</span> Agregar Pregunta
                                         </button>
                                     </div>
-                                    {preguntas.length === 0 ? (
-                                        <p className="text-[10px] text-gray-400 italic">Si necesitas más información, agrega preguntas aquí.</p>
-                                    ) : (
+
+                                    {preguntas.length > 0 ? (
                                         <div className="space-y-3">
                                             {preguntas.map((p, index) => (
-                                                <div key={p.id} className="bg-gray-50 p-3 rounded-xl border border-gray-200 flex gap-2">
+                                                <div key={p.id} className="flex gap-2 items-start bg-white p-3 border border-gray-200 rounded-2xl shadow-sm group transition-all hover:border-blue-300">
+                                                    <div className="mt-2 text-gray-400 font-bold text-xs w-6 text-center shrink-0">{index + 1}.</div>
                                                     <div className="flex-1">
-                                                        <input 
-                                                            type="text" 
-                                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 mb-2" 
-                                                            placeholder={`Pregunta ${index + 1}`}
+                                                        <textarea
+                                                            className="w-full bg-transparent border-none text-sm outline-none resize-none h-10 p-1 text-gray-700 placeholder-gray-300 focus:ring-0 font-medium"
+                                                            placeholder={`Escribe la pregunta ${index + 1}...`}
                                                             value={p.pregunta}
                                                             onChange={(e) => {
-                                                                const newP = [...preguntas];
-                                                                newP[index].pregunta = e.target.value;
-                                                                setPreguntas(newP);
+                                                                const n = [...preguntas];
+                                                                n[index].pregunta = e.target.value;
+                                                                setPreguntas(n);
                                                             }}
                                                         />
                                                         {p.respuesta && (
-                                                            <div className="bg-green-50 text-green-800 text-xs p-2 rounded border border-green-200">
+                                                            <div className="bg-green-50 text-green-800 text-xs p-3 rounded-xl border border-green-200 mt-2">
                                                                 <span className="font-bold block text-[10px] text-green-600 uppercase mb-1">Respuesta del cliente:</span>
                                                                 {p.respuesta}
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         onClick={() => setPreguntas(preguntas.filter(q => q.id !== p.id))}
-                                                        className="text-red-400 hover:text-red-600 p-2"
+                                                        className="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-xl hover:bg-red-50 opacity-0 group-hover:opacity-100"
                                                         title="Eliminar pregunta"
                                                     >
                                                         ✕
                                                     </button>
                                                 </div>
                                             ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-6 bg-white border border-dashed border-gray-200 rounded-2xl text-gray-400 text-xs shadow-sm">
+                                            No hay preguntas agregadas.
                                         </div>
                                     )}
                                 </div>
