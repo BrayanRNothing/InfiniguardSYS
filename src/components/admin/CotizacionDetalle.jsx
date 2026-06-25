@@ -6,10 +6,8 @@ import InfoItem from '../../components/ui/InfoItem';
 
 function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
     const [respuesta, setRespuesta] = useState({ texto: '', precio: '', moneda: 'MXN' });
-    const [archivo, setArchivo] = useState(null);
+    const [archivos, setArchivos] = useState([]);
     const [imagenZoom, setImagenZoom] = useState(null);
-    const [folio, setFolio] = useState(cotizacion.folio || '');
-    const [editandoFolio, setEditandoFolio] = useState(false);
     const [preguntas, setPreguntas] = useState(cotizacion.preguntas_cotizacion || []);
 
     const handleEnviarCotizacion = async () => {
@@ -37,7 +35,9 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
         formData.append('moneda', respuesta.moneda);
         formData.append('adminVendedor', adminNombre);
         formData.append('preguntas_cotizacion', JSON.stringify(preguntas));
-        if (archivo) formData.append('archivo', archivo);
+        if (archivos.length > 0) {
+            archivos.forEach(a => formData.append('archivos', a));
+        }
 
         const loadingToast = toast.loading('Enviando...');
 
@@ -51,7 +51,7 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                 toast.dismiss(loadingToast);
                 toast.success('Enviado correctamente');
                 setRespuesta({ texto: '', precio: '', moneda: 'MXN' });
-                setArchivo(null);
+                setArchivos([]);
                 if (onUpdate) onUpdate();
             } else {
                 toast.dismiss(loadingToast);
@@ -111,35 +111,15 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
         }
     };
 
-    const handleActualizarFolio = async () => {
-        if (!folio.trim()) {
-            toast.error('El folio no puede estar vacío');
-            return;
+    const handleFileChange = (e) => {
+        if (e.target.files) {
+            const filesArray = Array.from(e.target.files);
+            setArchivos(prev => [...prev, ...filesArray]);
         }
-
-        const toastId = toast.loading('Actualizando folio...');
-
-        try {
-            const res = await fetch(`${API_URL}/api/servicios/${cotizacion.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ folio: folio.trim() })
-            });
-
-            if (res.ok) {
-                toast.dismiss(toastId);
-                toast.success('✅ Folio actualizado');
-                setEditandoFolio(false);
-                if (onUpdate) onUpdate();
-            } else {
-                toast.dismiss(toastId);
-                toast.error('Error al actualizar');
-            }
-        } catch (error) {
-            console.error(error);
-            toast.dismiss(toastId);
-            toast.error('Error de conexión');
-        }
+    };
+    
+    const removeFile = (index) => {
+        setArchivos(prev => prev.filter((_, i) => i !== index));
     };
 
     const fotoUrl = getSafeUrl(cotizacion.foto);
@@ -152,37 +132,6 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
                     <div className=" group-hover:border-blue-200 h-8 w-8 flex items-center justify-center mr-2 transition">←</div>
                     Volver al listado
                 </button>
-                
-                <div className="flex items-center gap-3">
-                    {/* Folio Editable */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-xl border border-blue-200 shadow-sm">
-                        {editandoFolio ? (
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={folio}
-                                    onChange={(e) => setFolio(e.target.value)}
-                                    className="w-32 px-2 py-1 text-xs font-mono border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder="COT-XXXXX"
-                                    autoFocus
-                                />
-                                <button onClick={handleActualizarFolio} className="text-green-600 hover:text-green-700 text-sm">✓</button>
-                                <button onClick={() => { setEditandoFolio(false); setFolio(cotizacion.folio || ''); }} className="text-red-500 hover:text-red-600 text-sm">✕</button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-blue-500 font-semibold uppercase">Folio:</span>
-                                <span className="text-xs font-mono text-blue-700 font-bold">{folio || 'Sin asignar'}</span>
-                                <button onClick={() => setEditandoFolio(true)} className="text-blue-400 hover:text-blue-600 transition text-xs">✏️</button>
-                            </div>
-                        )}
-                    </div>
-                    
-                    {/* Ticket ID */}
-                    <div className="bg-white px-3 py-1 rounded-full border border-gray-200 text-xs font-mono text-gray-400 shadow-sm">
-                        ID: <span className="text-gray-600 font-bold">#{cotizacion.id}</span>
-                    </div>
-                </div>
             </div>
 
             <div className="flex-1 overflow-hidden pr-2 pb-2">
@@ -353,18 +302,22 @@ function CotizacionDetalle({ cotizacion, onClose, onUpdate }) {
 
                                     {/* Adjuntar PDF Compacto */}
                                     <div className="w-20 shrink-0">
-                                        <label className="block text-center text-[10px] font-bold text-gray-500 uppercase mb-2">PDF</label>
-                                        <label className={`flex flex-col items-center justify-center w-full h-[68px] transition ${archivo ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-blue-50 hover:border-blue-300'} border-2 border-dashed rounded-xl cursor-pointer focus:outline-none group`}>
-                                            <span className="text-2xl group-hover:scale-110 transition">{archivo ? '📄' : '☁️'}</span>
-                                            <input type="file" className="hidden" accept="application/pdf" onChange={(e) => setArchivo(e.target.files[0])} />
+                                        <label className="block text-center text-[10px] font-bold text-gray-500 uppercase mb-2">PDFs</label>
+                                        <label className={`flex flex-col items-center justify-center w-full h-[68px] transition ${archivos.length > 0 ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-blue-50 hover:border-blue-300'} border-2 border-dashed rounded-xl cursor-pointer focus:outline-none group`}>
+                                            <span className="text-2xl group-hover:scale-110 transition">{archivos.length > 0 ? '📄' : '☁️'}</span>
+                                            <input type="file" className="hidden" accept="application/pdf" multiple onChange={handleFileChange} />
                                         </label>
                                     </div>
                                 </div>
 
-                                {archivo && (
-                                    <div className="bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-[10px] font-bold flex justify-between items-center border border-blue-100">
-                                        <span className="truncate max-w-[150px]">{archivo.name}</span>
-                                        <button onClick={() => setArchivo(null)} className="text-red-500 hover:text-red-700 ml-2 text-sm">✕</button>
+                                {archivos.length > 0 && (
+                                    <div className="space-y-2">
+                                        {archivos.map((archivo, index) => (
+                                            <div key={index} className="bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-[10px] font-bold flex justify-between items-center border border-blue-100">
+                                                <span className="truncate max-w-[200px]">{archivo.name}</span>
+                                                <button onClick={() => removeFile(index)} className="text-red-500 hover:text-red-700 ml-2 text-sm">✕</button>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
 

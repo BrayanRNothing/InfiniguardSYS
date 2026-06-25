@@ -538,15 +538,28 @@ app.post('/api/servicios', upload.fields([{ name: 'foto', maxCount: 10 }, { name
   }
 });
 
-app.put('/api/servicios/:id', uploadDocumentos.single('archivo'), async (req, res) => {
+app.put('/api/servicios/:id', uploadDocumentos.array('archivos', 10), async (req, res) => {
   const { id } = req.params;
   const update = req.body;
   let estadoCambiado = false;
 
   try {
-    if (req.file) {
-      const pdfPath = `uploads/documentos/${req.file.filename}`;
-      await pool.query('UPDATE servicios SET pdfCotizacion = $1 WHERE id = $2', [pdfPath, id]);
+    if (req.files && req.files.length > 0) {
+      const pdfPaths = req.files.map(f => `uploads/documentos/${f.filename}`);
+      
+      // Obtener PDFs actuales
+      const currentRes = await pool.query('SELECT pdfCotizacion FROM servicios WHERE id = $1', [id]);
+      let existingPdfs = [];
+      if (currentRes.rows[0]?.pdfcotizacion) {
+        try {
+          existingPdfs = JSON.parse(currentRes.rows[0].pdfcotizacion);
+        } catch {
+          existingPdfs = [currentRes.rows[0].pdfcotizacion];
+        }
+      }
+      
+      const allPdfs = [...existingPdfs, ...pdfPaths];
+      await pool.query('UPDATE servicios SET pdfCotizacion = $1 WHERE id = $2', [JSON.stringify(allPdfs), id]);
     }
 
     if (update.estado) {
