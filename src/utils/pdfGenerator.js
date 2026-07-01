@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import logoImg from '../assets/LOGOUPDM.png';
+import logoImg from '../assets/logoinfiniguardnew.png';
 
 /**
  * Genera el PDF de la cotización

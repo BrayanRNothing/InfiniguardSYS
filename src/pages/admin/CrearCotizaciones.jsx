@@ -3,7 +3,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 import logoUPDM from '../../assets/LOGOUPDM.png';
-import logoInfiniguard from '../../assets/logoInfiniguard.png';
+import logoInfiniguard from '../../assets/logoinfiniguardnew.png';
 import { guardarCotizacionSimple, subirPDFCotizacion, obtenerProximoNumeroCotizacion } from '../../utils/documentStorage';
 import API_URL from '../../config/api';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -34,7 +34,23 @@ const CrearCotizaciones = () => {
     }, [isEditing]);
 
     // Estado del logo seleccionado
-    const [logoSeleccionado, setLogoSeleccionado] = useState(editData?.logo || 'UPDM');
+    const [logoSeleccionado, setLogoSeleccionado] = useState(editData?.logo || 'INFINIGUARD');
+
+    // Precarga de dimensiones reales de logos para respetar aspecto ratio
+    const [logoDims, setLogoDims] = useState({ INFINIGUARD: { w: 50, h: 18 }, UPDM: { w: 40, h: 20 } });
+    useEffect(() => {
+        const preload = (src, key) => {
+            const img = new Image();
+            img.onload = () => {
+                const targetH = 18;
+                const ratio = img.naturalWidth / img.naturalHeight;
+                setLogoDims(prev => ({ ...prev, [key]: { w: targetH * ratio, h: targetH } }));
+            };
+            img.src = src;
+        };
+        preload(logoInfiniguard, 'INFINIGUARD');
+        preload(logoUPDM, 'UPDM');
+    }, []);
 
     // Form data
     const [formData, setFormData] = useState({
@@ -50,14 +66,14 @@ const CrearCotizaciones = () => {
         descripcion: editData?.descripcion || editData?.Descripción || '',
         fecha: editData?.fecha ? new Date(editData.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         validez: editData?.validez || editData?.Válidez || '30', // días
-        creadoPor: editData?.creadoPor || '', // Nombre de quien crea la cotización
-        notas: editData?.notas || '', // Notas adicionales
+        creadoPor: editData?.creadoPor || 'Fernando Zamarripa', // Nombre de quien crea la cotización
+        notas: editData?.notas || 'El servicio incluye:\n\n• Preparación de superficie: Remoción total de óxido en todas las áreas afectadas.\n• Protección de gabinete: Aplicación de revestimiento bicapa (base blanca Infiniguard y sellador transparente).\n• Protección de serpentín condensador: Aplicación de recubrimiento Infiniguard, diseñado para retardar la oxidación sin alterar la eficiencia térmica del equipo, prolongando así su vida útil.\n• Componentes electrónicos: Protección especializada en tarjetas y componentes electrónicos para prevenir la sulfatación y la oxidación.\n• Soporte técnico: Retoques sin costo adicional durante el período de garantía (en caso de ser necesarios).', // Notas adicionales
 
         // Financial
         moneda: editData?.moneda || 'MXN', // MXN o USD
         impuesto: editData?.impuesto || '16', // IVA %
         descuento: editData?.descuento || '0', // %
-        terminosCondiciones: editData?.terminosCondiciones || editData?.TérminosCondiciónes || 'Se requiere contar con toma de agua y suministro eléctrico cercanos para poder llevar a cabo el servicio de recubrimiento. Se otorga una garantía de 2 años contra la corrosión. En caso de que el serpentín sea reemplazado antes de que concluya dicho periodo, el serpentín sustituido será recubierto nuevamente sin costo adicional por nuestra parte.',
+        terminosCondiciones: editData?.terminosCondiciones || editData?.TérminosCondiciónes || '• Garantía en estructura: Se otorga una garantía de 4 años contra la corrosión en la estructura, bases, compresores y componentes en general.\n• Garantía en serpentín: Se otorga una garantía de 3 años en el serpentín del condensador (considerando su condición de equipo usado).\n• Garantía en tarjetas electrónicas: Protección contra la corrosión en componentes electrónicos, en caso de falla electrónica prematura, se recubre la tarjeta nueva libre de costo durante el periodo de garantía. (5 años)\n• Vigencia: La presente cotización tiene una validez de 30 días naturales a partir de su fecha de emisión.\n• Fugas: las reparaciones de fugas y cargas de gas no están consideradas en la garantía.',
     });
 
     // Line items
@@ -144,17 +160,17 @@ const CrearCotizaciones = () => {
         const pageWidth = doc.internal.pageSize.width;
         let yPos = 10;
 
-        let logoWidth = 40;
-        let logoHeight = 20;
         const img = new Image();
-
         if (logoSeleccionado === 'INFINIGUARD') {
             img.src = logoInfiniguard;
-            logoWidth = 60;
-            logoHeight = 18;
         } else {
             img.src = logoUPDM;
         }
+
+        // Usar dimensiones precargadas (respetan el aspecto ratio real del logo)
+        const dims = logoDims[logoSeleccionado] || { w: 50, h: 18 };
+        const logoWidth = dims.w;
+        const logoHeight = dims.h;
 
         try {
             doc.addImage(img, 'PNG', 14, yPos, logoWidth, logoHeight);
@@ -200,13 +216,14 @@ const CrearCotizaciones = () => {
         doc.setTextColor(60, 60, 60);
         doc.text(`Emisor: ${logoSeleccionado === 'INFINIGUARD' ? 'INFINIGUARD' : 'UPDM'}`, 14, yPos);
         doc.setFont('helvetica', 'normal');
-        doc.text('RFC: UPD141011MC3', pageWidth - 14, yPos, { align: 'right' });
+        doc.text(logoSeleccionado === 'INFINIGUARD' ? 'RFC: IME191002KLA' : 'RFC: UPD141011MC3', pageWidth - 14, yPos, { align: 'right' });
 
         yPos += 5;
-        doc.text('Blvd. Rogelio Cantú Gómez 333-9, col Santa María, Monterrey, N.L, 64650', 14, yPos);
-
-        yPos += 5;
-        doc.text('TEL: 813-557-3724 & 811-418-5412', 14, yPos);
+        if (logoSeleccionado === 'INFINIGUARD') {
+            doc.text('KAPPA 420, PARQUE INDUSTRIAL MILENIUM, APODACA N.L. MEXICO, CP 66626', 14, yPos);
+        } else {
+            doc.text('Blvd. Rogelio Cantú Gómez 333-9, col Santa María, Monterrey, N.L, 64650', 14, yPos);
+        }
 
         yPos += 7;
         doc.setFont('helvetica', 'bold');
@@ -344,32 +361,14 @@ const CrearCotizaciones = () => {
         const pageHeight = doc.internal.pageSize.height;
         const footerHeight = 20;
         const maxY = pageHeight - footerHeight;
+        const lineH = 4; // mm por línea a fontSize 8
 
-        let notasHeight = 0;
-        let notasLines = [];
+        // --- NOTAS ---
         if (formData.notas) {
             doc.setFontSize(8);
-            notasLines = doc.splitTextToSize(formData.notas, pageWidth - 28);
-            notasHeight = 10 + 6 + (notasLines.length * 4) + 12;
-        }
+            const notasLines = doc.splitTextToSize(formData.notas, pageWidth - 28);
+            const notasHeight = 8 + (notasLines.length * lineH) + 6; // título + líneas + margen
 
-        let termsHeight = 0;
-        let termLines = [];
-        if (formData.terminosCondiciones) {
-            doc.setFontSize(8);
-            termLines = doc.splitTextToSize(formData.terminosCondiciones, pageWidth - 28);
-            termsHeight = 10 + 6 + (termLines.length * 4);
-        }
-
-        const totalContentHeight = notasHeight + termsHeight;
-        const spaceAvailable = maxY - yPos;
-
-        if (totalContentHeight > spaceAvailable && totalContentHeight < maxY - 20) {
-            doc.addPage();
-            yPos = 20;
-        }
-
-        if (formData.notas) {
             if (yPos + notasHeight > maxY) {
                 doc.addPage();
                 yPos = 20;
@@ -378,17 +377,30 @@ const CrearCotizaciones = () => {
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(60, 60, 60);
-            doc.text('NOTAS:', 14, yPos);
+            doc.text('NOTAS IMPORTANTES:', 14, yPos);
             yPos += 6;
 
             doc.setFontSize(8);
             doc.setFont('helvetica', 'normal');
-            doc.text(notasLines, 14, yPos);
-            yPos += notasLines.length * 4 + 12;
+            // Renderizar línea a línea para manejar saltos de página en medio
+            for (const line of notasLines) {
+                if (yPos + lineH > maxY) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                doc.text(line, 14, yPos);
+                yPos += lineH;
+            }
+            yPos += 6;
         }
 
+        // --- TÉRMINOS Y CONDICIONES ---
         if (formData.terminosCondiciones) {
-            if (yPos + termsHeight > maxY) {
+            doc.setFontSize(8);
+            const termLines = doc.splitTextToSize(formData.terminosCondiciones, pageWidth - 28);
+            const termsHeaderHeight = 8;
+
+            if (yPos + termsHeaderHeight > maxY) {
                 doc.addPage();
                 yPos = 20;
             }
@@ -401,7 +413,15 @@ const CrearCotizaciones = () => {
 
             doc.setFontSize(8);
             doc.setFont('helvetica', 'normal');
-            doc.text(termLines, 14, yPos);
+            // Renderizar línea a línea
+            for (const line of termLines) {
+                if (yPos + lineH > maxY) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                doc.text(line, 14, yPos);
+                yPos += lineH;
+            }
         }
 
         const footerY = doc.internal.pageSize.height - 15;
